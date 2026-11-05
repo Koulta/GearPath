@@ -334,6 +334,23 @@ do
         "just as easy: your zone, then your continent, then across the sea (" .. ways[1].name .. ", " .. ways[2].name .. ", " .. ways[3].name .. ")")
     check(Src.PlayerContinent() == 1415, "and so does where you stand")
     check(Src.Continent(99999) == nil and Src.Continent(nil) == nil, "an unknown map has none")
+    -- Zephras Isle (Nov 5): on no continent on the game's maps; an island of its own.
+    M[2521] = { mapType = 3, parentMapID = 947 }
+    check(Src.Continent(2521) == 2521, "Zephras Isle is a land of its own")
+    GP.Score.here = 1415
+    check(GP.Score.IsFar({ kind = "vendor", mapID = 2521 }), "so its vendors are across the sea from Tirisfal")
+    GP.Score.here = 2521
+    check(not GP.Score.IsFar({ kind = "vendor", mapID = 2521 }), "and not when you're on it")
+    GP.Score.here = nil
+    -- A zone far above you (Nov 5: Surfer Shoes from Jang in Booty Bay at level 8).
+    M[1434] = { mapType = 3, parentMapID = 1415 }
+    check(Src.ZoneTooHigh({ kind = "vendor", mapID = 1434 }, 8), "Stranglethorn is too high for a level 8")
+    check(not Src.ZoneTooHigh({ kind = "vendor", mapID = 1434 }, 25), "not for a level 25")
+    check(not Src.ZoneTooHigh({ kind = "vendor", mapID = 1420 }, 8) and not Src.ZoneTooHigh({ kind = "drop", mapID = 1434, dungeon = "Zul'Gurub" }, 8),
+        "Tirisfal isn't, and a dungeon is judged by its own levels")
+    local lvl = GP.PlayerInfo().level or 1
+    local stv = { kind = "vendor", vendor = "Jang", zone = "Stranglethorn Vale", mapID = 1434 }
+    check(GP.Score.Effort(stv) == (lvl <= 20 and 2 or 1), "a vendor in a zone 10+ levels up is a trip, not Best now (level " .. lvl .. ")")
     -- Far sources: another continent than where you stand.
     local keepHere = GP.Score.here
     GP.Score.here = Src.PlayerContinent()

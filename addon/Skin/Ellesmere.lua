@@ -192,7 +192,10 @@ local function paintSlot(btn, data)
     end
     if not a then
         a = GP.Skin.UpgradeArrow(parent, 14)
-        a:SetPoint("TOPLEFT", parent, "TOPLEFT", 1, -1)
+        -- Top right: EllesmereUI keeps the item level top left, the count
+        -- bottom right and Bind on Equip bottom left (the arrow sat on the
+        -- item level, Nov 5).
+        a:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -1, -1)
         arrows[btn] = a
     end
     a.Paint("primary")

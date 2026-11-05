@@ -588,7 +588,18 @@ function UI.StatusText()
     if S.status == "loading" then return string.format(L["Loading item details (%d left)..."], GP.Items.Pending()) end
     if S.status == "idle" then return L["Getting ready..."] end
     local r = GP.Score.results
-    local t = string.format(L["%d to get now, %d worth chasing"], r.primary or 0, r.secondary or 0)
+    local now, chase = r.primary or 0, r.secondary or 0
+    -- With some kinds unticked under Show:, count what the lists show
+    -- (launch night: "7 to get now" over an empty Best now).
+    if UI.ContentFiltered() then
+        now, chase = 0, 0
+        for _, ev in ipairs(r.all or {}) do
+            if ev.tier and UI.ContentMatches(ev) then
+                if ev.tier == "primary" then now = now + 1 elseif ev.tier == "secondary" then chase = chase + 1 end
+            end
+        end
+    end
+    local t = string.format(L["%d to get now, %d worth chasing"], now, chase)
     if S.status == "nodb" then t = t .. "  |  " .. L["QuestieDB not found"] end
     if GP.Check and GP.Check.lastAll then t = t .. "  |  " .. string.format(L["checked %s"], GP.Check.Ago(GP.Check.lastAll)) end
     return t

@@ -204,6 +204,39 @@ for _, ev in ipairs(res.all or {}) do
             local f = DB.Npc.friendlyToFaction(src.id)
             if f and f ~= "AH" and f ~= (FACTION == "Horde" and "H" or "A") then bad(ev, "vendor of the other faction: " .. tostring(src.name)) end
         end
+        -- Faction rules (0.7.6), checked on their own: no quest only the other
+        -- faction's people give or its race list leaves you out of, no drop
+        -- from your own faction's people, nothing in the other faction's home
+        -- zones as Best now (zone area ids, not GearPath's map ids).
+        local mine, other = FACTION == "Horde" and "H" or "A", FACTION == "Horde" and "A" or "H"
+        if src and src.kind == "quest" and src.id and DB.Quest.name(src.id) then
+            local races = DB.Quest.requiredRaces(src.id)
+            local mask = DB.Enum.raceMaskById[race[2]]
+            if races and races ~= 0 and mask and math.floor(races / mask) % 2 == 0 then bad(ev, "a quest for other races: " .. tostring(src.name)) end
+            local sb = DB.Quest.startedBy(src.id)
+            local npcs = type(sb) == "table" and sb[1]
+            local onlyOther = type(npcs) == "table" and #npcs > 0 and not (type(sb[2]) == "table" and #sb[2] > 0) and not (type(sb[3]) == "table" and #sb[3] > 0)
+            if onlyOther then
+                for _, n in ipairs(npcs) do if DB.Npc.friendlyToFaction(n) ~= other then onlyOther = false end end
+            end
+            if onlyOther then bad(ev, "a quest only the other faction gives: " .. tostring(src.name)) end
+        end
+        if src and src.kind == "drop" and src.id and not src.journal and DB.Npc.friendlyToFaction(src.id) == mine then
+            bad(ev, "a drop from your own faction's people: " .. tostring(src.name))
+        end
+        local HOME_AREAS = FACTION == "Horde" and { [1] = 1, [12] = 1, [38] = 1, [40] = 1, [44] = 1, [141] = 1, [148] = 1, [1519] = 1, [1537] = 1, [1657] = 1 }
+            or { [14] = 1, [17] = 1, [85] = 1, [130] = 1, [215] = 1, [1497] = 1, [1637] = 1, [1638] = 1 }
+        local neutral = src and (src.kind == "vendor" or (src.giverID and DB.Npc.friendlyToFaction(src.giverID) == "AH"))
+        if ev.tier == "primary" and src and not src.dungeon and not neutral and src.areaId and HOME_AREAS[src.areaId] then
+            bad(ev, "Best now in the other faction's home zone: " .. tostring(src.zone))
+        end
+        -- Best now in a zone 10+ levels above you (area ids, not GearPath's table).
+        local AREA_MIN = { [33] = 30, [36] = 30, [45] = 30, [405] = 30, [400] = 25, [267] = 20, [11] = 20, [10] = 18,
+            [331] = 18, [406] = 15, [44] = 15, [15] = 35, [3] = 35, [8] = 35, [357] = 40, [47] = 40, [440] = 40, [51] = 43,
+            [16] = 45, [4] = 45, [490] = 48, [361] = 48, [46] = 50, [28] = 51, [139] = 53, [618] = 55, [41] = 55, [1377] = 55 }
+        if ev.tier == "primary" and src and not src.dungeon and src.areaId and AREA_MIN[src.areaId] and AREA_MIN[src.areaId] >= LEVEL + 10 then
+            bad(ev, "Best now in a zone far above you: " .. tostring(src.zone))
+        end
         for _, n in ipairs(ev.train or {}) do train[n.name] = (train[n.name] or 0) + 1 end
     end
 end

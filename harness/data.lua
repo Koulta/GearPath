@@ -218,6 +218,8 @@ local DB_ITEMS = {
     [214] = { class = 4, subClass = 1, requiredLevel = 22, name = "Chest Loot Leggings", objectDrops = { 2 } },
     [215] = { class = 4, subClass = 1, requiredLevel = 23, name = "Sergeant's Cloak", vendors = { 9001 } },
     [500] = { class = 0, requiredLevel = 1, name = "Potion" },
+    -- Level 60: never a candidate, only resolved by the faction checks.
+    [241] = { class = 4, subClass = 1, requiredLevel = 60, name = "Guard's Sash", npcDrops = { 9009, 9010 } },
 }
 local QUESTS = {
     [5000] = { name = "The Lost Cultist", questLevel = 22, requiredLevel = 18, startedBy = { { 9000 } }, zoneOrSort = 40 },
@@ -226,10 +228,19 @@ local QUESTS = {
     [5002] = { name = "Red Silk Bandanas", questLevel = 24, requiredLevel = 18, startedBy = { { 9004 } }, zoneOrSort = 1581 },
     [5004] = { name = "Strahnbrad Mystery", questLevel = 30, requiredLevel = 22, startedBy = { { 9000 } }, zoneOrSort = 40 },
     [5003] = { name = "Old News", questLevel = 20, requiredLevel = 15, startedBy = { { 9000 } }, zoneOrSort = 40 },
+    -- Faction filtering: the journal calls 5010 "Both", the database knows it's Alliance (races 77);
+    -- 5011 is handed out only by an Alliance NPC; 5012's giver is marked "AH" (says nothing).
+    [5010] = { name = "Heirlooms Elsewhere", questLevel = 15, requiredLevel = 10, requiredRaces = 77, startedBy = { { 9008 } }, zoneOrSort = 40 },
+    [5011] = { name = "Ironforge Errand", questLevel = 15, requiredLevel = 10, startedBy = { { 9007 } }, zoneOrSort = 40 },
+    [5012] = { name = "Anyone's Errand", questLevel = 15, requiredLevel = 10, startedBy = { { 9008 } }, zoneOrSort = 40 },
 }
 local NPCS = {
     [9000] = { name = "Gryan Stoutmantle", friendlyToFaction = "AH", spawns = { [40] = { { 56.3, 47.5 } } }, zoneID = 40 },
     [9001] = { name = "Abigail Shiel", friendlyToFaction = "H", spawns = { [85] = { { 61.0, 52.0 } } }, zoneID = 85 },
+    [9007] = { name = "Thom Alliance", friendlyToFaction = "A", spawns = { [40] = { { 50, 50 } } }, zoneID = 40 },
+    [9008] = { name = "Anyone", friendlyToFaction = "AH", spawns = { [40] = { { 51, 51 } } }, zoneID = 40 },
+    [9009] = { name = "Deathguard Tester", friendlyToFaction = "H", minLevel = 20, maxLevel = 20, spawns = { [85] = { { 60, 50 } } }, zoneID = 85 },
+    [9010] = { name = "Hillsbrad Tester", friendlyToFaction = "A", minLevel = 20, maxLevel = 20, spawns = { [40] = { { 60, 50 } } }, zoneID = 40 },
     [9201] = { name = "Foreman Testly", rank = 4, minLevel = 20, maxLevel = 20, spawns = { [1581] = { { 40, 60 } } }, zoneID = 1581 },
     [9200] = { name = "Miner Testson", rank = 2, minLevel = 20, maxLevel = 20, spawns = { [1581] = { { 50, 50 } } }, zoneID = 1581 },
     -- A weapon master (the harness's map: put in Tirisfal).
@@ -302,7 +313,9 @@ if not H.noJournal then
                 quests = { { id = 5005, name = "Keep Clearing", level = 25, requires = 20, faction = "Both", rewardChoice = false,
                     rewardItems = { { 218, "Keep Bracers", 2 }, { 219, "Keep Gloves", 2 } },
                     startMap = { mapID = 1436, x = 0.4, y = 0.4, label = "Captain Grey - Westfall", targetName = "Captain Grey" } },
-                    { id = 5006, name = "Alliance Only", faction = "Alliance", rewardItems = { { 218, "Keep Bracers", 2 } } } },
+                    { id = 5006, name = "Alliance Only", faction = "Alliance", rewardItems = { { 218, "Keep Bracers", 2 } } },
+                    { id = 5010, name = "Heirlooms Elsewhere", faction = "Both", rewardItems = { { 218, "Keep Bracers", 2 } },
+                        startMap = { mapID = 1436, x = 0.3, y = 0.3, label = "Thom - Westfall", targetName = "Thom" } } },
             },
         },
     }

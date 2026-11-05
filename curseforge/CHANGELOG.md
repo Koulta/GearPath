@@ -1,5 +1,15 @@
 # GearPath changelog
 
+## 0.7.6
+
+- **Your faction's gear only.** An Undead in Tirisfal was offered the Dwarven Tome from Important Heirlooms, a quest handed out in Ironforge: the Dungeon Journal lists it for both factions, but QuestieDB knows it's an Alliance quest. Where QuestieDB has a quest, its race list now decides, whatever the journal (or another player's report) says. A quest only the other faction's people hand out is left out too, even when its race list is empty (Owen Thadd in the Undercity, for an Alliance player).
+- **No loot from your own side.** Gear that drops from your own faction's people (a Hillsbrad Farmer, for an Alliance player) isn't listed from them: you can't attack them. The other faction's people still count.
+- **Enemy ground is a trip.** A quest out in the other faction's starting zones, the zones next to them or its capitals (Westfall or Elwynn Forest for a Horde player, the Barrens or Tirisfal for an Alliance one) is never Best now; it moves to Worth chasing, and goes after the other ways to get the same item. Neutral towns and givers out there are fine (Ratchet, the Darkmoon Faire).
+- **Zephras Isle is an island.** The Skyborne's starting zone sits on no continent on the game's maps, so its vendors counted as next door: an Undead in Tirisfal had five Al'Aketh pieces under Best now, a trip by airship from Mulgore away. It now counts as a land of its own, like another continent: its gear shows once you're there.
+- **Zones above your level are a trip.** A vendor or quest in a zone at least 10 levels above you isn't Best now; it's Worth chasing (Surfer Shoes from Jang in Booty Bay was Best now for a level 8).
+- **EllesmereUI's bags: the arrow moved to the top right.** It sat on EllesmereUI's item level in the top left corner (an "11" with an arrow on top of it).
+- **The header follows Show:.** With some kinds unticked under Show:, "7 to get now, 44 worth chasing" counts what the lists show (it counted everything, so it could say 7 over an empty Best now).
+
 ## 0.7.5
 
 - **A worn item worth nothing to you isn't an empty slot.** A starter weapon with no stats your spec uses (a caster's Forsaken Dagger) made GearPath say "Main Hand (empty now)" in tooltips and "fills your empty slot" in upgrade notes. Over a worn item worth 0 points it now shows the gain in points ("+12 pts"); "empty now" is only for slots with nothing in them.

@@ -262,11 +262,21 @@ function Score.Effort(source)
     if source.kind == "bags" then return 0 end
     -- Where it is isn't in the database: not easy, whatever it is.
     local unknown = not source.worldDrop and not source.dungeon and not source.zone and not source.mapID
-    if source.kind == "vendor" then return (source.dungeon or unknown) and 2 or 1 end
+    if source.kind == "vendor" then
+        if source.dungeon or unknown then return 2 end
+        -- In a zone far above your level (Jang in Booty Bay at level 8): a trip.
+        if GP.Sources and GP.Sources.ZoneTooHigh and GP.Sources.ZoneTooHigh(source) then return 2 end
+        return 1
+    end
     if source.kind == "quest" then
         -- Nobody known to start it (or its chain): you can't go and pick it up.
         local starter = source.giver or source.startItem or (source.chainStart and source.chainStart.giver)
         if source.dungeon or unknown or not starter or (source.chainLength or 0) >= 3 then return 2 end
+        -- Out in the other faction's home zones (Westfall for a Horde
+        -- player): a trip, not an easy pick-up.
+        if GP.Sources and GP.Sources.EnemyLand and GP.Sources.EnemyLand(source) then return 2 end
+        -- In a zone far above your level (Booty Bay at level 8): a trip too.
+        if GP.Sources and GP.Sources.ZoneTooHigh and GP.Sources.ZoneTooHigh(source) then return 2 end
         return 1
     end
     if source.kind == "drop" or source.kind == "object" then

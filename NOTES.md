@@ -18,8 +18,7 @@ add what was decided, move finished work to `done`. Never delete Koulta's own ro
 - **QuestieDB data as a built-in backup: allowed.** TheCrux (BreakBB, Questie lead, a GPL-3
   signer) replied on Discord, October 30, 2026: using the data "as backup" for people who don't
   have Questie installed "sounds good, yes", as long as GearPath tries the real QuestieDB first.
-  Screenshot kept privately by Koulta (taken out of the repo before it went public, Nov 4,
-  since it shows a Discord channel). Credit Questie and QuestieDB; no
+  Screenshot: `permissions/questie-thecrux-2026-10-30.png`. Credit Questie and QuestieDB; no
   Questie name or logo in GearPath's branding.
 - He also said QuestieDB will soon be released on CurseForge as a standalone library. When it
   is, make QuestieDB (not Questie) GearPath's Required dependency on CurseForge, and list it in
@@ -89,7 +88,7 @@ Class sweep (real data): from `harness/`,
 `GPDIR=<addon folder> CLASS=WARRIOR FACTION=Horde LEVEL=30 [SPEC=arms] [VERBOSE=1] lua5.1 qdb.lua <QuestieDB folder> ../queries/sweep.lua`.
 It checks each pick against its own table of what each class can use (Forever's
 changes included), the slot rules (off-hand weapons only with Dual Wield, shields,
-relics, two-handers), your faction's vendors and no item picked twice. Run it for
+relics, two-handers), your faction's vendors and no item picked twice; since 0.7.6 also faction rules checked on their own (no quest only the other faction gives or whose race list leaves you out, no drop from your own faction's people, nothing Best now in the other faction's home zones by area id, neutral givers and vendors excepted). Also nothing Best now in a zone 10+ levels above you (by area id). November 5, 2026 (0.7.6), QuestieDB 1.0.10: 162 runs (both factions, levels 5/8/10/15/20/30/40/50/60), 0 problems. Run it for
 all nine classes, both factions, levels 10/20/30/40/50/60 (108 runs) plus each
 non-default spec; every run must say 0 problems. October 23, 2026: 0 problems.
 October 29, 2026, on QuestieDB 1.0.9 (the live client's): 204 runs (108 + every non-default

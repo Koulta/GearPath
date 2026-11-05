@@ -31,6 +31,10 @@ end
 local GP = ns
 check(_G.GearPath == GP, "GearPath global")
 
+-- The fake world sends this Horde warlock to Westfall as a stand-in zone:
+-- its home-ground rule is off until the faction checks below.
+local realAllianceHome = GP.Sources.HOME.Alliance
+GP.Sources.HOME.Alliance = {}
 H.Fire("ADDON_LOADED", "GearPath")
 H.Fire("PLAYER_LOGIN")
 if look == "ellesmere" then H.loggedIn = true; H.EUILogin() end
@@ -1467,6 +1471,55 @@ do
     table.remove(H.errors)   -- that one was on purpose
 end
 
+-- Faction filtering (0.7.6, launch night: an Undead was offered the
+-- Dwarven Tome from Important Heirlooms, a quest given in Ironforge).
+if not H.noDB then
+    local Src = GP.Sources
+    GP.Sources.HOME.Alliance = realAllianceHome
+    check(Src.EnemyLand({ mapID = 1436 }), "Westfall is enemy land for a Horde player")
+    check(not Src.EnemyLand({ mapID = 1420 }), "Tirisfal isn't")
+    check(not Src.EnemyLand({ mapID = 1436, dungeon = "The Deadmines" }), "a dungeon's entrance is never enemy land")
+    check(GP.Score.Effort({ kind = "quest", giver = "Thom", mapID = 1436, zone = "Westfall" }) == 2,
+        "a quest in Westfall is a trip for a Horde player, not Best now")
+    check(GP.Score.Effort({ kind = "quest", giver = "Abigail", mapID = 1420, zone = "Tirisfal Glades" }) == 1,
+        "one in Tirisfal is an easy pick-up")
+    local sorted = { { kind = "quest", giver = "A", mapID = 1436, zone = "Westfall", level = 10 },
+        { kind = "quest", giver = "B", mapID = 1431, zone = "Duskwood", level = 12 } }
+    Src.SortSources(sorted)
+    check(sorted[1].mapID == 1431, "a quest in enemy land goes after one elsewhere")
+    check(not Src.QuestAvailable(5011), "a quest only an Alliance NPC hands out isn't a Horde player's")
+    check(Src.QuestAvailable(5012), "a giver marked AH keeps the quest")
+    check(not Src.QuestAvailable(5010) and Src.QuestNotForYou(5010), "an Alliance race list keeps the quest out")
+    check(not Src.QuestNotForYou(5005), "a quest the database doesn't have isn't judged")
+    local sash = Src.Resolve({ id = 241 })
+    local names = {}
+    for _, s in ipairs(sash.sources or {}) do names[#names + 1] = s.name end
+    check(#names == 1 and names[1] == "Hillsbrad Tester",
+        "your own faction's people drop nothing for you; the other faction's still do (" .. table.concat(names, ", ") .. ")")
+    if not H.noJournal then
+        local bracers = Src.Resolve({ id = 218 })
+        local got5010, got5005 = false, false
+        for _, s in ipairs(bracers.sources or {}) do
+            if s.kind == "quest" and s.id == 5010 then got5010 = true end
+            if s.kind == "quest" and s.id == 5005 then got5005 = true end
+        end
+        check(not got5010, "the journal's \"Both\" doesn't beat the database's Alliance race list")
+        check(got5005, "a journal quest the database doesn't have is still listed")
+    end
+    GP.Sources.HOME.Alliance = {}
+    -- The header counts what Show: lets through.
+    local all = GP.UI.StatusText()
+    GP.UI.ContentOff().quest = true
+    local now = 0
+    for _, ev in ipairs(GP.Score.results.all) do
+        if ev.tier == "primary" and GP.UI.ContentMatches(ev) then now = now + 1 end
+    end
+    local shown = GP.UI.StatusText()
+    check(shown:find("^" .. now .. " to get now") and shown ~= all,
+        "with quests unticked, the header counts only what's shown (" .. shown .. " / " .. all .. ")")
+    GP.UI.ContentOff().quest = nil
+end
+
 if look == "ellesmere" then
     local W = GP.UI.frame
     local skinned = function(f, prim) return H.euiSkinned[f] and H.euiSkinned[f][prim] end
@@ -1486,6 +1539,7 @@ if look == "ellesmere" then
     local btn = H.EUIPaintSlot(0, 3, H.Link(210))
     local a = GP.Ellesmere.arrows and GP.Ellesmere.arrows[btn]
     check(a and a:IsShown(), "Bagged Gloves get the upgrade arrow in EllesmereUI's bags")
+    check(a and a:GetPoint(1) == "TOPRIGHT", "in the top right corner, off EllesmereUI's item level (top left)")
     local empty = H.EUIPaintSlot(0, 9, nil)
     check(not (GP.Ellesmere.arrows[empty] and GP.Ellesmere.arrows[empty]:IsShown()), "an empty bag slot gets none")
     -- Skinning turned off for GearPath: the next session falls back to the game's look.

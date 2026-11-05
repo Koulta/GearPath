@@ -118,12 +118,18 @@ end
 -- The continent a map is on (its map id), or nil when the game can't say.
 local CONTINENT = 2   -- Enum.UIMapType.Continent
 local continentOf = {}
+-- Islands the game's maps put on no continent, each a land of its own:
+-- Zephras Isle, the Skyborne's starting zone, reached by airship from
+-- Mulgore or Alterac (its gear showed as Best now for an Undead in Tirisfal).
+local ISLANDS = { [2521] = true }
+
 function Sources.Continent(mapID)
     if type(mapID) ~= "number" or not (C_Map and C_Map.GetMapInfo) then return nil end
     local known = continentOf[mapID]
     if known then return known end
     local id, found, steps = mapID, false, 0
     while type(id) == "number" and id > 0 and steps < 8 do
+        if ISLANDS[id] then found = id break end
         local ok, info = pcall(C_Map.GetMapInfo, id)
         if not (ok and type(info) == "table") then break end
         if info.mapType == CONTINENT then found = id break end
@@ -165,7 +171,8 @@ function Sources.SortSources(list)
     local function far(s)
         if hereZone and s.mapID and Sources.Zone(s.mapID) == hereZone then return 0 end
         local c = here and s.mapID and Sources.Continent(s.mapID)
-        return (c ~= nil and c ~= here) and 2 or 1
+        if c ~= nil and c ~= here then return 2 end
+        return Sources.EnemyLand(s) and 1.5 or 1
     end
     table.sort(list, function(a, b)
         local ea, eb = Score.Effort(a), Score.Effort(b)
@@ -293,6 +300,28 @@ local function friendly(npcID)
     return f == "AH" or f == myFactionLetter()
 end
 
+-- The other faction's letter ("A" for a Horde player).
+local function otherFactionLetter()
+    return myFactionLetter() == "H" and "A" or "H"
+end
+
+-- A quest only the other faction's people hand out (Owen Thadd in the
+-- Undercity for an Alliance player), whatever its race list says. Only a
+-- giver marked as the other faction's counts: QuestieDB marks plenty of
+-- hostile beasts "AH", so that mark says nothing.
+local function giversOtherFaction(q)
+    local started = field(DB.Quest, "startedBy", q)
+    if type(started) ~= "table" then return false end
+    local npcs, objects, items = started[1], started[2], started[3]
+    if (type(objects) == "table" and #objects > 0) or (type(items) == "table" and #items > 0) then return false end
+    if type(npcs) ~= "table" or #npcs == 0 then return false end
+    local other = otherFactionLetter()
+    for _, npc in ipairs(npcs) do
+        if field(DB.Npc, "friendlyToFaction", npc) ~= other then return false end
+    end
+    return true
+end
+
 function Sources.QuestAvailable(q)
     if not DB or not field(DB.Quest, "name", q) then return false end
     local races = field(DB.Quest, "requiredRaces", q)
@@ -301,7 +330,65 @@ function Sources.QuestAvailable(q)
     local classes = field(DB.Quest, "requiredClasses", q)
     local class = myClassMask()
     if classes and classes ~= 0 and class and not GP.HasBit(classes, class) then return false end
+    if giversOtherFaction(q) then return false end
     return true
+end
+
+-- Whether QuestieDB has a quest and says it isn't for you (another
+-- faction's, race's or class's). A quest it doesn't have: false.
+function Sources.QuestNotForYou(q)
+    q = tonumber(q)
+    if not (DB and q and field(DB.Quest, "name", q)) then return false end
+    return not Sources.QuestAvailable(q)
+end
+
+-- Each faction's home ground: its starting zones, the zones next to them
+-- and its capitals (the game's map ids, the same in Forever). A quest out
+-- there is a trip into enemy land for the other faction: never "Best now".
+local HOME = {
+    Horde = { [1411] = true, [1412] = true, [1413] = true, [1420] = true, [1421] = true,
+        [1454] = true, [1456] = true, [1458] = true },
+    Alliance = { [1426] = true, [1429] = true, [1432] = true, [1433] = true, [1436] = true,
+        [1438] = true, [1439] = true, [1453] = true, [1455] = true, [1457] = true },
+}
+Sources.HOME = HOME
+local zoneCache = {}   -- map id -> its zone (these checks run inside sorts)
+local function zoneOf(mapID)
+    local z = zoneCache[mapID]
+    if z == nil then z = Sources.Zone(mapID) or mapID; zoneCache[mapID] = z end
+    return z
+end
+
+function Sources.EnemyLand(src)
+    if not src or src.dungeon or type(src.mapID) ~= "number" then return false end
+    -- A neutral town or giver out there is fine (Ratchet in the Barrens,
+    -- the Darkmoon Faire in Elwynn): a vendor GearPath lists is one who
+    -- deals with you, and a quest giver marked for both factions is neutral.
+    if src.kind == "vendor" then return false end
+    if src.giverID and DB and field(DB.Npc, "friendlyToFaction", src.giverID) == "AH" then return false end
+    local f = (GP.player or GP.PlayerInfo()).faction
+    local enemy = (f == "Horde" and HOME.Alliance) or (f == "Alliance" and HOME.Horde) or nil
+    if not enemy then return false end
+    return enemy[zoneOf(src.mapID)] == true
+end
+
+-- The lowest level each zone is for (the game's map ids). A quest or vendor
+-- in a zone 10 or more levels above you is a trip, not Best now (launch
+-- night: Surfer Shoes from Jang in Booty Bay, Stranglethorn, for a level 8).
+local ZONE_MIN = {
+    [1413] = 10, [1421] = 10, [1436] = 10, [1432] = 10, [1439] = 10, [1433] = 15, [1442] = 15,
+    [1440] = 18, [1431] = 18, [1424] = 20, [1437] = 20, [1441] = 25, [1416] = 30, [1417] = 30,
+    [1443] = 30, [1434] = 30, [1445] = 35, [1418] = 35, [1435] = 35, [1444] = 40, [1425] = 40,
+    [1446] = 40, [1427] = 43, [1447] = 45, [1419] = 45, [1449] = 48, [1448] = 48, [1428] = 50,
+    [1422] = 51, [1423] = 53, [1452] = 55, [1430] = 55, [1451] = 55,
+}
+Sources.ZONE_MIN = ZONE_MIN
+
+function Sources.ZoneTooHigh(src, level)
+    if not src or src.dungeon or type(src.mapID) ~= "number" then return false end
+    level = level or (GP.player or GP.PlayerInfo()).level or 1
+    local min = ZONE_MIN[zoneOf(src.mapID)]
+    return min ~= nil and min >= level + 10
 end
 
 local function questDone(q)
@@ -416,6 +503,9 @@ end
 local RANK = { [1] = "Elite", [2] = "Rare Elite", [3] = "Boss", [4] = "Rare" }
 
 local function dropSource(npc)
+    -- Your own faction's people (a Hillsbrad Farmer for an Alliance
+    -- player): you can't attack them.
+    if field(DB.Npc, "friendlyToFaction", npc) == myFactionLetter() then return nil end
     local s = { kind = "drop", id = npc, name = field(DB.Npc, "name", npc) }
     s.level = field(DB.Npc, "maxLevel", npc) or field(DB.Npc, "minLevel", npc)
     s.minLevel = field(DB.Npc, "minLevel", npc)
@@ -583,7 +673,9 @@ function Sources.Resolve(entry)
                 elseif not match.rank then
                     match.rank = j.rank
                 end
-            elseif not j.done then
+            elseif not j.done and not (j.kind == "quest" and Sources.QuestNotForYou(j.id)) then
+                -- (The journal called Important Heirlooms "Both"; QuestieDB
+                -- knows it's an Alliance quest, given in Ironforge.)
                 list[#list + 1] = j
             end
         end
@@ -604,7 +696,7 @@ function Sources.Resolve(entry)
                 break
             end
         end
-        if not dup then list[#list + 1] = s end
+        if not dup and not (s.kind == "quest" and Sources.QuestNotForYou(s.id)) then list[#list + 1] = s end
     end
     if entry.bags then
         table.insert(list, 1, { kind = "bags", name = "In your bags", zone = "In your bags" })
