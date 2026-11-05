@@ -1,0 +1,46 @@
+## Interface: 16001
+## Title: GearPath
+## Notes: Your character sheet, a gear database and an upgrade route in one window. Finds the best gear for each slot and tells you where to get it.
+## Author: Koulta
+## Version: 0.7.5
+## IconTexture: Interface\AddOns\GearPath\Media\icon
+## X-License: GPL-3.0-or-later
+## SavedVariables: GearPathDB
+## SavedVariablesPerCharacter: GearPathCharDB
+## OptionalDeps: QuestieDB, Questie, ForeverDungeonJournal, DaylightUI, DaylightUI_Skins, EllesmereUI, EllesmereUIBags, EllesmereUIBlizzardSkin, TomTom
+## AddonCompartmentFunc: GearPath_Toggle
+## AddonCompartmentFuncOnEnter: GearPath_CompartmentEnter
+## AddonCompartmentFuncOnLeave: GearPath_CompartmentLeave
+
+Core.lua
+Data\Slots.lua
+Data\Classes.lua
+Data\Locales.lua
+Data\Text.lua
+Items.lua
+Score.lua
+Sources.lua
+ZoneData.lua
+Learn.lua
+Check.lua
+Share.lua
+Journal.lua
+Waypoint.lua
+Training.lua
+Skin\Skin.lua
+Skin\Native.lua
+Skin\Daylight.lua
+Skin\Ellesmere.lua
+UI\List.lua
+UI\Dropdown.lua
+UI\Window.lua
+UI\PaperDoll.lua
+UI\Stats.lua
+UI\SlotPanel.lua
+UI\Browse.lua
+UI\Plan.lua
+UI\Settings.lua
+UI\Tooltip.lua
+UI\RareWatch.lua
+UI\QuestPick.lua
+UI\Notes.lua

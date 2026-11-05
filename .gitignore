@@ -1,0 +1,12 @@
+# Release builds go to CurseForge / GitHub Releases, not into the code history.
+*.zip
+
+# Anything copied out of the game's WTF folder (saved settings, account and
+# character files: they hold your account name and other players' names).
+WTF/
+*SavedVariables*/
+*.bak
+
+# Windows clutter.
+Thumbs.db
+desktop.ini

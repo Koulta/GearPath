@@ -1,0 +1,96 @@
+# GearPath changelog
+
+## 0.7.5
+
+- **A worn item worth nothing to you isn't an empty slot.** A starter weapon with no stats your spec uses (a caster's Forsaken Dagger) made GearPath say "Main Hand (empty now)" in tooltips and "fills your empty slot" in upgrade notes. Over a worn item worth 0 points it now shows the gain in points ("+12 pts"); "empty now" is only for slots with nothing in them.
+- **Nearer sources first.** When an item drops from several mobs that are just as easy to get, the one in the zone you're in comes first, then the rest of your continent, then across the sea (an Undead in Tirisfal was told to go to a Young Wolf in Elwynn Forest before Muad, right there in Tirisfal). The order follows you as you change zones.
+- **Your lists stay on your continent.** Gear you could only get on another continent (a rare in Teldrassil, for an Undead in Tirisfal) is no longer in Best now, Worth chasing, the Route or Near you; its tooltip says "on another continent", and Browse still has it. When an item has a way to get it on your continent too, that way is used. Dungeons are never locked out (group finder). Sail across and GearPath looks again.
+
+## 0.7.4
+
+- **Map pins: QuestieDB's zone data is used again.** On launch night the check GearPath runs on each new QuestieDB version wrongly set QuestieDB 1.0.10's zone table aside ("puts zones on the wrong maps, 7 of 16 names agree"), so map pins fell back to the game's own maps and the Dungeon Journal. QuestieDB rightly puts subzones and towns (Deathknell, Brill, Goldshire...) on their zone's map; the check now leaves subzones out, lets a town or city count when it sits inside the map it's given, and ignores "The" and letter case. Tables that really put zones on the wrong maps are still caught.
+
+## 0.7.3
+
+- **Sharing reaches every GearPath player**: the hidden GearPath channel is now on for everyone, so what you see (and what others see) is shared with every GearPath user online, not only your guild and group. The first time it joins, a chat line says so and how to keep sharing to your guild and group (turn off "Use the GearPath channel" in Settings). Saves from earlier versions are switched on once. Strangers' reports of a source the database doesn't know still need two players before they show, and stay labeled "reported by other players".
+- **QuestieDB is now its own addon** on CurseForge, and GearPath's required dependency there (Questie is optional). Checked on QuestieDB 1.0.10: same contract (4) as 1.0.9, and its changes since are quest and NPC corrections only, so GearPath reads it as before. The "QuestieDB isn't installed" note and `/gp status` now say to install QuestieDB rather than Questie.
+
+## 0.7.2
+
+- **EllesmereUI**: a new look under Settings > Look. GearPath's window follows EllesmereUI's theme and accent through its published skinning API (Automatic picks DaylightUI first, then EllesmereUI; EllesmereUI can turn it off for GearPath in its own options). Its bags get a green arrow on gear that's an upgrade you can wear now, and with its Character sheet on, GearPath leaves the item levels on the slots to it.
+- **Survival hunters**: Forever reworked Survival into a melee spec, so it's now a spec of its own (Settings > Stat weights, or `/gp spec survival`). Agility first, then Hit (wow.gg); the melee weapon is what counts, a two-hander or two one-handers, whichever items are better; the bow only for its stats. The gaps come from Sharpie's Gear Judge's melee Survival leveling build.
+- **New icon**: GearPath's shield-and-arrow logo in the addon list, the addon compartment and on the minimap button (and as DaylightUI's plugin icon).
+- **Stat weights checked against Sharpie's Gear Judge** (wowsims-based): hit, crit and main stats agreed for every spec. Eleven values that both its raid and its leveling numbers put more than 2x off now use its leveling value: Spirit for Holy Paladins (0.74) and Restoration Shamans (0.81); Mp5 for Fire/Frost (0.48) and Arcane Mages (0.51), Demonology Warlocks (0.33) and Restoration Druids (0.61); Stamina for Destruction (0.21) and Demonology Warlocks (0.14) and Balance Druids (0.19); Spirit for Demonology Warlocks (0.2); Dodge for bear Druids (5 per 1%). Affliction and Feral Spirit keep the guides' order.
+- **Safer sharing**: a source only other players report (the database doesn't know it) says "reported by other players"; a reported map spot is only used on a map the game has; a source's reporter count stops at 8, so one player can't pump it; and within one session, new shared items stop at the saved cap, so spam can't grow your saved file before the next load trims it.
+- **License**: GPL-3.0-or-later (was MIT).
+- Checked on QuestieDB 1.0.9 (the live game's): its zone data is in the shape GearPath knows, and a sweep as every class and spec, both factions, levels 10 to 60 (204 runs) found no problems.
+
+## 0.7.1
+
+
+- **Weapon damage is worth what it does**: every 14 attack power adds 1 damage per second in Forever, so a point of weapon DPS now counts 14 times a point of attack power (half that in the off hand, a little more for Combat rogues). Weapons were worth about half before.
+- **No weapon racials**: since the October 15 beta notes, Forever's Human, Orc and Dwarf racials are flat bonuses with any weapon, so they no longer favor swords, axes or maces.
+- **Weapon type** (a Subtlety rogue's dagger) changes what the weapon's damage is worth, not its stats.
+- **The two hands are one choice** on the Route: a two-hander, or a main hand and off hand, never both, and their gain is counted once. Off a two-hander, a one-hander and off hand add up to what they're really worth. The same for what you try on.
+- **Two rings or trinkets**: the second one is weighed against the stronger one you wear, and left out if it isn't a gain there.
+- **Unique**: a second copy of a ring or trinket you wear can go on the other slot, unless it's Unique.
+- **Healing**: "damage and healing" spell power counts as Healing too, so healers value it right, and it isn't treated as healer gear. Shadow priests count Healing a lot less.
+- **Hit cap**: hit past the cap against mobs of your level (5% attacks, 4% spells, from the beta) counts for nothing.
+- **Expertise**: Forever's "Reduces chance to be Dodged or Parried by 1.0%" line is read.
+- **Percentages**: the tooltip's own percentage of hit, crit and the like is used over the stat table's number.
+- **Fixed**: gear you wear that the game hadn't loaded yet (the first login after a patch) counted as an empty slot until the next rescan; now it waits for it and rescores.
+- **Fixed**: learning a weapon skill or Dual Wield rescored only after something else changed (the modern client renamed the event).
+- **Fixed**: with a controller, opening or closing the window in combat could leave its buttons stuck; it now waits for the fight to end.
+- **Fixed**: putting on two items that bind when worn could lose the second one; they go on one confirmation at a time.
+- **Map pins survive QuestieDB updates**: where QuestieDB's zones and dungeons are on the game's maps (its internal zone tables, which it doesn't promise to keep the same) is now checked when each new QuestieDB version loads: the shape of every row, and a sample of zones against the game's own map names. If a table is gone, unreadable, in a new layout or puts zones on the wrong maps, it's set aside and pins come from the game's own maps and the Dungeon Journal. An update with far fewer dungeon entrances than the last good version is flagged too. It's said once in chat; `/gp zones` has the details, and `/gp status` and `/gp report` say where pins come from. A public QuestieDB function for it is used first if a version adds one.
+
+## 0.7.0
+
+- **Specs**: pick yours under Settings > Stat weights (or `/gp spec`). Every class has its usual specs, tanks and healers included: Warrior Fury, Arms, Protection; Paladin Retribution, Holy, Protection; Hunter Marksmanship, Beast Mastery; Rogue Subtlety, Combat, Assassination; Priest Shadow, Holy/Discipline; Shaman Enhancement, Elemental, Restoration; Mage Fire/Frost, Arcane; Warlock Affliction, Destruction, Demonology; Druid Feral, Feral (bear tank), Balance, Restoration. Healing specs list healer gear. Your own weight changes are kept for each spec.
+- **Weapon training**: gear that needs a weapon skill you haven't learned (or Mail, Plate, Dual Wield) is marked "Learn Staves first", with the weapon master who teaches it and where. The Route puts the trainer at the top, with a map pin.
+- **Weapon speed and type**: slow main hands for Combat rogues (fast off hands), slow two-handers for Enhancement, Retribution and Arms, slow bows and guns for hunters, daggers for Subtlety and Assassination.
+- **Weapon racials**: a Human's sword, an Orc's axe and a Dwarf's mace count for the crit they give in Forever.
+- **Forever's weapons**: druids can use Polearms and rogues One-Handed Axes; hunters can't use thrown weapons; Polearms only from level 20.
+- **Relic slot**: called Relic for paladins, druids and shamans.
+- **Fixed**: when a second scan started while the first was still loading items (a level-up right after logging in), the list could show up half-built until the next rescore.
+- Swept on Forever's full database as every class and spec, both factions, levels 10 to 60: no wrong armor or weapon types, no off-hand weapons before Dual Wield, no shields or relics for the wrong class, no other faction's vendors, no item picked twice.
+
+## 0.6.0 (launch release)
+
+- **Put it on**: try on gear from your bags on the Character tab, then put it on with one click (out of combat). Gear that binds when equipped says so on the button first, and the game asks you to confirm.
+- **Rare watch in the open world**: when a rare of your zone that drops an upgrade for you comes into view (its nameplate, a target, a minimap marker), an icon pops up with a sound and a chat line. Its own switch under Settings > Extras.
+- **Share stat weights**: Settings > Copy my weights gives a short string (`GP1:WARLOCK:...`) another player of your class can paste (Settings > Paste weights, or `/gp weights <string>`). Pasted strings are only read, never run.
+- **Controllers**: with the game's gamepad mode on, the D-pad, A, X, Y, B and the shoulder buttons drive the window. ConsolePort's cursor works too.
+- **Translations (drafts made by machine)**: the window, its lists and Settings in German, French, Spanish, Portuguese, Russian, Korean and Chinese. Item tooltip lines and chat stay English. Settings > Extras > English text turns them off.
+- **`/gp report`**: one line with what a bug report needs, in a box ready to copy.
+- **Faster first scan**: Forever's mobs can have thousands of spawns, and the database rebuilt the list on every read. GearPath now reads each NPC's spawns once a session: the first scan at low levels does about a third of the work it did, and a rescan a fraction of that.
+- **Saved data kept in bounds**: shared sources nobody has reported for 60 days are dropped, and both saved lists are capped.
+- `/gp status` also says how many sources are saved, how long the list took to build and GearPath's memory.
+
+## 0.5.5
+
+- Tested as every class and as Alliance. Dual wield is learned at 10 (rogues) or 20 (warriors, hunters). The stats panel ranks main stats first on a tie. "Off-hand DPS" label.
+
+## 0.5.4
+
+- Reads items in every Classic client language (German, French, Spanish, Portuguese, Italian, Russian, Korean, Chinese), matched against Blizzard's own wording. "Requires" and damage-per-second lines follow the game's own templates. PvP rank names come from the game.
+
+## 0.5.3
+
+- Item levels on the slots of the game's own Character window, in each item's quality colour.
+
+## 0.5.2
+
+- Minimap button (click: open, right-click: Settings, drag to move) and a key binding.
+
+## 0.5.1
+
+- Your stats under the model, with a preview of what a tried-on item would change.
+
+## 0.5.0
+
+- Wording pass, precise map pins (dungeon entrances, first quest givers), class weights retuned, NPC and wand tooltip lines, map pins that clear on arrival, vendor and level-up chat notes, an upgrade toast, counts on the addon list button, your race's art behind the model.
+
+## 0.4.8
+
+- First release after two days of real play.
