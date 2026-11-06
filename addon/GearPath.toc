@@ -2,7 +2,7 @@
 ## Title: GearPath
 ## Notes: Your character sheet, a gear database and an upgrade route in one window. Finds the best gear for each slot and tells you where to get it.
 ## Author: Koulta
-## Version: 0.7.8
+## Version: 0.7.9
 ## IconTexture: Interface\AddOns\GearPath\Media\icon
 ## X-License: GPL-3.0-or-later
 ## SavedVariables: GearPathDB

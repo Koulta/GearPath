@@ -268,6 +268,10 @@ S.gearHit = 20
 check(near(S.HitPastCap(2, 0), (0.6 * 2 - 2) * hw), "from 20% to 22%: 60% of it")
 S.gearHit = 23
 check(near(S.HitPastCap(2, 0), (0.6 * 1 - 2) * hw), "from 23% to 25%: 60% of the 1% under 24%")
+-- Off-type armor (Nov 6): cloth is worth 60% to a rogue, and so is the cap's correction.
+wear({ [1] = 443, [10] = 445, [16] = 411 })      -- 4% hit (leather hood), one weapon
+_, dHit = S.Upgrade(rec(441))                     -- cloth gloves, +2% hit: 1% of it under the cap
+check(near(dHit, 0.6 * 1 * hw), "cloth hit gloves on a rogue: 60% of the 1% that counts (" .. tostring(dHit) .. ")")
 as("WARLOCK")
 wear({ [1] = 440, [10] = 441 })
 S.gearHit = 6

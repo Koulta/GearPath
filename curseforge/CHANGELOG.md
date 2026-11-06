@@ -1,5 +1,9 @@
 # GearPath changelog
 
+## 0.7.9
+
+- **Fixed: hit on a lighter armor type.** A piece of an armor type below yours (cloth for a rogue) counts for part of its worth, but the hit cap's correction to it counted in full, so hit gear of that kind could score too low or too high. The correction is now scaled the same way (a cloth piece a rogue values at 60% gets 60% of what its hit is really worth).
+
 ## 0.7.8
 
 - **Hit for dual-wielders.** With a weapon in each hand, your auto-attacks still miss past the 5% hit cap (up to 24% against mobs of your level), so hit there isn't wasted: it now counts for 60% of its weight from 5% to 24%, and nothing past that, as Sharpie's Gear Judge 3.2.11 counts it for dual-wield Fury, rogues and melee hunters. It was counted as nothing past 5%, so a dual-wielder at the cap saw hit gear rank below worse items. One weapon, a shield or casting: the cap is as before.

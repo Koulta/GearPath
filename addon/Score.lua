@@ -110,6 +110,12 @@ local bestPartner = { main = 0, off = 0 }
 
 local function hitOf(r) return r and r.stats and r.stats.hit or 0 end
 
+-- How much of an item's worth counts for its armor type (1 = your own).
+local function armorFactor(r)
+    local _, f = Classes.CanUse(r.classID, r.subClassID, r.equipLoc, nil, 999)
+    return (f and f > 0) and f or 1
+end
+
 -- Wielding a weapon in each hand now (an off-hand weapon, not a shield or
 -- held item): auto-attacks can still miss past the hit cap.
 function Score.DualWielding()
@@ -223,7 +229,11 @@ function Score.Upgrade(rec)
             end
         end
         if okSlot and delta then
-            delta = delta + Score.HitPastCap(hitIn, hitOut or 0, weights)
+            -- The cap's correction is part of the item's worth, so it's scaled
+            -- like the rest of it: a cloth piece a rogue values at 60% gets 60%
+            -- of what its hit is really worth (it had the full correction on a
+            -- scaled-down score, Nov 6).
+            delta = delta + armorFactor(rec) * Score.HitPastCap(hitIn, hitOut or 0, weights)
             if not best or delta > best.delta then
                 best = { slot = slotKey, delta = delta, base = base, points = points }
             end
