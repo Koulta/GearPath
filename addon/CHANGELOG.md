@@ -1,5 +1,11 @@
 # GearPath changelog
 
+## 0.7.7
+
+- **Version in the title.** The GearPath window's title says which version you run ("GearPath  v0.7.7", the version in grey), in every look.
+- **Two warlock weights follow launch.** Checked against Sharpie's Gear Judge 3.2.11, rebuilt on Blizzard's launch notes (Life Tap now converts twice as much): Mp5 for Affliction 1.2 to 0.6 (Gear Judge's leveling value), and Intellect for Demonology 0.6 to 0.29 (its level-60 value, the nearer of its two). As before, a weight changes only where both of Gear Judge's tables (leveling and level 60) put it more than 2x from GearPath's, and never against the guides' stat order: Affliction's Intellect and Feral's Spirit keep the guides' order. Every other spec agreed within 2x.
+- Checked on QuestieDB 1.0.11 and ForeverDungeonJournal 1.7.0 (both updated after launch): zone data in the shape GearPath knows (129 dungeons, all with an entrance), and a sweep as every class and spec, both factions, levels 10 to 60 (210 runs) found no problems. Hit caps unchanged (5% attacks, 4% spells against mobs of your level).
+
 ## 0.7.6
 
 - **Your faction's gear only.** An Undead in Tirisfal was offered the Dwarven Tome from Important Heirlooms, a quest handed out in Ironforge: the Dungeon Journal lists it for both factions, but QuestieDB knows it's an Alliance quest. Where QuestieDB has a quest, its race list now decides, whatever the journal (or another player's report) says. A quest only the other faction's people hand out is left out too, even when its race list is empty (Owen Thadd in the Undercity, for an Alliance player).

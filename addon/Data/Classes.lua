@@ -65,7 +65,7 @@ Classes.DATA = {
         weapons = { [W.DAGGER] = true, [W.SWORD1H] = true, [W.STAFF] = true, [W.WAND] = true },
         dualWield = false,
         weights = { sp = 1.0, spShadow = 0.95, spFire = 0.3, hit = 11, int = 0.6, spi = 0.55, crit = 7.5,
-            sta = 0.45, haste = 5, mp5 = 1.2, armor = 0.008, dpsWand = 2.2 },
+            sta = 0.45, haste = 5, mp5 = 0.6, armor = 0.008, dpsWand = 2.2 },
     },
     -- Fire/Frost: Hit > Spell Power > Spirit > Intellect > Crit > Stamina.
     MAGE = {
@@ -268,7 +268,7 @@ Classes.SPECS = {
             weights = { sp = 1.0, spShadow = 0.8, spFire = 0.6, crit = 10, hit = 11, int = 0.55, spi = 0.3, sta = 0.21,
                 haste = 5, mp5 = 1.0, armor = 0.008, dpsWand = 2.0 } },
         { key = "demonology", name = "Demonology",
-            weights = { sp = 1.0, spShadow = 0.85, spFire = 0.4, sta = 0.14, int = 0.6, spi = 0.2, hit = 10, crit = 6,
+            weights = { sp = 1.0, spShadow = 0.85, spFire = 0.4, sta = 0.14, int = 0.29, spi = 0.2, hit = 10, crit = 6,
                 haste = 4, mp5 = 0.33, armor = 0.01, dpsWand = 2.0 } },
     },
     DRUID = {

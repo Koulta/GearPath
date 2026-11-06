@@ -1020,7 +1020,8 @@ if not H.noDB then
     local St, D = UI.Stats, UI.Doll
     UI.Show("doll")
     local keys = table.concat(St.Keys(GP.Classes.Weights()), " ")
-    check(keys == "sp hit int spi crit mp5 sta haste", "a warlock's stats in Affliction order (" .. keys .. ")")
+    -- (Mp5 sorts last since 0.7.7: Gear Judge 3.2.11 halved it for launch's stronger Life Tap.)
+    check(keys == "sp hit int spi crit sta haste mp5", "a warlock's stats in Affliction order (" .. keys .. ")")
     local function cell(label)
         for _, c in ipairs(St.frame.cells) do
             if c.row and c.row.label == label then return c end
@@ -1507,6 +1508,9 @@ if not H.noDB then
         check(got5005, "a journal quest the database doesn't have is still listed")
     end
     GP.Sources.HOME.Alliance = {}
+    -- The window's title carries the version (Nov 5).
+    check(GP.UI.WindowTitle():find(GP.VERSION, 1, true) and GP.UI.WindowTitle():find("^GearPath"),
+        "the title says which version you run (" .. GP.UI.WindowTitle() .. ")")
     -- The header counts what Show: lets through.
     local all = GP.UI.StatusText()
     GP.UI.ContentOff().quest = true

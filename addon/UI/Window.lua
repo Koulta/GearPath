@@ -605,6 +605,14 @@ function UI.StatusText()
     return t
 end
 
+-- The window's title, with the version in grey after it ("GearPath v0.7.6").
+function UI.WindowTitle()
+    local v = GP.VERSION
+    if not v or v == "" then return GP.TITLE end
+    if v:match("^%d") then v = "v" .. v end
+    return GP.TITLE .. "  |cff9d9d9d" .. v .. "|r"
+end
+
 function UI.UpdateSub()
     if not UI.frame then return end
     local p = GP.PlayerInfo()
@@ -612,7 +620,7 @@ function UI.UpdateSub()
     local className = GP.Plain(UnitClass("player")) or ""
     -- The spec too, for classes with more than one: "level 30 Affliction Warlock".
     if GP.Classes and #GP.Classes.Specs() > 1 then className = L[GP.Classes.Spec().name or ""] .. " " .. className end
-    UI.skin.SetTitle(UI.frame, GP.TITLE,
+    UI.skin.SetTitle(UI.frame, UI.WindowTitle(),
         string.format(L["%s, level %d %s"], name, p.level or 1, className) .. "  |  " .. UI.StatusText())
     -- While the database is read the line counts down by itself.
     local S = GP.Sources
@@ -654,7 +662,7 @@ local function build()
     if type(s) == "table" and type(s[1]) == "number" and type(s[2]) == "number" then
         w, h = math.max(UI.W, s[1]), math.max(UI.H, s[2])
     end
-    local f = skin.Window({ name = "GearPathFrame", w = w, h = h, minW = UI.W, minH = UI.H, title = GP.TITLE,
+    local f = skin.Window({ name = "GearPathFrame", w = w, h = h, minW = UI.W, minH = UI.H, title = UI.WindowTitle(),
         sized = function(nw, nh) GP.db.window.size = nw and { math.floor(nw + 0.5), math.floor(nh + 0.5) } or nil end })
     UI.frame = f
     if type(UISpecialFrames) == "table" then table.insert(UISpecialFrames, "GearPathFrame") end

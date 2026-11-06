@@ -88,7 +88,7 @@ Class sweep (real data): from `harness/`,
 `GPDIR=<addon folder> CLASS=WARRIOR FACTION=Horde LEVEL=30 [SPEC=arms] [VERBOSE=1] lua5.1 qdb.lua <QuestieDB folder> ../queries/sweep.lua`.
 It checks each pick against its own table of what each class can use (Forever's
 changes included), the slot rules (off-hand weapons only with Dual Wield, shields,
-relics, two-handers), your faction's vendors and no item picked twice; since 0.7.6 also faction rules checked on their own (no quest only the other faction gives or whose race list leaves you out, no drop from your own faction's people, nothing Best now in the other faction's home zones by area id, neutral givers and vendors excepted). Also nothing Best now in a zone 10+ levels above you (by area id). November 5, 2026 (0.7.6), QuestieDB 1.0.10: 162 runs (both factions, levels 5/8/10/15/20/30/40/50/60), 0 problems. Run it for
+relics, two-handers), your faction's vendors and no item picked twice; since 0.7.6 also faction rules checked on their own (no quest only the other faction gives or whose race list leaves you out, no drop from your own faction's people, nothing Best now in the other faction's home zones by area id, neutral givers and vendors excepted). Also nothing Best now in a zone 10+ levels above you (by area id). November 5, 2026 (0.7.6), QuestieDB 1.0.10: 162 runs (both factions, levels 5/8/10/15/20/30/40/50/60), 0 problems. November 6, 2026 (0.7.7), QuestieDB 1.0.11 and ForeverDungeonJournal 1.7.0: 210 runs (108 + every non-default spec at 20/40/60, both factions), 0 problems; zones OK (129 dungeons, 129 entrances); speed 80 ms rescan, 5.1 MB. Run it for
 all nine classes, both factions, levels 10/20/30/40/50/60 (108 runs) plus each
 non-default spec; every run must say 0 problems. October 23, 2026: 0 problems.
 October 29, 2026, on QuestieDB 1.0.9 (the live client's): 204 runs (108 + every non-default
@@ -126,6 +126,14 @@ agreed within 2x. Where both disagreed with GearPath by more than 2x, GearPath t
 leveling value (or, where Gear Judge's two disagree with each other, the one nearer ours), unless
 that would break a guide order (Affliction and Feral Spirit kept). Eleven values changed; the
 list is in CHANGELOG.md (0.7.2).
+
+November 6, 2026 (0.7.7): rechecked against Gear Judge 3.2.11 (its leveling weights rebuilt on
+Blizzard's launch notes, 3.2.8 to 3.2.11), by the same rule: both its leveling curve (levels
+20, 30 and 40) and its level-60 profile more than 2x off. Four flags: Affliction Mp5 1.2 -> 0.6
+and Demonology Intellect 0.6 -> 0.29 changed; Affliction Intellect and Feral Spirit kept for the
+guides' order. Note: its leveling rows price hit and crit far lower than its level-60 profiles
+(1% hit about 1.4 spell power at level 30), so hit and crit only count as off when both are.
+The comparison reads its Curves and Classes files as text (Python regex), never runs them.
 
 
 Since 0.7.0 each class has specs (`Classes.SPECS`; tanks and healers too). The
