@@ -1488,6 +1488,12 @@ if not H.noDB then
         { kind = "quest", giver = "B", mapID = 1431, zone = "Duskwood", level = 12 } }
     Src.SortSources(sorted)
     check(sorted[1].mapID == 1431, "a quest in enemy land goes after one elsewhere")
+    local said = GP.UI.Describe({ kind = "quest", name = "Captain Sander's Hidden Treasure", level = 16, mapID = 1436, zone = "Westfall" })
+    check(said:find("(Alliance territory)", 1, true), "the line says why: " .. said)
+    said = GP.UI.Describe({ kind = "quest", name = "Rear Guard Patrol", level = 13, mapID = 1420, zone = "Tirisfal Glades" })
+    check(not said:find("territory", 1, true), "nothing on your own side: " .. said)
+    said = GP.UI.Describe({ kind = "vendor", name = "Jang", mapID = 1436, zone = "Westfall" })
+    check(not said:find("territory", 1, true), "vendors who deal with you aren't flagged: " .. said)
     check(not Src.QuestAvailable(5011), "a quest only an Alliance NPC hands out isn't a Horde player's")
     check(Src.QuestAvailable(5012), "a giver marked AH keeps the quest")
     check(not Src.QuestAvailable(5010) and Src.QuestNotForYou(5010), "an Alliance race list keeps the quest out")

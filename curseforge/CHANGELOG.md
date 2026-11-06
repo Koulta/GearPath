@@ -1,5 +1,10 @@
 # GearPath changelog
 
+## 0.7.8
+
+- **Hit for dual-wielders.** With a weapon in each hand, your auto-attacks still miss past the 5% hit cap (up to 24% against mobs of your level), so hit there isn't wasted: it now counts for 60% of its weight from 5% to 24%, and nothing past that, as Sharpie's Gear Judge 3.2.11 counts it for dual-wield Fury, rogues and melee hunters. It was counted as nothing past 5%, so a dual-wielder at the cap saw hit gear rank below worse items. One weapon, a shield or casting: the cap is as before.
+- **"Alliance territory" / "Horde territory".** A quest out in the other faction's home zones now says so on its line and in its tooltip (it's why it's under Worth chasing and not Best now).
+
 ## 0.7.7
 
 - **Version in the title.** The GearPath window's title says which version you run ("GearPath  v0.7.7", the version in grey), in every look.

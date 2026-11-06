@@ -85,6 +85,12 @@ function UI.Describe(src, long)
     elseif not (src.kind == "quest" and src.startItem) then   -- an item that starts a quest says where itself
         t = t .. (long and (" (" .. L["where isn't in the database yet"] .. ")") or (", " .. L["location unknown"]))
     end
+    -- Out in the other faction's home zones (Westfall for a Horde player):
+    -- why it's Worth chasing and not Best now.
+    if GP.Sources.EnemyLand and GP.Sources.EnemyLand(src) then
+        local f = (GP.player or GP.PlayerInfo()).faction
+        t = t .. " (" .. L[f == "Horde" and "Alliance territory" or "Horde territory"] .. ")"
+    end
     -- Only other players say so (the database doesn't): never passed off as fact.
     if src.shared and not src.dbKnown then t = t .. " (" .. L["reported by other players"] .. ")" end
     if long and src.kind == "quest" and not src.giver and not src.startItem and not (src.chain and src.chainStart and src.chainStart.giver) then

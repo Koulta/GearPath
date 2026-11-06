@@ -319,6 +319,10 @@ t("%s entrance, %s", "Eingang %s, %s", "Entrée de %s, %s", "Entrada de %s, %s",
 t("Quest: %s", "Quest: %s", "Quête : %s", "Misión: %s", "Missão: %s", "Задание: %s", "퀘스트: %s", "任务：%s", "任務：%s")
 t("chain of %d, starts with %s", "Reihe aus %d, beginnt mit %s", "chaîne de %d, commence par %s", "cadena de %d, empieza con %s",
     "cadeia de %d, começa com %s", "цепочка из %d, начало: %s", "%d단계 연계, 시작: %s", "%d 环任务链，起始：%s", "%d 環任務鏈，起始：%s")
+t("Alliance territory", "Allianzgebiet", "territoire de l'Alliance", "territorio de la Alianza", "território da Aliança",
+    "территория Альянса", "얼라이언스 영토", "联盟领地", "聯盟領地")
+t("Horde territory", "Hordengebiet", "territoire de la Horde", "territorio de la Horda", "território da Horda",
+    "территория Орды", "호드 영토", "部落领地", "部落領地")
 t("from %s", "bei %s", "auprès de %s", "de %s", "com %s", "у %s", "%s에게서", "从%s处", "從%s處")
 t("in your quest log", "im Questlog", "dans votre journal", "en tu registro", "no seu registro", "в журнале заданий", "퀘스트 목록에 있음", "在任务日志中", "在任務日誌中")
 t("starts inside the dungeon", "beginnt im Dungeon", "commence dans le donjon", "empieza dentro de la mazmorra", "começa dentro da masmorra",

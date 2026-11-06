@@ -135,6 +135,11 @@ guides' order. Note: its leveling rows price hit and crit far lower than its lev
 (1% hit about 1.4 spell power at level 30), so hit and crit only count as off when both are.
 The comparison reads its Curves and Classes files as text (Python regex), never runs them.
 
+Dual-wield hit (0.7.8, Nov 6): Classes.DW_HIT_CAP = 24 (method.gg's Forever hit guide) and
+DW_HIT_SHARE = 0.6 (Gear Judge 3.2.11's ApplyForeverHitKnees for DW Fury, rogues and melee
+hunters: full to 5%, 60% to 24%, 5% past; GearPath uses 0 past 24% as it does past every cap).
+Score.DualWielding(): a one-hand or off-hand weapon in the off hand right now.
+
 
 Since 0.7.0 each class has specs (`Classes.SPECS`; tanks and healers too). The
 table below is each class's first spec, the default; the other specs override

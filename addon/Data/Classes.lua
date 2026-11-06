@@ -162,6 +162,14 @@ Classes.POLEARM_AT = 20
 -- Only hit from gear is counted (talents and auras aren't known here).
 Classes.HIT_CAP = { melee = 5, spell = 4 }
 
+-- Dual-wielding, auto-attacks miss far more: hit keeps cutting their misses
+-- past the 5% cap, up to 24% against mobs of your level (method.gg's Forever
+-- hit guide), where nothing misses. Between the two caps hit is worth 60% of
+-- its weight, as Sharpie's Gear Judge 3.2.11 counts it for dual-wield Fury,
+-- rogues and melee hunters (special attacks already hit; only white swings
+-- gain). Past 24% it does nothing.
+Classes.DW_HIT_CAP, Classes.DW_HIT_SHARE = 24, 0.6
+
 -- The cap for the spec in use: spells for casters (spell power their main
 -- stat), attacks for everyone else. nil: hit isn't scored (healers).
 function Classes.HitCap(weights)

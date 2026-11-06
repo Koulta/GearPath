@@ -110,17 +110,34 @@ local bestPartner = { main = 0, off = 0 }
 
 local function hitOf(r) return r and r.stats and r.stats.hit or 0 end
 
--- What a change of hit is really worth: hit past the cap does nothing.
--- hitIn is the hit on what goes on, hitOut on what comes off. Returns the
--- points to add to a plain weights x stats delta (0 or less for a gain past
--- the cap; more than 0 for losing hit you had past it).
+-- Wielding a weapon in each hand now (an off-hand weapon, not a shield or
+-- held item): auto-attacks can still miss past the hit cap.
+function Score.DualWielding()
+    local oh = eq("SecondaryHandSlot").rec
+    return oh ~= nil and (oh.equipLoc == "INVTYPE_WEAPON" or oh.equipLoc == "INVTYPE_WEAPONOFFHAND")
+end
+
+-- What `hit` percent of hit is worth, in percents of full-value hit: all of
+-- it up to the cap; dual-wielding with melee, 60% of it from there to 24%
+-- (Classes.DW_HIT_CAP); nothing past that.
+local function usefulHit(hit, cap, dual)
+    if hit <= cap then return hit end
+    if not dual then return cap end
+    return cap + Classes.DW_HIT_SHARE * (math.min(hit, Classes.DW_HIT_CAP) - cap)
+end
+
+-- What a change of hit is really worth: hit past the cap does nothing (or
+-- less, dual-wielding). hitIn is the hit on what goes on, hitOut on what
+-- comes off. Returns the points to add to a plain weights x stats delta (0
+-- or less for a gain past the cap; more than 0 for losing hit you had past it).
 function Score.HitPastCap(hitIn, hitOut, weights)
     weights = weights or Classes.Weights()
     local cap = Classes.HitCap(weights)
     if not cap or hitIn == hitOut then return 0 end
+    local dual = cap == Classes.HIT_CAP.melee and Score.DualWielding()
     local now = Score.gearHit or 0
     local after = now - hitOut + hitIn
-    local useful = math.min(after, cap) - math.min(now, cap)
+    local useful = usefulHit(after, cap, dual) - usefulHit(now, cap, dual)
     return (weights.hit or 0) * (useful - (hitIn - hitOut))
 end
 

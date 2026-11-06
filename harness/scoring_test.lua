@@ -40,6 +40,9 @@ I[431] = { "Crit Gloves", 2, 26, 20, "INVTYPE_HAND", 4, 3, { ITEM_MOD_CRIT_RATIN
 I[440] = { "Hit Hood", 2, 25, 20, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_HIT_RATING_SHORT = 4 } }
 I[441] = { "Hit Gloves", 2, 25, 20, "INVTYPE_HAND", 4, 1, { ITEM_MOD_HIT_RATING_SHORT = 2 } }
 I[442] = { "Plain Gloves", 2, 25, 20, "INVTYPE_HAND", 4, 1, {} }
+I[443] = { "Leather Hit Hood", 2, 25, 20, "INVTYPE_HEAD", 4, 2, { ITEM_MOD_HIT_RATING_SHORT = 4 } }
+I[444] = { "Leather Hit Gloves", 2, 25, 20, "INVTYPE_HAND", 4, 2, { ITEM_MOD_HIT_RATING_SHORT = 2 } }
+I[445] = { "Leather Gloves", 2, 25, 20, "INVTYPE_HAND", 4, 2, {} }
 I[450] = { "Worse Chest", 2, 20, 15, "INVTYPE_CHEST", 4, 1, { ITEM_MOD_STAMINA_SHORT = 5 } }
 
 local ns = {}
@@ -243,6 +246,32 @@ check(near(dHit, 2 * C.Weights().hit), "under the cap, hit counts in full (" .. 
 wear({ [1] = 440, [10] = 441 })          -- 6% on: 2% past the cap
 local _, dOff = S.Upgrade(rec(442))
 check(near(dOff, 0), "past the cap, taking hit gloves off loses nothing (" .. tostring(dOff) .. ")")
+-- Dual-wielding (Nov 6): white swings still miss past the 5% cap, up to 24%;
+-- hit there is worth 60% of its weight (Gear Judge 3.2.11's dual-wield band).
+as("ROGUE")
+local hw = C.Weights().hit
+check(C.HitCap() == C.HIT_CAP.melee, "a rogue's cap is the melee cap")
+wear({ [1] = 443, [10] = 445, [16] = 411 })      -- 4% hit, one weapon
+check(not S.DualWielding(), "one weapon isn't dual-wielding")
+_, dHit = S.Upgrade(rec(444))
+check(near(dHit, 1 * hw), "one weapon: only the 1% up to the cap counts (" .. tostring(dHit) .. ")")
+wear({ [1] = 443, [10] = 445, [16] = 411, [17] = 411 })  -- 4% hit, two weapons
+check(S.DualWielding(), "a weapon in each hand is dual-wielding")
+_, dHit = S.Upgrade(rec(444))
+check(near(dHit, (1 + 0.6) * hw), "dual-wielding: 1% in full and 1% past the cap at 60% (" .. tostring(dHit) .. ")")
+wear({ [1] = 443, [10] = 444, [16] = 411, [17] = 411 })  -- 6% on
+_, dOff = S.Upgrade(rec(445))
+check(near(dOff, -(1 + 0.6) * hw), "taking it off loses the same (" .. tostring(dOff) .. ")")
+S.gearHit = 24
+check(near(S.HitPastCap(2, 0), -2 * hw), "past 24% hit does nothing even dual-wielding")
+S.gearHit = 20
+check(near(S.HitPastCap(2, 0), (0.6 * 2 - 2) * hw), "from 20% to 22%: 60% of it")
+S.gearHit = 23
+check(near(S.HitPastCap(2, 0), (0.6 * 1 - 2) * hw), "from 23% to 25%: 60% of the 1% under 24%")
+as("WARLOCK")
+wear({ [1] = 440, [10] = 441 })
+S.gearHit = 6
+check(near(S.HitPastCap(2, 0), -2 * C.Weights().hit), "casters keep the plain spell cap")
 as("PALADIN"); C.SetSpec("holy")
 check(C.HitCap() == nil, "healers don't score hit")
 
