@@ -87,14 +87,14 @@ function Check.Item(entry)
         end
         if #diffs > 0 then warn(w, "changed", table.concat(diffs, ", ")) end
     end
-    if db and rec and not entry.fromDB and not entry.bags and not entry.fromJournal then
+    if db and rec and not entry.fromDB and not entry.bags and not entry.fromJournal and not entry.fromCraft then
         local exists = db.Item.Exists and field(db.Item, "Exists", id)
         if exists == false or (exists == nil and not field(db.Item, "name", id)) then warn(w, "notInDB") end
     end
 
     -- The easiest source's own gaps.
     local src = entry.best
-    if src and src.kind ~= "bags" and not src.worldDrop then
+    if src and src.kind ~= "bags" and src.kind ~= "craft" and not src.worldDrop then
         if not src.zone and not src.dungeon and not src.mapID then
             warn(w, "noLocation")
         end

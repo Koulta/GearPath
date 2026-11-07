@@ -559,25 +559,169 @@ function Sources.ProfessionSkill(prof)
     return nil
 end
 
--- A crafted item's way in, for this character (Learn.lua saved what the
--- profession window and trainers showed): you know the recipe; you can
--- train it now; or it needs more skill first. nil: not your profession,
--- or a recipe you'd have to find somewhere (only someone else knows it).
-function Sources.CraftSource(prof, info)
+-- The nearest of some places: in your zone, then on your continent, then
+-- anywhere; nil for an empty list.
+local function nearestOf(list)
+    local here, hereZone = Sources.PlayerContinent(), Sources.PlayerZone()
+    local best, bestRank
+    for _, s in ipairs(list) do
+        local rank = 3
+        if s.mapID then
+            if hereZone and Sources.Zone(s.mapID) == hereZone then rank = 0
+            elseif here and Sources.Continent(s.mapID) == here then rank = 1
+            else rank = 2 end
+        end
+        if not best or rank < bestRank then best, bestRank = s, rank end
+    end
+    return best
+end
+
+-- An NPC of your faction (or anyone's) and where it stands, from QuestieDB:
+-- { id, name, mapID, x, y, zone }, or nil.
+local function friendlyNpcAt(npc)
+    if not (DB and type(npc) == "number" and friendly(npc)) then return nil end
+    local s = { id = npc, name = field(DB.Npc, "name", npc) }
+    local area, x, y = firstSpawn(spawnSummary("npc", npc))
+    copyPlace(s, place(area or field(DB.Npc, "zoneID", npc), x, y))
+    return s
+end
+
+local function nearestFriendly(list)
+    local found = {}
+    for _, n in ipairs(list or {}) do
+        local s = friendlyNpcAt(type(n) == "table" and n.id or n)
+        if s then found[#found + 1] = s end
+    end
+    return nearestOf(found)
+end
+
+-- How to learn a recipe ProfessionDB knows (r = GP.Crafts.RecipesFor's
+-- entry): { via = "trainer" | "vendor" | "quest" | "drop" | "random", npc,
+-- name, count }, or nil when nothing says. A recipe item's own sources in
+-- QuestieDB (Forever's) come before ProfessionDB's lists, which for Forever
+-- are Vanilla's.
+local function recipeWay(r)
+    local src = r.sources
+    if src and src.trainer then
+        local npc = nearestFriendly(src.trainer)
+        return { via = "trainer", npc = npc }
+    end
+    if DB and r.item then
+        local npc = nearestFriendly(field(DB.Item, "vendors", r.item))
+        if npc then return { via = "vendor", npc = npc } end
+        for _, q in ipairs(field(DB.Item, "questRewards", r.item) or {}) do
+            local qs = questSource(q)
+            if qs then return { via = "quest", name = qs.name, quest = qs } end
+        end
+        local drops = field(DB.Item, "npcDrops", r.item)
+        if type(drops) == "table" and #drops > 0 then
+            if #drops > Sources.WORLD_DROP then return { via = "random" } end
+            local list = {}
+            for _, n in ipairs(drops) do
+                local d = dropSource(n)
+                if d then list[#list + 1] = d end
+            end
+            local d = nearestOf(list)
+            if d then return { via = "drop", npc = d, count = #drops } end
+        end
+        local objs = field(DB.Item, "objectDrops", r.item)
+        if type(objs) == "table" and #objs > 0 then return { via = "random" } end
+    end
+    -- (Without QuestieDB there's no telling whose side an NPC is on: no
+    -- names then, only the kind.)
+    if src and src.vendor then
+        local npc = nearestFriendly(src.vendor)
+        if npc or not DB then return { via = "vendor", npc = npc } end
+    end
+    if src and src.quest then return { via = "quest" } end
+    if src and src.drop and (src.drop.total or #src.drop) <= Sources.WORLD_DROP then
+        local l = {}
+        for _, n in ipairs(src.drop) do
+            local d = DB and dropSource(n.id)
+            if d then l[#l + 1] = d end
+        end
+        local npc = nearestOf(l)
+        if npc or not DB then return { via = "drop", npc = npc, count = src.drop.total or #src.drop } end
+    end
+    if src and (src.drop or src.container) then return { via = "random" } end
+    return nil
+end
+Sources.RecipeWay = recipeWay
+
+-- A crafted item's way in, for this character, one per profession:
+-- info = what you've seen yourself (Learn.lua: whether you know the recipe,
+-- the skill a trainer asked for and where that trainer stands); r = what
+-- ProfessionDB says (GP.Crafts). You know the recipe; or you can learn it
+-- now; or it takes more skill first. nil: not one of your professions, or
+-- nothing to go on.
+function Sources.CraftSource(prof, info, r)
     local skill = Sources.ProfessionSkill(prof)
-    if not skill or type(info) ~= "table" then return nil end
-    local known = type(info.k) == "table" and info.k[GP.Learn.Me()] == true
-    local s = { kind = "craft", id = prof, name = prof, profession = prof, known = known, rank = info.r,
-        trainer = info.t, learned = true }
+    if not skill then return nil end
+    if type(info) ~= "table" then info = nil end
+    if not info and not r then return nil end
+    local known = (info and type(info.k) == "table" and info.k[GP.Learn.Me()] == true)
+        or (r and (r.auto or (GP.Crafts and GP.Crafts.Known(r.spell)))) or false
+    local s = { kind = "craft", id = prof, name = prof, profession = prof, known = known,
+        learned = info ~= nil, spell = r and r.spell }
     if known then
         s.zone = "Craft it yourself"
         return s
     end
-    if type(info.r) ~= "number" then return nil end
-    s.mapID, s.x, s.y = info.m, info.x, info.y
-    s.zone = info.m and Sources.MapName(info.m) or nil
-    if skill < info.r then s.needs = string.format("%s (%d)", prof, info.r) end
+    -- The skill it takes: a trainer's own number; else ProfessionDB's,
+    -- unconfirmed ("Tailoring (75?)": its numbers run high for Forever).
+    local rank, sure = info and info.r, true
+    if type(rank) ~= "number" then rank, sure = r and r.rank, false end
+    if type(rank) == "number" then
+        s.rank, s.rankSure = rank, sure
+        if skill < rank then s.needs = string.format(sure and "%s (%d)" or "%s (%d?)", prof, rank) end
+    end
+    -- Where to learn it: the trainer you saw it at; else ProfessionDB.
+    if info and info.t then
+        s.via, s.npcName = "trainer", info.t
+        if info.m then
+            s.mapID, s.x, s.y = info.m, info.x, info.y
+            s.zone = Sources.MapName(info.m)
+        end
+        return s
+    end
+    local way = r and recipeWay(r)
+    if not way then
+        -- Seen only in another character's profession window, or nothing
+        -- known about it at all: nothing to send you to.
+        if not r then return nil end
+        return s
+    end
+    s.via, s.count = way.via, way.count
+    local npc = way.npc
+    if npc then
+        s.npcName, s.npcID = npc.name, npc.id
+        s.mapID, s.x, s.y, s.zone, s.dungeon = npc.mapID, npc.x, npc.y, npc.zone, npc.dungeon
+    else
+        s.npcName = way.name
+    end
     return s
+end
+
+-- Every craft way in for an item: what you've seen in game merged with
+-- ProfessionDB, one per profession (the lowest skill, when two recipes in
+-- one profession make it).
+function Sources.CraftSourcesFor(id)
+    local out = {}
+    local L = GP.db and GP.db.learned and GP.db.learned.items and GP.db.learned.items[id]
+    local seen = type(L) == "table" and type(L.c) == "table" and L.c or nil
+    local byProf = {}
+    for _, r in ipairs(GP.Crafts and GP.Crafts.RecipesFor(id) or {}) do
+        local cur = byProf[r.prof]
+        if not cur or (r.rank or 9999) < (cur.rank or 9999) then byProf[r.prof] = r end
+    end
+    local profs = {}
+    for prof in pairs(byProf) do profs[prof] = true end
+    for prof in pairs(seen or {}) do profs[prof] = true end
+    for prof in pairs(profs) do
+        local s = Sources.CraftSource(prof, seen and seen[prof], byProf[prof])
+        if s then out[#out + 1] = s end
+    end
+    return out
 end
 
 local function learnedSources(id)
@@ -598,10 +742,6 @@ local function learnedSources(id)
     for key, info in pairs(L.d or {}) do
         out[#out + 1] = { kind = "drop", id = key, name = info.n, mapID = info.m, x = info.x, y = info.y,
             zone = Sources.MapName(info.m), learned = true, dungeon = info.dg }
-    end
-    for prof, info in pairs(L.c or {}) do
-        local s = Sources.CraftSource(prof, info)
-        if s then out[#out + 1] = s end
     end
     return out
 end
@@ -717,6 +857,9 @@ function Sources.Resolve(entry)
         end
     end
 
+    -- Crafting: your professions (ProfessionDB, and what you've seen).
+    for _, s in ipairs(Sources.CraftSourcesFor(id)) do list[#list + 1] = s end
+
     local seen = learnedSources(id)
     for _, s in ipairs(sharedSources(id)) do seen[#seen + 1] = s end
     for _, s in ipairs(seen) do
@@ -811,7 +954,7 @@ local function applyBags()
     for id, entry in pairs(Sources.entries) do
         if entry.bags and not bags[id] then
             entry.bags = nil
-            if not entry.fromDB then Sources.entries[id] = nil else Sources.Resolve(entry) end
+            if not (entry.fromDB or entry.fromCraft) then Sources.entries[id] = nil else Sources.Resolve(entry) end
         end
     end
     local toLoad = {}
@@ -857,19 +1000,41 @@ local function addJournalItems(level, ahead)
     return toLoad
 end
 
--- Crafted gear you've seen in your profession window or at a trainer:
--- not in the database's item sources, so added to every scan here.
-local function addLearnedCrafts(level, ahead)
+-- Near your level, by the database's numbers (an item it doesn't know
+-- passes: the scoring checks the level once the item is loaded).
+local function nearLevel(id, level, ahead)
+    if not (DB and DB.Item) then return true end
+    if field(DB.Item, "class", id) == nil then return true end
+    local req = field(DB.Item, "requiredLevel", id) or 0
+    local near = req
+    if near == 0 then
+        local ilvl = field(DB.Item, "itemLevel", id) or 0
+        near = ilvl > 0 and math.max(1, ilvl - 5) or level
+    end
+    local lowest = math.max(0, level - Sources.LOWER)
+    return req <= level + ahead and near >= lowest and near <= level + ahead + 5
+end
+
+-- Crafted gear: what your professions make (ProfessionDB) and what you've
+-- seen in your profession window or at a trainer (Learn.lua). QuestieDB has
+-- no recipes, so these are added to every scan here.
+local function addCrafts(level, ahead)
     local toLoad = {}
+    local ids = GP.Crafts and GP.Crafts.MyItems() or {}
     local items = GP.db and GP.db.learned and GP.db.learned.items
-    if type(items) ~= "table" then return toLoad end
-    for id, L in pairs(items) do
-        if type(L) == "table" and type(L.c) == "table" and not Sources.entries[id] then
+    if type(items) == "table" then
+        for id, L in pairs(items) do
+            if type(L) == "table" and type(L.c) == "table" then ids[id] = true end
+        end
+    end
+    for id in pairs(ids) do
+        if not Sources.entries[id] and nearLevel(id, level, ahead) then
             local equipLoc, classID, subClassID = Items.Instant(id)
             local ok, opensAt = false, nil
             if equipLoc then ok, opensAt = usableFor(classID, subClassID, equipLoc, level, ahead) end
             if ok then
                 local entry = newEntry(id)
+                entry.fromCraft = true
                 entry.opensAt = opensAt
                 Sources.Resolve(entry)
                 if entry.best then
@@ -931,7 +1096,7 @@ function Sources.Scan()
         Sources.status = "nodb"
         GP.Fire("SourcesChanged")
         local toLoad = addJournalItems(level, ahead)
-        for _, id in ipairs(addLearnedCrafts(level, ahead)) do toLoad[#toLoad + 1] = id end
+        for _, id in ipairs(addCrafts(level, ahead)) do toLoad[#toLoad + 1] = id end
         for _, id in ipairs(applyBags()) do toLoad[#toLoad + 1] = id end
         loadRecords(toLoad, finished)
         return
@@ -975,7 +1140,7 @@ function Sources.Scan()
     end, function()
         local toLoad = {}
         addJournalItems(level, ahead)
-        addLearnedCrafts(level, ahead)
+        addCrafts(level, ahead)
         for id, entry in pairs(Sources.entries) do
             if not entry.rec then toLoad[#toLoad + 1] = id end
         end
@@ -1075,6 +1240,8 @@ GP.On("StatusRequested", function()
     else
         GP.Print("Database: QuestieDB not found. Install QuestieDB for quests, drops and vendors; until then only your bags and what you've seen are used.")
     end
+    local crafts = GP.Crafts and GP.Crafts.StatusLine()
+    if crafts then GP.Print(crafts) end
     GP.Print("Gear for you: %d found, %d loaded. Status: %s.", Sources.counts.candidates, Sources.counts.loaded, Sources.status)
     local r = GP.Score.results
     GP.Print("Upgrades: %d to get now, %d worth chasing.", r.primary or 0, r.secondary or 0)
@@ -1123,6 +1290,7 @@ function Sources.ReportLine()
     local addons = {}
     addons[#addons + 1] = lib and ("QuestieDB " .. (Sources.counts.db or 0)) or "no QuestieDB"
     if GP.Journal and GP.Journal.Available and GP.Journal.Available() then addons[#addons + 1] = "Journal" end
+    if GP.Crafts and GP.Crafts.Available() then addons[#addons + 1] = "ProfessionDB" end
     if GP.AddOnLoaded("DaylightUI") then addons[#addons + 1] = "DaylightUI" end
     if GP.AddOnLoaded("TomTom") then addons[#addons + 1] = "TomTom" end
     local parts = {

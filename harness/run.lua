@@ -131,7 +131,7 @@ check(itemRow ~= nil, "an item row is on screen")
 if itemRow then
     itemRow:_run("OnEnter")
     local text = table.concat(GameTooltip._lines or {}, "\n")
-    check(text:find("GearPath:"), "item tooltip has the GearPath line")
+    check(text:find("GearPath %("), "item tooltip has the GearPath line")
     check(text:find("Click: try it on"), "item tooltip has the click hints")
     print("  tooltip:\n    " .. text:gsub("\n", "\n    "))
     itemRow:Click("LeftButton")
@@ -422,8 +422,8 @@ if not H.noDB then
         GP.Tooltip.Add(GameTooltip, id)
         return table.concat(GameTooltip._lines or {}, "\n")
     end
-    check(tip(230):find("let your healer roll first"), "the dropped one's tooltip says to let the healer roll")
-    check(tip(231):find("not listed for you"), "the quest one's tooltip says it's not listed")
+    check(tip(230):find("GearPath %("), "the dropped healer cape still gets GearPath's line")
+    check(tip(231):find("Quest: The Lost Cultist"), "and the quest one says where it's from")
     GP.SetSetting("healerGear", true); GP.Score.Run()
     check(GP.Score.ForItem(230).tier ~= nil and GP.Score.ForItem(231).tier ~= nil, "with healer gear asked for, both are listed")
     GP.SetSetting("healerGear", false); GP.Score.Run()
@@ -758,7 +758,7 @@ if not H.noDB then
         check(mp and mp.kind == "entrance" and mp.dungeon == "Shadow Keep", "a journal boss drop pins its dungeon's entrance")
         GameTooltip._lines = {}
         GP.Tooltip.Add(GameTooltip, 217)
-        check(table.concat(GameTooltip._lines, "\n"):find("through the iron gate"), "the tooltip gives the way in")
+        check(table.concat(GameTooltip._lines, "\n"):find("Shadow Keep"), "the tooltip names the dungeon (the way in is the pin's message)")
         before = #H.printed
         W.Set(mantle.best, "Shade Mantle")
         check(table.concat(H.printed, "\n", before + 1):find("through the iron gate"), "and so does the pin message")
@@ -870,18 +870,12 @@ if not H.noDB then
     GameTooltip._lines = {}
     T.Add(GameTooltip, 211)
     local wl = table.concat(GameTooltip._lines, "\n")
-    check(wl:find("Wand: 15.0 damage per second || you wear no wand"), "a wand's tooltip gives its damage (no wand worn)")
+    check(wl:find("GearPath %(") and not wl:find("Wand:"), "a wand's tooltip: GearPath's line, no separate damage line (the % covers it)")
     H.EQUIPPED[18] = 234
     GP.Score.ReadEquipped()
     GameTooltip._lines = {}
-    T.Add(GameTooltip, 211)
-    check(table.concat(GameTooltip._lines, "\n"):find("+5.0 over yours"), "and how much more than yours")
-    GameTooltip._lines = {}
     T.Add(GameTooltip, 234)
-    check(table.concat(GameTooltip._lines, "\n"):find("the wand you wear"), "and which one is yours")
-    GameTooltip._lines = {}
-    T.Add(GameTooltip, 200)
-    check(not table.concat(GameTooltip._lines, "\n"):find("Wand:"), "no wand line on other gear")
+    check(table.concat(GameTooltip._lines, "\n"):find("|| equipped"), "the wand you wear: equipped")
     H.EQUIPPED[18] = nil
     GP.Score.ReadEquipped()
 
@@ -1579,7 +1573,7 @@ do
     check(belt and belt.tier == "primary", "and it's Best now")
     check(d(belt):find("you know the recipe"), "it says you know the recipe")
     check(boots and boots.tier and not boots.needs, "a recipe you can train now is listed (" .. d(boots) .. ")")
-    check(d(boots):find("recipe from Victor Ward"), "with the trainer who teaches it")
+    check(d(boots):find("Tailoring recipe: Victor Ward"), "with the trainer who teaches it")
     check(gloves and gloves.needs == "Tailoring (75)" and gloves.tier == "locked", "a recipe above your skill needs the skill first (" .. tostring(gloves and gloves.needs) .. ")")
     check(GP.UI.ContentOf(belt) == "craft" and GP.UI.ContentOf(gloves) == "craft", "both under Professions in Show")
     check(not (GP.db.learned.items[247] and GP.db.learned.items[247].c), "another profession's trainer recipes aren't saved")
@@ -1589,7 +1583,7 @@ do
     -- The trainer's recipe tooltip gets the line for the item it makes.
     GameTooltip:SetTrainerService(1)
     local tl = table.concat(GameTooltip._lines, "\n")
-    check(tl:find("GearPath:"), "a trainer's recipe tooltip gets GearPath's line")
+    check(tl:find("GearPath %("), "a trainer's recipe tooltip gets GearPath's line")
     -- Another character with the same profession hasn't learned the belt.
     local me = GP.Learn.Me
     GP.Learn.Me = function() return "Alt-Forever" end
@@ -1601,36 +1595,148 @@ do
     H.skills, H.trade, H.trainer, H.units.npc = nil, nil, nil, nil
 end
 
--- The tooltip never says "not an upgrade" next to a gain.
+-- ProfessionDB (LibProfessionDB-1.0), when installed: the gear your
+-- professions make, before you've opened a profession window or a trainer.
+do
+    local RECIPES = {
+        [197] = {   -- Tailoring
+            [9001] = { craftedItemId = 248, requiredSkill = 30 },    -- a trainer teaches it; you have the skill
+            [9002] = { craftedItemId = 249, requiredSkill = 75 },    -- more skill first (ProfessionDB's number)
+            [9003] = { craftedItemId = 250, requiredSkill = 1 },     -- you know it (the game says so)
+            [9004] = { craftedItemId = 251, requiredSkill = 20 },    -- a pattern a vendor sells
+            [9005] = { craftedItemId = 253, requiredSkill = 10 },    -- never in the game
+            [9006] = { craftedItemId = 245, requiredSkill = 75 },    -- the trainer said 35: the trainer wins
+            [9007] = { craftedItemId = 256, requiredSkill = 1 },     -- comes with the profession
+            [9008] = { craftedItemId = 252, requiredSkill = 30 },    -- a pattern that drops from 50 mobs
+        },
+        [165] = { [9101] = { craftedItemId = 254, requiredSkill = 1 } },   -- Leatherworking: not yours
+    }
+    local SOURCES = {
+        [9001] = { trainer = { { id = 9013, name = "Alliance Tailor" }, { id = 9011, name = "Test Tailor" }, total = 2 } },
+        [9002] = { trainer = { { id = 9011, name = "Test Tailor" }, total = 1 } },
+        [9006] = { trainer = { { id = 9011, name = "Test Tailor" }, total = 1 } },
+        [9008] = { drop = { { id = 9100, name = "Mob 9100" }, total = 50 } },
+    }
+    local lib = {}
+    function lib:IsReady() return true end
+    function lib:Count() return 9 end
+    function lib:GetGameVersion() return "Forever" end
+    function lib:GetRecipe(p, r) return RECIPES[p] and RECIPES[p][r] end
+    function lib:Iterate()
+        local out = {}
+        for p, list in pairs(RECIPES) do for r, e in pairs(list) do out[#out + 1] = { p, r, e } end end
+        local i = 0
+        return function() i = i + 1; local x = out[i]; if x then return x[1], x[2], x[3] end end
+    end
+    function lib:IsHiddenRecipe(s) return s == 9005 end
+    function lib:IsAutoTaughtRecipe(s) return s == 9007 end
+    function lib:GetRecipeItem(s) if s == 9004 then return 255, false end end
+    function lib:GetRecipeSources(s) return SOURCES[s] end
+    local savedStub = rawget(_G, "LibStub")
+    LibStub = function(name) if name == "LibProfessionDB-1.0" then return lib end end
+    GP.Crafts.Reset()
+    H.skills = { { "Tailoring", 40 } }
+    H.unknownSpells = { [9001] = true, [9002] = true, [9004] = true, [9006] = true, [9007] = true, [9008] = true }
+    GP.Sources.Scan()
+    for _ = 1, 60 do H.Tick(0.1) end
+    local d = function(ev) return ev and GP.UI.Describe(ev.source, true) or "?" end
+    local function craft(ev) return ev and ev.entry and (function()
+        for _, s in ipairs(ev.entry.sources) do if s.kind == "craft" then return s end end
+    end)() end
+    check(GP.Crafts.Available(), "ProfessionDB found")
+    local mantle, legs, cuffs, cloak = GP.Score.ForItem(248), GP.Score.ForItem(249), GP.Score.ForItem(250), GP.Score.ForItem(251)
+    local cm = craft(mantle)
+    if H.noDB then
+        -- QuestieDB is what places NPCs (and knows their faction).
+        check(cm and cm.via == "trainer" and not cm.mapID and mantle.tier == "secondary", "without QuestieDB: a trainer, not placed, worth chasing")
+        check(d(mantle) == "Tailoring recipe: a trainer", "Tailoring recipe: a trainer (" .. d(mantle) .. ")")
+    else
+        check(cm and cm.via == "trainer" and cm.npcName == "Test Tailor" and cm.mapID == 1420, "a trainer's recipe: your own faction's trainer, placed (" .. d(mantle) .. ")")
+        check(mantle and mantle.tier == "primary", "learnable now: Best now")
+        check(d(mantle):find("^Tailoring recipe: Test Tailor, Tirisfal"), "Tailoring recipe: the trainer, the zone")
+    end
+    check(legs and legs.needs == "Tailoring (75?)" and legs.tier == "locked", "more skill first, ProfessionDB's number marked unconfirmed (" .. tostring(legs and legs.needs) .. ")")
+    check(GP.UI.ContentOf(legs) == "craft", "and it's under Professions")
+    check(cuffs and craft(cuffs) and craft(cuffs).known and cuffs.tier == "primary", "a recipe the game says you know: Best now")
+    check(d(cuffs) == "Tailoring: you know the recipe", "Tailoring: you know the recipe (" .. d(cuffs) .. ")")
+    local cc = craft(cloak)
+    if H.noDB then
+        check(cc and cc.via == nil and cloak.tier == nil, "without QuestieDB, who sells the pattern isn't known: off the lists")
+    else
+        check(cc and cc.via == "vendor" and cc.npcName == "Pattern Seller", "a pattern a vendor sells: that vendor (" .. d(cloak) .. ")")
+    end
+    check(GP.Score.ForItem(253) == nil, "a recipe never in the game: left out")
+    check(GP.Score.ForItem(254) == nil, "another profession's gear: left out")
+    local band = GP.Score.ForItem(256)
+    check(band and craft(band) and craft(band).known, "a recipe that comes with the profession: known")
+    local boots = GP.Score.ForItem(245)
+    check(boots and not boots.needs and craft(boots).rank == 35 and craft(boots).rankSure, "a trainer's own number beats ProfessionDB's (35, not 75)")
+    local pend = GP.Score.ForItem(252)
+    check(pend and craft(pend).via == "random" and pend.tier == nil, "a pattern that drops from 50 mobs: off the lists")
+    check(d(pend) == "Tailoring recipe: random drop", "Tailoring recipe: random drop")
+    GameTooltip._lines = {}
+    GP.Tooltip.Add(GameTooltip, 252)
+    check(table.concat(GameTooltip._lines, "\n"):find("Tailoring recipe: random drop"), "its tooltip says the recipe is a random drop")
+    GameTooltip._lines = {}
+    GP.Tooltip.Add(GameTooltip, 249)
+    check(table.concat(GameTooltip._lines, "\n"):find("Needs Tailoring %(75%?%)"), "and Needs Tailoring (75?) on the one that needs more skill")
+    -- Without the profession: none of it.
+    H.skills = {}
+    GP.Sources.Scan()
+    for _ = 1, 60 do H.Tick(0.1) end
+    check(GP.Score.ForItem(248) == nil and GP.Score.ForItem(250) == nil, "no Tailoring: no tailored gear")
+    -- And without ProfessionDB: as before.
+    LibStub = savedStub
+    GP.Crafts.Reset()
+    H.skills, H.unknownSpells = nil, nil
+    check(not GP.Crafts.Available(), "ProfessionDB gone: nothing from it")
+    GP.Sources.Scan()
+    for _ = 1, 60 do H.Tick(0.1) end
+end
+
+-- The tooltip: how much better or worse than what you have on (by your
+-- spec's weights), and where to get it.
 do
     local real = GP.Score.ForItem
     local rec = GP.Items.Get(210)
-    local function line(ev)
+    local function tip(ev)
         GP.Score.ForItem = function() return ev end
+        GP.UI.hintFor = nil   -- not over a row of GearPath's window
         GameTooltip._lines = {}
         GP.Tooltip.Add(GameTooltip, 210)
         GP.Score.ForItem = real
-        for _, l in ipairs(GameTooltip._lines) do if l:find("GearPath:") then return l end end
-        return ""
+        return table.concat(GameTooltip._lines, "\n")
     end
-    local tiny = line({ rec = rec, slot = "HandsSlot", delta = 0.07, pct = 100, base = 0.07 })
-    check(tiny:find("barely better") and not tiny:find("%%"), "a sliver better reads as barely better (" .. tiny .. ")")
-    local off = line({ rec = rec, slot = "HandsSlot", delta = 12, pct = 40, base = 30 })
-    check(off:find("better, not on your lists"), "a real gain off your lists says so (" .. off .. ")")
-    local wornID
-    for _, e in pairs(GP.Score.equipped) do if e.id then wornID = e.id break end end
+    local spec = GP.Classes.Spec().name
+    local vendor = { kind = "vendor", name = "Abigail Shiel", zone = "Tirisfal Glades" }
+    -- Gloves on, so there's something to compare with.
+    H.EQUIPPED[10] = 233
+    GP.Score.ReadEquipped()
+    local up = tip({ rec = rec, slot = "HandsSlot", delta = 12, pct = 40, base = 30, points = 42, source = vendor })
+    check(up:find("^ \nGearPath %(" .. spec .. "%) || %+40%%\nVendor: Abigail Shiel, Tirisfal Glades"),
+        "GearPath (your spec), +40% against what you have on, then where to get it (" .. up:gsub("\n", " / ") .. ")")
+    check(not up:find("Rating"), "no rating")
+    local worse = tip({ rec = rec, slot = "HandsSlot", delta = -6, pct = -20, base = 30, points = 24, source = vendor })
+    check(worse:find("|| %-20%%") and worse:find("Vendor: Abigail Shiel"), "a worse one: -20%, and still where it's from (" .. worse:gsub("\n", " / ") .. ")")
+    local tiny = tip({ rec = rec, slot = "HandsSlot", delta = 0.07, pct = 100, base = 0.07, points = 0.14 })
+    check(tiny:find("|| same") and not tiny:find("%%"), "better by a hair (+100% of almost nothing): same (" .. tiny:gsub("\n", " / ") .. ")")
+    local inBags = tip({ rec = rec, slot = "HandsSlot", delta = -6, pct = -20, base = 30, points = 24, source = { kind = "bags" } })
+    check(not inBags:find("put it on"), "a worse one in your bags isn't 'put it on'")
+    local need = tip({ rec = rec, slot = "HandsSlot", delta = 12, pct = 40, base = 30, points = 42, needs = "Tailoring (75?)",
+        source = { kind = "craft", profession = "Tailoring", via = "trainer", npcName = "Test Tailor", zone = "Tirisfal Glades" } })
+    check(need:find("Needs Tailoring %(75%?%)") and need:find("Tailoring recipe: Test Tailor"), "needs more skill: says so, then the recipe's place (" .. need:gsub("\n", " / ") .. ")")
+    local wornID = GP.Score.equipped.HandsSlot.id
     GameTooltip._lines = {}
     GP.Tooltip.Add(GameTooltip, wornID)
-    check(table.concat(GameTooltip._lines, "\n"):find("GearPath: currently equipped"), "an item you wear says so")
-    local same = line({ rec = rec, slot = "HandsSlot", delta = 0, base = 0 })
-    check(same:find("not an upgrade") and not same:find("pts"), "no better and no worse shows no \"+0 pts\" (" .. same .. ")")
-    local worldEv = { rec = rec, slot = "HandsSlot", delta = 12, pct = 40, base = 30, source = { kind = "drop", worldDrop = true } }
-    check(line(worldEv):find("only from random loot"), "a world drop off your lists says why")
+    local wt = table.concat(GameTooltip._lines, "\n")
+    check(wt:find("GearPath %(" .. spec .. "%) || equipped"), "what you wear: equipped (" .. wt:gsub("\n", " / ") .. ")")
     -- An item GearPath never scored (an auction, a trainer's recipe): weighed on the spot.
     local q = GP.Tooltip.QuickEval(rec)
     check(q and q.quick and q.slot, "an unscored item you can wear is weighed on the spot")
-    local worse = line({ rec = rec, slot = "HandsSlot", delta = -5, pct = -20, base = 25 })
-    check(worse:find("not an upgrade"), "a worse item is not an upgrade (" .. worse .. ")")
+    H.EQUIPPED[10] = nil
+    GP.Score.ReadEquipped()
+    local fresh = tip({ rec = rec, slot = "HandsSlot", delta = 8, base = 0, points = 8 })
+    check(fresh:find("|| empty slot"), "nothing worn there: empty slot (" .. fresh .. ")")
 end
 
 local unknown = {}

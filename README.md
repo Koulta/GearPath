@@ -27,10 +27,10 @@ GearPath looks at your class, spec and level, finds every upgrade you can actual
 | **Route** | The best upgrade for every slot, grouped by zone and dungeon. Click one and the map pin goes there. |
 | **Near you** | Upgrades in the zone you're standing in, closest first, with the distance to each. |
 | **Browse** | Every piece of gear for your class near your level. Search, filter and sort it. |
-| **Tooltips** | Every item says how much better it is for you and where to get it. Mobs and NPCs list the upgrades they drop or sell. |
+| **Tooltips** | Every piece of gear shows how much better or worse it is than what you wear, by your class and spec (+12%, -8%), and where to get it. Mobs and NPCs list the upgrades they drop or sell. |
 | **Quest reward pick** | Shows which reward to take, or the one that sells for the most if none is an upgrade. |
 | **Rare watch** | An icon and a sound when a rare that drops an upgrade for you comes into view. |
-| **Crafted gear** | Open your profession window or a trainer and the gear your recipes make joins your lists: what you can craft now, what to train next, what needs more skill. |
+| **Crafted gear** | The gear your professions can make: what you can craft now, which trainer or vendor has the recipe, what needs more skill. From your profession window and trainers, or every recipe at once with ProfessionDB. |
 | **Weapon training** | Found a great staff but never learned Staves? GearPath says so and puts the weapon master on your route. |
 | **Learns and shares** | Quest rewards, loot and vendor gear you see are remembered and shared with other GearPath players, so new Forever gear shows up before the database has it. |
 
@@ -53,6 +53,7 @@ Then type `/gp` in game.
 | ForeverDungeonJournal | optional | Boss loot, dungeon quests, wings and entrances, including Forever's new dungeons |
 | DaylightUI / EllesmereUI | optional | GearPath matches their look; EllesmereUI's bags get upgrade arrows |
 | TomTom | optional | An arrow for map pins |
+| ProfessionDB | optional | Every piece of gear your professions can make, and where to learn each recipe |
 
 GearPath reads these while you play. It includes none of their code or data.
 
@@ -102,6 +103,7 @@ What changed in each version: [CHANGELOG](addon/CHANGELOG.md).
 - **The Questie team** for QuestieDB: code by Logonz, data by Muehe, TheCrux (BreakBB), Drejjmit, Dyaxler, Cheeq, TechnoHunter, Yttrium and everyone who contributes to Questie.
 - **TheCrux (BreakBB)**, Questie's lead, for answering questions on Discord and giving the go-ahead to build on QuestieDB.
 - **Exehn** for ForeverDungeonJournal.
+- **Pimptasty** for LibProfessionDB (the ProfessionDB addon, MIT), the recipe database behind crafted gear.
 - **Supersharpie** for Sharpie's Gear Judge (MIT), which GearPath's stat weights were checked against.
 
 ## License

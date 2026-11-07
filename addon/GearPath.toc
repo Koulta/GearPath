@@ -2,12 +2,12 @@
 ## Title: GearPath
 ## Notes: Your character sheet, a gear database and an upgrade route in one window. Finds the best gear for each slot and tells you where to get it.
 ## Author: Koulta
-## Version: 0.7.11
+## Version: 0.7.12
 ## IconTexture: Interface\AddOns\GearPath\Media\icon
 ## X-License: GPL-3.0-or-later
 ## SavedVariables: GearPathDB
 ## SavedVariablesPerCharacter: GearPathCharDB
-## OptionalDeps: QuestieDB, Questie, ForeverDungeonJournal, DaylightUI, DaylightUI_Skins, EllesmereUI, EllesmereUIBags, EllesmereUIBlizzardSkin, TomTom
+## OptionalDeps: QuestieDB, Questie, ForeverDungeonJournal, DaylightUI, DaylightUI_Skins, EllesmereUI, EllesmereUIBags, EllesmereUIBlizzardSkin, TomTom, ProfessionDB
 ## AddonCompartmentFunc: GearPath_Toggle
 ## AddonCompartmentFuncOnEnter: GearPath_CompartmentEnter
 ## AddonCompartmentFuncOnLeave: GearPath_CompartmentLeave
@@ -22,6 +22,7 @@ Score.lua
 Sources.lua
 ZoneData.lua
 Learn.lua
+Crafts.lua
 Check.lua
 Share.lua
 Journal.lua

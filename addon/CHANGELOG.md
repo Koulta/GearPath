@@ -1,5 +1,22 @@
 # GearPath changelog
 
+## 0.7.12
+
+- **Crafted gear from ProfessionDB.** With the ProfessionDB addon installed (optional), GearPath knows every piece of gear your professions can make, from Forever's own game files and including Forever's new recipes, without opening a profession window first. Each one says how to get the recipe: the nearest trainer or pattern vendor of your faction (with a map pin), a quest, a named mob, or "random drop".
+  - A trainer's own skill number wins. Once you've opened a trainer, GearPath uses what it asked for; until then the number is ProfessionDB's and has a question mark ("Needs Tailoring (75?)"), because its numbers run high for Forever.
+  - Recipes that come with the profession count as known, and so do recipes the game says you've learned.
+  - Without ProfessionDB, crafted gear still comes from your profession window and trainers, as in 0.7.10.
+- **Tooltips: plus or minus, and where.** Gear you could wear gets one line: how much better or worse it is than what you have on, by your class and spec's weights (**+12%**, **-8%**, **same**, **empty slot**, **equipped**), and under it, where to get it:
+  ```
+  GearPath (Affliction)                             +12%
+  Vendor: Harold Raims, Tirisfal Glades (32.4, 66.4)
+  ```
+  - The colour is the verdict: green Best now, gold Worth chasing, red needs something first (with a line saying what), white better but not on your lists, grey not an upgrade.
+  - A difference too small to matter says **same**, not "+100%" (9 more armor on a caster).
+  - Gone from tooltips, still in the window: the other ways to get an item, the wand damage line, the checker's notes, and the dungeon's way-in sentence (the map pin's message has it).
+- Crafted gear's source line reads like the others: "Tailoring: you know the recipe", "Tailoring recipe: Victor Ward, Undercity (40.2, 30.1)", "Tailoring recipe: random drop".
+- `/gp status` and `/gp report` mention ProfessionDB when it's there.
+
 ## 0.7.11
 
 Tooltips, read through line by line:

@@ -33,7 +33,7 @@
 ### Built for your class
 
 - **Every spec:** pick yours, and GearPath weighs gear for it, including tanks, healers and Forever's melee Survival hunters. Weapon speed and type follow the spec too.
-- **Crafted gear:** open your profession window or a trainer and the gear your recipes make joins your lists.
+- **Crafted gear:** the gear your professions can make joins your lists, with the trainer or vendor that has the recipe. From your profession window and trainers, or every recipe at once with ProfessionDB.
 - **Weapon training:** found a great staff but never learned Staves? GearPath says so and puts the weapon master on your route.
 - **Your weights:** change any stat weight, and share yours with a short string other players of your class can paste.
 
@@ -58,6 +58,7 @@ Healer gear is left out for classes that don't heal.
 - **Dungeon Journal** (optional): boss loot, dungeon quests and entrances, including Forever's new dungeons.
 - **DaylightUI** or **EllesmereUI** (optional): GearPath matches their look. EllesmereUI's bags also get upgrade arrows.
 - **TomTom** (optional): an arrow for map pins.
+- **ProfessionDB** (optional): every piece of gear your professions can make, and where to learn each recipe.
 
 GearPath reads these addons while you play. It doesn't include any of their code or data.
 
@@ -81,6 +82,7 @@ This is a first release. GearPath was played through the beta (which stopped at 
 - **The Questie team** for QuestieDB, the database GearPath reads: code by Logonz, data by Muehe, TheCrux (BreakBB), Drejjmit, Dyaxler, Cheeq, TechnoHunter, Yttrium and everyone else who contributes to Questie.
 - **TheCrux (BreakBB)**, Questie's lead, for answering my questions on Discord and giving the go-ahead to build on QuestieDB.
 - **Supersharpie** for Sharpie's Gear Judge (MIT), which GearPath's stat weights were checked against.
+- **Pimptasty** for LibProfessionDB (ProfessionDB, MIT), the recipe database behind crafted gear.
 
 ## License
 

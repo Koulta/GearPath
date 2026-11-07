@@ -68,12 +68,21 @@ function UI.Describe(src, long)
         if src.rank then t = t .. " (" .. L[src.rank] .. ")" end
         where = src.dungeon or src.zone
     elseif src.kind == "craft" then
-        -- Crafting: Tailoring (you know the recipe)
-        -- Crafting: Tailoring, recipe from Victor Ward, Undercity
-        t = string.format(L["Crafting: %s"], src.profession or src.name or "?")
-        if src.known then return t .. " (" .. L["you know the recipe"] .. ")" end
-        if src.trainer then t = t .. ", " .. string.format(L["recipe from %s"], src.trainer) end
-        where = src.zone
+        -- Tailoring: you know the recipe
+        -- Tailoring recipe: Victor Ward, Undercity (40.2, 30.1)
+        -- Tailoring recipe: random drop
+        local prof = src.profession or src.name or "?"
+        if src.known then return string.format(L["%s: you know the recipe"], prof) end
+        local via, who, what = src.via, src.npcName, nil
+        if via == "trainer" then what = who or L["a trainer"]
+        elseif via == "vendor" then what = who or L["a vendor"]
+        elseif via == "quest" then what = who and string.format(L["%s (quest)"], who) or L["a quest"]
+        elseif via == "drop" then what = who and string.format(L["drops from %s"], who) or L["random drop"]
+        elseif via == "random" then return string.format(L["%s recipe: %s"], prof, L["random drop"])
+        else return string.format(L["%s recipe: %s"], prof, L["not in the database yet"]) end
+        t = string.format(L["%s recipe: %s"], prof, what)
+        if not (src.zone or src.dungeon) then return t end
+        where = src.dungeon or src.zone
     elseif src.kind == "object" then
         if src.randomChest then
             if src.count and src.count > 1 then
@@ -192,7 +201,7 @@ function UI.ContentOf(ev)
     local needs = ev.needs
     if needs then
         if PVP_RANKS[needs] then return "pvp" end
-        if needs:find("%(%d+%)") then return "craft" end
+        if needs:find("%(%d+%??%)") then return "craft" end
         return "rep"
     end
     local src = ev.source

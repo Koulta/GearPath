@@ -323,11 +323,19 @@ t("Alliance territory", "Allianzgebiet", "territoire de l'Alliance", "territorio
     "территория Альянса", "얼라이언스 영토", "联盟领地", "聯盟領地")
 t("Horde territory", "Hordengebiet", "territoire de la Horde", "territorio de la Horda", "território da Horda",
     "территория Орды", "호드 영토", "部落领地", "部落領地")
-t("Crafting: %s", "Handwerk: %s", "Artisanat : %s", "Artesanía: %s", "Artesanato: %s", "Ремесло: %s", "제작: %s", "制作：%s", "製作：%s")
-t("you know the recipe", "du kennst das Rezept", "vous connaissez la recette", "conoces la receta", "você conhece a receita",
-    "рецепт изучен", "제조법을 알고 있음", "已学会配方", "已學會配方")
-t("recipe from %s", "Rezept bei %s", "recette auprès de %s", "receta de %s", "receita com %s", "рецепт у %s",
-    "제조법: %s", "配方：%s", "配方：%s")
+t("%s: you know the recipe", "%s: du kennst das Rezept", "%s : vous connaissez la recette", "%s: conoces la receta",
+    "%s: você conhece a receita", "%s: рецепт изучен", "%s: 제조법을 알고 있음", "%s：已学会配方", "%s：已學會配方")
+t("%s recipe: %s", "%s-Rezept: %s", "Recette (%s) : %s", "Receta (%s): %s", "Receita (%s): %s", "Рецепт (%s): %s",
+    "%s 제조법: %s", "%s配方：%s", "%s配方：%s")
+t("a trainer", "ein Lehrer", "un maître", "un instructor", "um instrutor", "учитель", "기술 전문가", "训练师", "訓練師")
+t("a vendor", "ein Händler", "un marchand", "un vendedor", "um vendedor", "торговец", "상인", "商人", "商人")
+t("%s (quest)", "%s (Quest)", "%s (quête)", "%s (misión)", "%s (missão)", "%s (задание)", "%s (퀘스트)", "%s（任务）", "%s（任務）")
+t("a quest", "eine Quest", "une quête", "una misión", "uma missão", "задание", "퀘스트", "任务", "任務")
+t("drops from %s", "Beute von %s", "butin de %s", "botín de %s", "saque de %s", "выпадает с %s", "%s 전리품", "%s掉落", "%s掉落")
+t("random drop", "zufällige Beute", "butin aléatoire", "botín aleatorio", "saque aleatório", "случайная добыча", "무작위 드롭",
+    "随机掉落", "隨機掉落")
+t("not in the database yet", "noch nicht in der Datenbank", "absente de la base", "aún no está en la base de datos",
+    "ainda não está no banco de dados", "ещё нет в базе", "아직 데이터베이스에 없음", "数据库中尚无", "資料庫中尚無")
 t("Craft it yourself", "Selbst herstellen", "À fabriquer vous-même", "Fabrícalo tú mismo", "Fabrique você mesmo",
     "Изготовьте сами", "직접 제작", "自己制作", "自己製作")
 t("from %s", "bei %s", "auprès de %s", "de %s", "com %s", "у %s", "%s에게서", "从%s处", "從%s處")

@@ -39,6 +39,15 @@ local ITEMS = {
     [245] = { "Test Tailored Boots", 2, 26, 22, "INVTYPE_FEET", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 9 } },
     [246] = { "Test Tailored Gloves", 2, 27, 23, "INVTYPE_HAND", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 10 } },
     [247] = { "Test Leather Cap", 2, 26, 22, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 9 } },
+    -- Made by the fake ProfessionDB's recipes (run.lua's ProfessionDB test).
+    [248] = { "PDB Trainer Mantle", 2, 26, 20, "INVTYPE_SHOULDER", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 20 } },
+    [249] = { "PDB High Leggings", 2, 27, 21, "INVTYPE_LEGS", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 25 } },
+    [250] = { "PDB Known Cuffs", 2, 26, 20, "INVTYPE_WRIST", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 20 } },
+    [251] = { "PDB Pattern Cloak", 2, 26, 20, "INVTYPE_CLOAK", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 20 } },
+    [252] = { "PDB Rare Pendant", 2, 26, 20, "INVTYPE_NECK", 4, 0, { ITEM_MOD_SPELL_POWER_SHORT = 20 } },
+    [253] = { "PDB Never Hat", 2, 26, 20, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 30 } },
+    [254] = { "PDB Leather Cap", 2, 26, 20, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 30 } },
+    [256] = { "PDB Starter Band", 2, 26, 20, "INVTYPE_FINGER", 4, 0, { ITEM_MOD_SPELL_POWER_SHORT = 20 } },
     [215] = { "Sergeant's Cloak", 3, 30, 23, "INVTYPE_CLOAK", 4, 1, { ITEM_MOD_STAMINA_SHORT = 9 }, { { "Requires Sergeant", 1, 0.125, 0.125 }, { "Requires Level 23", 1, 0.125, 0.125 } } },
 }
 H.ITEMS = ITEMS
@@ -223,6 +232,8 @@ local DB_ITEMS = {
     [214] = { class = 4, subClass = 1, requiredLevel = 22, name = "Chest Loot Leggings", objectDrops = { 2 } },
     [215] = { class = 4, subClass = 1, requiredLevel = 23, name = "Sergeant's Cloak", vendors = { 9001 } },
     [500] = { class = 0, requiredLevel = 1, name = "Potion" },
+    -- A recipe item, sold by a Horde vendor (ProfessionDB test).
+    [255] = { class = 9, subClass = 2, requiredLevel = 0, name = "Pattern: PDB Pattern Cloak", vendors = { 9012 } },
     -- Level 60: never a candidate, only resolved by the faction checks.
     [241] = { class = 4, subClass = 1, requiredLevel = 60, name = "Guard's Sash", npcDrops = { 9009, 9010 } },
 }
@@ -254,6 +265,10 @@ local NPCS = {
     [9002] = { name = "Stalvan Mistmantle", rank = 1, minLevel = 25, maxLevel = 25, spawns = { [10] = { { 77.2, 36.1 } } }, zoneID = 10 },
     [9003] = { name = "Madame Eva", friendlyToFaction = "AH", spawns = { [10] = { { 75.8, 45.3 } } }, zoneID = 10 },
     [9004] = { name = "Scout Riell", friendlyToFaction = "AH", spawns = { [40] = { { 42.0, 71.0 } } }, zoneID = 40 },
+    -- A tailoring trainer and a pattern vendor in Tirisfal; an Alliance trainer (ProfessionDB test).
+    [9011] = { name = "Test Tailor", friendlyToFaction = "H", spawns = { [85] = { { 52.0, 55.0 } } }, zoneID = 85 },
+    [9012] = { name = "Pattern Seller", friendlyToFaction = "H", spawns = { [85] = { { 60.0, 51.0 } } }, zoneID = 85 },
+    [9013] = { name = "Alliance Tailor", friendlyToFaction = "A", spawns = { [40] = { { 30.0, 30.0 } } }, zoneID = 40 },
 }
 for i = 9100, 9111 do NPCS[i] = { name = "Mob " .. i, spawns = { [10] = { { 10, 10 } } } } end
 

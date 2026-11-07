@@ -6,7 +6,7 @@ Your character sheet, a gear database and an upgrade route in one window, for Wo
 - **Route**: the best upgrade for each slot you can get now, grouped by zone, and a click on a place or an item puts the map pin there. A pick-one quest counts once; a quest that gives every reward doesn't. Below that is the gear worth chasing, grouped by dungeon (each wing on its own) or zone. Groups are colored: purple for dungeons, green for zones, gold for your bags.
 - **Browse**: every piece of gear found for your class within reach of your level. Search it, filter by slot and by Show:, and sort by item level, gain, required level or name.
 - **Settings**: the look and window scale, how far ahead to look, dungeon, world-drop and healer gear, the extras (tooltips, upgrade notes, learning, quest reward pick, rare watch), checking and sharing, and your stat weights.
-- **Tooltips**: gear gets a GearPath line everywhere (how much better it is and where to get it), and a wand also gets its damage per second against yours. NPCs and mobs list the upgrades they drop, sell or give for a quest ("GearPath: sells Ritual Dagger +12% Main Hand"), Best now first, up to three.
+- **Tooltips**: gear gets a GearPath line everywhere: how much better or worse it is than what you have on, by your class and spec's weights ("GearPath (Affliction) +12%", or -8%, same, empty slot, equipped), then a line with where to get it. The colour is the verdict: green Best now, gold Worth chasing, red needs something first, white better but not on your lists, grey not an upgrade. Every other way to get it is in the window. NPCs and mobs list the upgrades they drop, sell or give for a quest ("GearPath: sells Ritual Dagger +12% Main Hand"), Best now first, up to three.
 - **Upgrade notes**: a toast at the top of the screen when you put on an upgrade, with how much it adds to your GearPath score; a line in chat when a vendor you open sells an upgrade (with its price), and when a level-up lets you wear something from your bags. Turn them off under Settings > Extras.
 - **Item levels**: the game's own Character window shows each item's level on its slot, in the item's quality colour, so you don't need a separate item-level add-on. Turn it off under Settings > Extras. With EllesmereUI's Character sheet on, it draws them itself and GearPath doesn't add a second set.
 - **EllesmereUI**: pick EllesmereUI under Settings > Look (Automatic picks DaylightUI first, then EllesmereUI) and the window follows EllesmereUI's theme and accent. Its bags get a green arrow on gear that's an upgrade you can wear now. EllesmereUI can turn the look off for GearPath in its own options (Third-Party Addons).
@@ -24,8 +24,8 @@ A class can learn more weapons than it starts with. Weapon masters in the capita
 **Worth chasing** means a dungeon, an elite or rare, a quest chain of 3 or more, a quest or mob above your level, or an item a few levels away.
 **Needs something first** holds gear that needs a PvP rank, a reputation or a profession you don't have yet.
 
-**Crafted gear** comes from the game, not QuestieDB (which has no recipes): open your profession window and the gear your recipes make is added; open a profession trainer and the gear it teaches is added too, with the skill each recipe needs and where the trainer stands. Only your own professions count, and each character's known recipes are its own.
-**Healer gear** (Healing is its biggest spell stat, like "+7 Healing, +3 Spell Damage") is left out, from drops, quests and vendors alike. When it drops in a group, its tooltip says to let your healer roll. Turn on **Healer gear** in Settings to list it anyway. (Classes whose weights count Healing aren't affected. Gear with "damage and healing" spell power isn't healer gear: it's everyone's.)
+**Crafted gear** comes from the game, not QuestieDB (which has no recipes): open your profession window and the gear your recipes make is added; open a profession trainer and the gear it teaches is added too, with the skill each recipe needs and where the trainer stands. With **ProfessionDB** installed (optional), every recipe of your professions is known from the start, with how to get it: the nearest trainer or pattern vendor of your faction, a quest, a named mob, or a random drop. A trainer's own skill number always wins over ProfessionDB's, which runs high for Forever and shows with a question mark ("Needs Tailoring (75?)") until you've seen a trainer. Only your own professions count, and each character's known recipes are its own.
+**Healer gear** (Healing is its biggest spell stat, like "+7 Healing, +3 Spell Damage") is left out, from drops, quests and vendors alike. Turn on **Healer gear** in Settings to list it anyway. (Classes whose weights count Healing aren't affected. Gear with "damage and healing" spell power isn't healer gear: it's everyone's.)
 
 **Show:** on every tab is one filter for the whole window. Tick the kinds of content you want (quests, dungeons, vendors, mob drops and rares, world drops and chests, your bags, PvP rank, reputation, professions) and untick the rest. The lists, the slot arrows, the route and Browse all follow it.
 
@@ -52,6 +52,7 @@ GearPath also shares what you see (quest rewards, loot and vendor gear) with eve
 - **DaylightUI** (optional): with it, GearPath uses DaylightUI's look and shows up under its Plugins. Without it, GearPath uses the game's own look.
 - **EllesmereUI** (optional): with it, GearPath can use EllesmereUI's look (Settings > Look) and marks upgrades in its bags.
 - **TomTom** (optional): if you have it, map pins use its arrow.
+- **ProfessionDB** (optional, LibProfessionDB by Pimptasty): with it, GearPath knows every piece of gear your professions can make and how each recipe is learned. It needs Ace3, VersionCheck-1.0 and LibAceGUIWidgets, which the CurseForge app installs with it.
 
 ## Commands
 
@@ -100,6 +101,7 @@ Copyright (C) 2026 Koulta. GearPath is free software, released under the GNU Gen
 - **EllesmereUI**: GearPath matches its look through EllesmereUI's published skinning API, puts upgrade arrows in its bags, and leaves item levels on the Character sheet to it. Optional; not included.
 - **Sharpie's Gear Judge** by Supersharpie (MIT License, Copyright (c) 2025 Supersharpie): its wowsims-based Forever weights were used to check GearPath's, and some of its leveling values were taken (see Stat weights).
 - **TomTom**: map arrows, when installed. Optional; not included.
+- **LibProfessionDB** (the ProfessionDB addon) by Pimptasty (MIT License): every recipe, the item it makes, the skill it takes and how it's learned, read while the game runs. Optional; not included.
 
 World of Warcraft and its item, quest and character names are trademarks and content of Blizzard Entertainment. GearPath isn't made or endorsed by Blizzard.
 

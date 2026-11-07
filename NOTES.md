@@ -219,6 +219,28 @@ it into a "craft" source: known (effort 1, route group "Craft it yourself"), tra
 adds learned crafts (addLearnedCrafts). Trainer recipe tooltips: hooksecurefunc on
 GameTooltip.SetTrainerService. Untested in game until Koulta opens a trainer.
 
+## ProfessionDB and simpler tooltips (0.7.12)
+
+Crafts.lua reads LibProfessionDB-1.0 (the ProfessionDB addon, OptionalDeps) through LibStub:
+an item index built once (2,511 Forever recipes; never-implemented ones left out), professions
+matched by name (GetSpellInfo of each profession's spell vs your skill lines). Sources.CraftSource
+merges per profession: Learn.lua's trainer skill and place win; ProfessionDB's skill is marked
+unconfirmed ("Tailoring (75?)"). How the recipe is learned (Sources.RecipeWay): ProfessionDB's
+trainer list -> nearest friendly trainer QuestieDB can place; else the recipe item's own QuestieDB
+vendors / quest / drops; else ProfessionDB's vendor / quest / drop lists; else "random drop" or
+"not in the database yet". Known: Learn.lua's profession window, auto-taught (AcquireMethod 1), or
+IsPlayerSpell. Effort: known 1; needs 2; trainer/vendor with a place 1; quest or named mob 2;
+random or unknown 3. addCrafts adds crafted items QuestieDB doesn't hold (level window when it does).
+Real-data run Nov 7: ProfessionDB's Forever files read as TEXT into a fixture
+(scratchpad/pdbtools/make_fixture.py, 2,511 recipes, 1,170 source lists) behind a stand-in of the
+library's lookups; 8 class/profession mixes on QuestieDB 1.0.11, 0 problems (professions, skill vs
+needs, other-faction NPCs, never-implemented recipes). Speed with it: rescan 87 ms vs 67 ms.
+Tooltips, settled Nov 7 after several rounds (Koulta: "location, % +/- better than equipped", from
+a mockup he okayed): "GearPath (Affliction)  +12%" (or -8%, same, empty slot, equipped) and one
+"where" line; the colour is the verdict. "same" when |delta| < Score.MIN_POINTS (+100% of almost
+nothing). A 0-100 rating was tried first and dropped: it needed a reference the tooltip can't show.
+Don't change tooltip wording again without a mockup Koulta has okayed.
+
 ## Tooltip wording (0.7.11)
 
 Read through every tooltip shape on the real QuestieDB (a level-14 Horde warlock dump:

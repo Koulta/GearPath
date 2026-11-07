@@ -307,11 +307,19 @@ function Score.Effort(source)
         return 1
     end
     if source.kind == "craft" then
-        -- Known: make it (mats aside). Trainable now: a trip to the trainer.
+        -- Known: make it (mats aside). A recipe to learn now from a trainer
+        -- or a vendor GearPath can pin: a trip. A quest or a named mob:
+        -- worth chasing. A random drop, or nothing known: off the lists.
         if source.known then return 1 end
-        if source.needs or not source.mapID then return 2 end
-        if GP.Sources and GP.Sources.ZoneTooHigh and GP.Sources.ZoneTooHigh(source) then return 2 end
-        return 1
+        if source.needs then return 2 end
+        local via = source.via
+        if via == "trainer" or via == "vendor" then
+            if not source.mapID then return 2 end
+            if GP.Sources and GP.Sources.ZoneTooHigh and GP.Sources.ZoneTooHigh(source) then return 2 end
+            return 1
+        end
+        if via == "quest" or via == "drop" then return 2 end
+        return 3
     end
     if source.kind == "drop" or source.kind == "object" then
         if source.worldDrop then return 3 end
