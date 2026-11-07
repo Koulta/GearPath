@@ -188,11 +188,37 @@ end
 -- ways to get it (no new scan) and score again.
 function Sources.Resort()
     for _, entry in pairs(Sources.entries or {}) do
-        if entry.sources and #entry.sources > 1 then
-            Sources.SortSources(entry.sources)
-            entry.best = entry.sources[1]
-            entry.effort = GP.Score.Effort(entry.best)
+        local all = entry.allSources or entry.sources
+        if all and #all > 1 then
+            Sources.SortSources(all)
+            Sources.Visible(entry)
         end
+    end
+end
+
+-- Leaves out the vendors you hid (Hide.lua): entry.sources is what's left,
+-- entry.allSources everything. entry.hiddenAll: every way was hidden.
+function Sources.Visible(entry)
+    local all = entry.allSources or entry.sources or {}
+    entry.allSources = all
+    local Hide = GP.Hide
+    local list = all
+    if Hide and Hide.Any() then
+        list = {}
+        for _, s in ipairs(all) do
+            if not Hide.IsVendor(s) then list[#list + 1] = s end
+        end
+    end
+    entry.sources = list
+    entry.best = list[1]
+    entry.effort = GP.Score.Effort(entry.best)
+    entry.hiddenAll = #all > 0 and #list == 0
+end
+
+-- After hiding or showing a vendor: every item's ways again (no new scan).
+function Sources.ApplyHidden()
+    for _, entry in pairs(Sources.entries or {}) do
+        if entry.allSources or entry.sources then Sources.Visible(entry) end
     end
 end
 
@@ -887,9 +913,8 @@ function Sources.Resolve(entry)
         if not (s.kind == "quest" and s.done) then usable[#usable + 1] = s end
     end
     Sources.SortSources(usable)
-    entry.sources = usable
-    entry.best = usable[1]
-    entry.effort = GP.Score.Effort(entry.best)
+    entry.allSources = usable
+    Sources.Visible(entry)
     entry.allDone = #list > 0 and #usable == 0
     return entry
 end

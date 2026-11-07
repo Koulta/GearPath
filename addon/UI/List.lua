@@ -197,7 +197,7 @@ List.KINDS.item = {
         row.pin:SetShown(pins and GP.Waypoint.CanSet(ev.source))
     end,
     enter = function(row) GP.UI.ItemTooltip(row, row.item.ev) end,
-    click = function(row, button) GP.UI.ItemClick(row.item.ev, button) end,
+    click = function(row, button) GP.UI.ItemClick(row.item.ev, button, row) end,
 }
 
 -- ---------------------------------------------------------------------

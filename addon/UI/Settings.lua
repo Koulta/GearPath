@@ -300,7 +300,52 @@ UI.RegisterPage("settings", {
         check:SetPoint("TOPLEFT", rescan, "BOTTOMLEFT", 0, -10)
         check:SetScript("OnClick", function() SlashCmdList.GEARPATH("check") end)
         y = y + 74
-        c:SetHeight(y)
+
+        -- What you hid with a right-click (Hide.lua), each with Show again.
+        y = section(c, y, "Hidden vendors and items",
+            "Right-click an item in the window to hide its vendor or the item. Hidden ones are left off the lists; tooltips still show them.")
+        local top, rows = y, {}
+        local function layout()
+            local list = GP.Hide.List()
+            local yy = top
+            for i = 1, math.max(#list, 1) do
+                local r = rows[i]
+                if not r then
+                    r = CreateFrame("Frame", nil, c)
+                    r:SetHeight(26)
+                    r.text = skin.Text(r, "body", "VALUE")
+                    r.text:SetPoint("LEFT", r, "LEFT", 0, 0)
+                    r.text:SetPoint("RIGHT", r, "RIGHT", -130, 0)
+                    r.show = skin.Button(r, L["Show again"], 110, 22)
+                    r.show:SetPoint("RIGHT", r, "RIGHT", 0, 0)
+                    r.show:SetScript("OnClick", function()
+                        if r.entry then GP.Hide.Show(r.entry.kind, r.entry.key) end
+                    end)
+                    rows[i] = r
+                end
+                r:ClearAllPoints()
+                r:SetPoint("TOPLEFT", c, "TOPLEFT", 12, -yy)
+                r:SetPoint("RIGHT", c, "RIGHT", -16, 0)
+                local e = list[i]
+                r.entry = e
+                if e then
+                    r.text:SetText(string.format(e.kind == "v" and L["%s (vendor)"] or L["%s (item)"], e.name))
+                    r.show:Show()
+                else
+                    r.text:SetText(L["Nothing hidden."])
+                    r.show:Hide()
+                end
+                r:Show()
+                yy = yy + 30
+            end
+            for i = math.max(#list, 1) + 1, #rows do rows[i]:Hide() end
+            c:SetHeight(yy + 20)
+            if Settings.sf and Settings.sf.UpdateBar then Settings.sf.UpdateBar() end
+        end
+        Settings.hiddenRows = rows
+        onRefresh(layout)
+        GP.On("HiddenChanged", function() GP.SafeCall(layout) end)
+        layout()
     end,
     Fill = function()
         for _, fn in ipairs(Settings.refreshers) do fn() end

@@ -1,5 +1,16 @@
 # GearPath changelog
 
+## 0.7.14
+
+### Fixed
+- **Reputation gear listed as plain vendor gear.** A quartermaster's items (Illiyana Moonblaze's Silverwing Sentinels gear, for one) could show up on your lists as if any vendor sold them. Any item that needs a reputation ("Requires Silverwing Sentinels - Honored") now counts as Reputation under Show:, whether you have the standing yet or not, so unticking Reputation leaves out the whole list. PvP rank gear works the same way under PvP rank. (Reported by dmann420.)
+- **Gear stuck under Needs something first after you earned the standing.** GearPath now checks your standing as it changes, so reputation gear moves to your lists the moment you reach it, without a /reload.
+- **A "Requires" line could be missed.** If the game hadn't finished loading an item's tooltip when GearPath first read it, the requirement was lost until /reload. GearPath now reads it again.
+
+### New
+- **Hide a vendor or an item.** Right-click an item in GearPath's window: **Hide items from <vendor>** or **Hide this item** (on the Character tab the map pin is there too). A hidden vendor stops counting as a way to get anything: an item you can get some other way keeps that way, one only it sells drops off the lists. A hidden item drops off the lists from any source. Settings > **Hidden vendors and items** lists them, each with **Show again**. Tooltips don't change. (Requested by dmann420.)
+- The hint on GearPath's window rows mentions the right-click.
+
 ## 0.7.13
 
 - **Tooltips, settled.** Gear you could wear shows how much better or worse it is than what you have on, by your class and spec's weights, and under it, where to get it:

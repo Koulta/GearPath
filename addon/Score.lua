@@ -351,7 +351,7 @@ function Score.CanWear(rec, level)
     if not (rec and Slots.FOR_EQUIPLOC[rec.equipLoc]) then return false end
     if Classes.CanUse(rec.classID, rec.subClassID, rec.equipLoc, nil, level) ~= true then return false end
     if rec.classes and not rec.classes[UnitClass("player")] then return false end
-    if rec.needs then return false end
+    if GP.Items.NeedsOf(rec) then return false end
     if Score.HealerGear(rec) and GP.Setting("healerGear") ~= true then return false, true end
     return true
 end
@@ -446,7 +446,8 @@ function Score.Run()
     for _, entry in pairs(entries) do
         local rec = entry.rec
         local pe, _, pfar, psrc = effortOf(entry, level, soon)
-        if rec and entry.usable and not rec.needs and not pfar and reqOf(entry, psrc) <= level + soon
+        local phidden = rec and GP.Hide and (GP.Hide.IsItem(rec.id) or entry.hiddenAll)
+        if rec and entry.usable and not phidden and not GP.Items.NeedsOf(rec) and not pfar and reqOf(entry, psrc) <= level + soon
             and pe <= 1 and (allowHealer or not Score.HealerGear(rec, weights)) then
             local loc = rec.equipLoc
             if loc == "INVTYPE_WEAPON" or loc == "INVTYPE_WEAPONMAINHAND" then
@@ -460,9 +461,12 @@ function Score.Run()
     end
 
     local res = { bySlot = newSlotTable(), all = {}, byID = {}, primary = 0, secondary = 0, locked = 0 }
+    local Hide = GP.Hide
     for _, entry in pairs(entries) do
         local rec = entry.rec
-        if rec and entry.usable then
+        -- Hidden (Hide.lua): the item itself, or every vendor that sells it.
+        local hidden = rec and Hide and (Hide.IsItem(rec.id) or entry.hiddenAll)
+        if rec and entry.usable and not hidden then
             -- Mail at 40 for a hunter: the item waits for that level too, and
             -- so does a quest you can't pick up yet.
             local effort, srcLevel, far, src = effortOf(entry, level, soon)
@@ -471,7 +475,7 @@ function Score.Run()
             if slot and req <= level + ahead then
                 local ev = { entry = entry, rec = rec, slot = slot, delta = delta, pct = pct, base = base,
                     points = points, source = src, effort = effort, req = req, srcLevel = srcLevel,
-                    needs = rec.needs or (src and src.needs),
+                    needs = GP.Items.NeedsOf(rec) or (src and src.needs),
                     far = far }
                 -- A weapon skill, Mail or Plate, or Dual Wield still to learn (Training.lua).
                 if GP.Training then ev.train = GP.Training.Need(rec, slot) end

@@ -69,6 +69,7 @@ Upgrade math: `lua5.1 scoring_test.lua <addon folder>` and zone data:
 `lua5.1 zone_test.lua <addon folder>`; both must end with 0 failed and 0 errors.
 October 23, 2026 (0.7.1 work): every suite above, 3,192 checks, 0 failed.
 October 29, 2026 (0.7.2): every suite above, 0 failed.
+November 7, 2026 (0.7.14): every suite above, 0 failed (native 459 checks).
 
 QuestieDB zone check after a QuestieDB update: from `harness/`,
 `GPDIR=<addon folder> lua5.1 qdb.lua <QuestieDB folder> ../queries/zones.lua` (shape only;

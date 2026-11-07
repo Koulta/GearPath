@@ -382,42 +382,62 @@ t("right here", "genau hier", "juste ici", "aquí mismo", "bem aqui", "прям�
 -- Clicks, tooltips, the stats panel
 -- ---------------------------------------------------------------------
 
-t("Click: try it on.  Right-click: map pin.  Ctrl-click: dressing room.  Shift-click: link.",
-    "Klick: anprobieren.  Rechtsklick: Kartenmarkierung.  Strg-Klick: Anprobe.  Umschalt-Klick: verlinken.",
-    "Clic : essayer.  Clic droit : repère sur la carte.  Ctrl-clic : cabine d'essayage.  Maj-clic : lien.",
-    "Clic: probar.  Clic derecho: marcador del mapa.  Ctrl-clic: probador.  Mayús-clic: enlace.",
-    "Clique: experimentar.  Clique direito: marcador no mapa.  Ctrl-clique: provador.  Shift-clique: link.",
-    "Клик: примерить.  ПКМ: метка на карте.  Ctrl-клик: примерочная.  Shift-клик: ссылка.",
-    "클릭: 착용해 보기.  우클릭: 지도 핀.  Ctrl-클릭: 미리보기.  Shift-클릭: 링크.",
-    "点击：试穿。  右键：地图标记。  Ctrl-点击：试衣间。  Shift-点击：链接。",
-    "點擊：試穿。  右鍵：地圖標記。  Ctrl-點擊：試衣間。  Shift-點擊：連結。")
-t("Click: try it on.  Ctrl-click: dressing room.  Shift-click: link.",
-    "Klick: anprobieren.  Strg-Klick: Anprobe.  Umschalt-Klick: verlinken.",
-    "Clic : essayer.  Ctrl-clic : cabine d'essayage.  Maj-clic : lien.",
-    "Clic: probar.  Ctrl-clic: probador.  Mayús-clic: enlace.",
-    "Clique: experimentar.  Ctrl-clique: provador.  Shift-clique: link.",
-    "Клик: примерить.  Ctrl-клик: примерочная.  Shift-клик: ссылка.",
-    "클릭: 착용해 보기.  Ctrl-클릭: 미리보기.  Shift-클릭: 링크.",
-    "点击：试穿。  Ctrl-点击：试衣间。  Shift-点击：链接。",
-    "點擊：試穿。  Ctrl-點擊：試衣間。  Shift-點擊：連結。")
-t("Click: map pin.  Ctrl-click: dressing room.  Shift-click: link.",
-    "Klick: Kartenmarkierung.  Strg-Klick: Anprobe.  Umschalt-Klick: verlinken.",
-    "Clic : repère sur la carte.  Ctrl-clic : cabine d'essayage.  Maj-clic : lien.",
-    "Clic: marcador del mapa.  Ctrl-clic: probador.  Mayús-clic: enlace.",
-    "Clique: marcador no mapa.  Ctrl-clique: provador.  Shift-clique: link.",
-    "Клик: метка на карте.  Ctrl-клик: примерочная.  Shift-клик: ссылка.",
-    "클릭: 지도 핀.  Ctrl-클릭: 미리보기.  Shift-클릭: 링크.",
-    "点击：地图标记。  Ctrl-点击：试衣间。  Shift-点击：链接。",
-    "點擊：地圖標記。  Ctrl-點擊：試衣間。  Shift-點擊：連結。")
-t("No map pin: where it is isn't in the database yet.  Ctrl-click: dressing room.  Shift-click: link.",
-    "Keine Kartenmarkierung: der Ort fehlt noch in der Datenbank.  Strg-Klick: Anprobe.  Umschalt-Klick: verlinken.",
-    "Pas de repère : le lieu n'est pas encore dans la base.  Ctrl-clic : cabine d'essayage.  Maj-clic : lien.",
-    "Sin marcador: el lugar aún no está en la base de datos.  Ctrl-clic: probador.  Mayús-clic: enlace.",
-    "Sem marcador: o local ainda não está no banco de dados.  Ctrl-clique: provador.  Shift-clique: link.",
-    "Метки нет: места ещё нет в базе.  Ctrl-клик: примерочная.  Shift-клик: ссылка.",
-    "지도 핀 없음: 위치가 아직 데이터베이스에 없습니다.  Ctrl-클릭: 미리보기.  Shift-클릭: 링크.",
-    "无地图标记：数据库中尚无位置。  Ctrl-点击：试衣间。  Shift-点击：链接。",
-    "無地圖標記：資料庫中尚無位置。  Ctrl-點擊：試衣間。  Shift-點擊：連結。")
+t("Click: try it on.  Right-click: map pin or hide.  Ctrl-click: dressing room.  Shift-click: link.",
+    "Klick: anprobieren.  Rechtsklick: Kartenmarkierung oder ausblenden.  Strg-Klick: Anprobe.  Umschalt-Klick: verlinken.",
+    "Clic : essayer.  Clic droit : repère sur la carte ou masquer.  Ctrl-clic : cabine d'essayage.  Maj-clic : lien.",
+    "Clic: probar.  Clic derecho: marcador del mapa u ocultar.  Ctrl-clic: probador.  Mayús-clic: enlace.",
+    "Clique: experimentar.  Clique direito: marcador no mapa ou ocultar.  Ctrl-clique: provador.  Shift-clique: link.",
+    "Клик: примерить.  ПКМ: метка на карте или скрыть.  Ctrl-клик: примерочная.  Shift-клик: ссылка.",
+    "클릭: 착용해 보기.  우클릭: 지도 핀 또는 숨기기.  Ctrl-클릭: 미리보기.  Shift-클릭: 링크.",
+    "点击：试穿。  右键：地图标记或隐藏。  Ctrl-点击：试衣间。  Shift-点击：链接。",
+    "點擊：試穿。  右鍵：地圖標記或隱藏。  Ctrl-點擊：試衣間。  Shift-點擊：連結。")
+t("Click: try it on.  Right-click: hide.  Ctrl-click: dressing room.  Shift-click: link.",
+    "Klick: anprobieren.  Rechtsklick: ausblenden.  Strg-Klick: Anprobe.  Umschalt-Klick: verlinken.",
+    "Clic : essayer.  Clic droit : masquer.  Ctrl-clic : cabine d'essayage.  Maj-clic : lien.",
+    "Clic: probar.  Clic derecho: ocultar.  Ctrl-clic: probador.  Mayús-clic: enlace.",
+    "Clique: experimentar.  Clique direito: ocultar.  Ctrl-clique: provador.  Shift-clique: link.",
+    "Клик: примерить.  ПКМ: скрыть.  Ctrl-клик: примерочная.  Shift-клик: ссылка.",
+    "클릭: 착용해 보기.  우클릭: 숨기기.  Ctrl-클릭: 미리보기.  Shift-클릭: 링크.",
+    "点击：试穿。  右键：隐藏。  Ctrl-点击：试衣间。  Shift-点击：链接。",
+    "點擊：試穿。  右鍵：隱藏。  Ctrl-點擊：試衣間。  Shift-點擊：連結。")
+t("Click: map pin.  Right-click: hide.  Ctrl-click: dressing room.  Shift-click: link.",
+    "Klick: Kartenmarkierung.  Rechtsklick: ausblenden.  Strg-Klick: Anprobe.  Umschalt-Klick: verlinken.",
+    "Clic : repère sur la carte.  Clic droit : masquer.  Ctrl-clic : cabine d'essayage.  Maj-clic : lien.",
+    "Clic: marcador del mapa.  Clic derecho: ocultar.  Ctrl-clic: probador.  Mayús-clic: enlace.",
+    "Clique: marcador no mapa.  Clique direito: ocultar.  Ctrl-clique: provador.  Shift-clique: link.",
+    "Клик: метка на карте.  ПКМ: скрыть.  Ctrl-клик: примерочная.  Shift-клик: ссылка.",
+    "클릭: 지도 핀.  우클릭: 숨기기.  Ctrl-클릭: 미리보기.  Shift-클릭: 링크.",
+    "点击：地图标记。  右键：隐藏。  Ctrl-点击：试衣间。  Shift-点击：链接。",
+    "點擊：地圖標記。  右鍵：隱藏。  Ctrl-點擊：試衣間。  Shift-點擊：連結。")
+t("No map pin: where it is isn't in the database yet.  Right-click: hide.  Ctrl-click: dressing room.  Shift-click: link.",
+    "Keine Kartenmarkierung: der Ort fehlt noch in der Datenbank.  Rechtsklick: ausblenden.  Strg-Klick: Anprobe.  Umschalt-Klick: verlinken.",
+    "Pas de repère : le lieu n'est pas encore dans la base.  Clic droit : masquer.  Ctrl-clic : cabine d'essayage.  Maj-clic : lien.",
+    "Sin marcador: el lugar aún no está en la base de datos.  Clic derecho: ocultar.  Ctrl-clic: probador.  Mayús-clic: enlace.",
+    "Sem marcador: o local ainda não está no banco de dados.  Clique direito: ocultar.  Ctrl-clique: provador.  Shift-clique: link.",
+    "Метки нет: места ещё нет в базе.  ПКМ: скрыть.  Ctrl-клик: примерочная.  Shift-клик: ссылка.",
+    "지도 핀 없음: 위치가 아직 데이터베이스에 없습니다.  우클릭: 숨기기.  Ctrl-클릭: 미리보기.  Shift-클릭: 링크.",
+    "无地图标记：数据库中尚无位置。  右键：隐藏。  Ctrl-点击：试衣间。  Shift-点击：链接。",
+    "無地圖標記：資料庫中尚無位置。  右鍵：隱藏。  Ctrl-點擊：試衣間。  Shift-點擊：連結。")
+t("Map pin", "Kartenmarkierung", "Repère sur la carte", "Marcador del mapa", "Marcador no mapa", "Метка на карте", "지도 핀", "地图标记", "地圖標記")
+t("Hide items from %s", "Gegenstände von %s ausblenden", "Masquer les objets de %s", "Ocultar objetos de %s", "Ocultar itens de %s",
+    "Скрыть предметы: %s", "%s의 아이템 숨기기", "隐藏%s的物品", "隱藏%s的物品")
+t("Hide this item", "Diesen Gegenstand ausblenden", "Masquer cet objet", "Ocultar este objeto", "Ocultar este item",
+    "Скрыть этот предмет", "이 아이템 숨기기", "隐藏此物品", "隱藏此物品")
+t("Hidden vendors and items", "Ausgeblendete Händler und Gegenstände", "Marchands et objets masqués", "Vendedores y objetos ocultos",
+    "Vendedores e itens ocultos", "Скрытые торговцы и предметы", "숨긴 상인과 아이템", "已隐藏的商人和物品", "已隱藏的商人和物品")
+t("Right-click an item in the window to hide its vendor or the item. Hidden ones are left off the lists; tooltips still show them.",
+    "Rechtsklick auf einen Gegenstand im Fenster blendet seinen Händler oder ihn selbst aus. Ausgeblendetes fehlt in den Listen; Tooltips zeigen es weiter.",
+    "Clic droit sur un objet dans la fenêtre pour masquer son marchand ou l'objet. Ce qui est masqué quitte les listes ; les infobulles le montrent toujours.",
+    "Clic derecho en un objeto de la ventana para ocultar su vendedor o el objeto. Lo oculto sale de las listas; las descripciones lo siguen mostrando.",
+    "Clique direito num item da janela para ocultar o vendedor ou o item. O que estiver oculto sai das listas; as dicas continuam mostrando.",
+    "ПКМ по предмету в окне скрывает его торговца или сам предмет. Скрытое не попадает в списки; подсказки показывают его как раньше.",
+    "창에서 아이템을 우클릭하면 그 상인이나 아이템을 숨깁니다. 숨긴 것은 목록에서 빠지며, 툴팁에는 계속 표시됩니다.",
+    "在窗口中右键点击物品，可隐藏其商人或该物品。隐藏的内容不会出现在列表中；鼠标提示仍会显示。",
+    "在視窗中右鍵點擊物品，可隱藏其商人或該物品。隱藏的內容不會出現在清單中；滑鼠提示仍會顯示。")
+t("%s (vendor)", "%s (Händler)", "%s (marchand)", "%s (vendedor)", "%s (vendedor)", "%s (торговец)", "%s (상인)", "%s（商人）", "%s（商人）")
+t("%s (item)", "%s (Gegenstand)", "%s (objet)", "%s (objeto)", "%s (item)", "%s (предмет)", "%s (아이템)", "%s（物品）", "%s（物品）")
+t("Show again", "Wieder zeigen", "Réafficher", "Mostrar de nuevo", "Mostrar de novo", "Показать снова", "다시 보기", "重新显示", "重新顯示")
+t("Nothing hidden.", "Nichts ausgeblendet.", "Rien de masqué.", "Nada oculto.", "Nada oculto.", "Ничего не скрыто.", "숨긴 것이 없습니다.", "没有隐藏的内容。", "沒有隱藏的內容。")
 t("No map pin: where it is isn't in the database yet.", "Keine Kartenmarkierung: der Ort fehlt noch in der Datenbank.",
     "Pas de repère : le lieu n'est pas encore dans la base.", "Sin marcador: el lugar aún no está en la base de datos.",
     "Sem marcador: o local ainda não está no banco de dados.", "Метки нет: места ещё нет в базе.",

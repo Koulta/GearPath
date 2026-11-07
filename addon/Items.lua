@@ -198,13 +198,110 @@ local function unmetNeed(line, left)
     return need
 end
 
+-- Any requirement but the level, met or not ("Sergeant", "Silverwing
+-- Sentinels - Honored"): what kind of gear it is, whatever the line's colour
+-- (dmann420, Nov 7: Illiyana Moonblaze's reputation gear listed as plain
+-- vendor gear).
+local function anyNeed(left)
+    if left:match(LEVEL_PATTERN) then return nil end
+    return left:match(REQ_PATTERN)
+end
+
+-- A reputation requirement: { faction, standing (1-8), text } or nil.
+-- From the game's template ("Requires %s - %s") and its standing names.
+local REP_TEMPLATE = type(ITEM_REQ_REPUTATION) == "string" and ITEM_REQ_REPUTATION or "Requires %s - %s"
+local REP_PATTERN = "^" .. escape(REP_TEMPLATE):gsub("%%s", "(.+)") .. "$"
+local standings
+local function standingOf(word)
+    if not standings then
+        standings = {}
+        local en = { "Hated", "Hostile", "Unfriendly", "Neutral", "Friendly", "Honored", "Revered", "Exalted" }
+        for i = 1, 8 do
+            standings[en[i]] = i
+            for _, suffix in ipairs({ "", "_FEMALE" }) do
+                local name = rawget(_G, "FACTION_STANDING_LABEL" .. i .. suffix)
+                if type(name) == "string" and name ~= "" then standings[name] = i end
+            end
+        end
+    end
+    return standings[word]
+end
+
+function Items.RepNeed(left)
+    if type(left) ~= "string" then return nil end
+    local a, b = left:match(REP_PATTERN)
+    if not a then return nil end
+    -- Either order (some languages put the standing first).
+    local faction, standing = a, standingOf(b)
+    if not standing then faction, standing = b, standingOf(a) end
+    if not standing then return nil end
+    local text = left:match(REQ_PATTERN) or (faction .. " - " .. b)
+    return { faction = faction, standing = standing, text = text }
+end
+
+-- Your standing with each faction the game lists: { [name] = 1-8 }.
+-- Factions under a collapsed header aren't listed: unknown (nil).
+local standingCache
+function Items.ResetStandings() standingCache = nil end
+local function myStandings()
+    if standingCache then return standingCache end
+    local t = {}
+    if GetNumFactions and GetFactionInfo then
+        for i = 1, GP.Plain(GetNumFactions()) or 0 do
+            local ok, name, _, standing, _, _, _, _, _, isHeader, _, hasRep = pcall(GetFactionInfo, i)
+            name, standing = ok and GP.Plain(name), ok and GP.Plain(standing)
+            if type(name) == "string" and type(standing) == "number" and (not isHeader or hasRep) then
+                t[name] = standing
+            end
+        end
+    end
+    standingCache = t
+    return t
+end
+
+GP.RegisterEvent("UPDATE_FACTION", function()
+    standingCache = nil
+    if GP.Score then GP.Score.Request() end
+end)
+
+-- Whether you meet a reputation requirement: true, false, or nil (can't tell).
+function Items.RepMet(rep)
+    if type(rep) ~= "table" then return nil end
+    local have = myStandings()[rep.faction]
+    if not have then return nil end
+    return have >= rep.standing
+end
+
+-- What an item needs that you don't have, now: a reputation is checked
+-- against your standing (so it clears as you earn it, without a /reload),
+-- anything else is the tooltip's red line.
+function Items.NeedsOf(rec)
+    if not rec then return nil end
+    if rec.rep then
+        local met = Items.RepMet(rec.rep)
+        if met == true then return nil end
+        if met == false then return rec.rep.text end
+    end
+    return rec.needs
+end
+
+-- Whether the game has finished the item's tooltip: one still loading has
+-- only its name (or "Retrieving item information").
+function Items.TooltipComplete(data)
+    local lines = tooltipLines(data)
+    if not lines or #lines < 2 then return false end
+    local first = lineText(lines[1], "leftText")
+    if first and type(RETRIEVING_ITEM_INFO) == "string" and first == RETRIEVING_ITEM_INFO then return false end
+    return true
+end
+
 -- Reads stats out of an item's tooltip. Returns found (key -> value),
 -- the classes it's limited to (a set of localized names, or nil),
 -- whether it's unique-equipped, and a requirement you don't meet (or nil).
 function Items.ParseTooltip(data)
-    local found, classes, unique, needs = {}, nil, false, nil
+    local found, classes, unique, needs, rule, rep = {}, nil, false, nil, nil, nil
     local lines = tooltipLines(data)
-    if not lines then return found, classes, unique, needs end
+    if not lines then return found, classes, unique, needs, rule, rep end
     local equipPrefix = type(ITEM_SPELL_TRIGGER_ONEQUIP) == "string" and ITEM_SPELL_TRIGGER_ONEQUIP:lower() or "equip:"
     local code = Items.Locale()
     local patterns = linePatterns(code)
@@ -254,9 +351,11 @@ function Items.ParseTooltip(data)
                 unique = true
             end
             needs = needs or unmetNeed(lines[i], left)
+            rule = rule or anyNeed(left)
+            rep = rep or Items.RepNeed(left)
         end
     end
-    return found, classes, unique, needs
+    return found, classes, unique, needs, rule, rep
 end
 
 -- ---------------------------------------------------------------------
@@ -284,11 +383,11 @@ function Items.ReadStats(link, tooltipData)
             end
         end
     end
-    local found, classes, unique, needs = Items.ParseTooltip(tooltipData)
+    local found, classes, unique, needs, rule, rep = Items.ParseTooltip(tooltipData)
     for k, v in pairs(found) do
         if stats[k] == nil or PERCENT_STATS[k] then stats[k] = v end
     end
-    return stats, classes, unique, needs
+    return stats, classes, unique, needs, rule, rep
 end
 
 local function tooltipFor(idOrLink)
@@ -311,10 +410,32 @@ local function build(id, link)
         id = id, name = name, link = link, quality = quality, ilvl = ilvl, reqLevel = reqLevel or 0,
         equipLoc = equipLoc, icon = icon, classID = classID, subClassID = subClassID,
     }
-    rec.stats, rec.classes, rec.unique, rec.needs = Items.ReadStats(link, tooltipFor(link))
+    local tip = tooltipFor(link)
+    rec.stats, rec.classes, rec.unique, rec.needs, rec.rule, rec.rep = Items.ReadStats(link, tip)
     -- The weapon speed is kept apart from the stats (it isn't a bonus).
     rec.speed, rec.stats.speed = rec.stats.speed, nil
+    -- A tooltip the game hadn't finished: read again later (Items.Get),
+    -- or a "Requires" line could be missed until /reload.
+    if C_TooltipInfo and not Items.TooltipComplete(tip) then rec.partial = 0 end
     return rec
+end
+
+Items.REREAD_TRIES = 5
+
+-- Reads a record's tooltip again, if the first read came back unfinished.
+local function reread(rec)
+    local now = GetTime and GetTime() or 0
+    if rec.partialAt and now - rec.partialAt < 1 then return end
+    rec.partialAt = now
+    rec.partial = rec.partial + 1
+    local tip = tooltipFor(rec.link or rec.id)
+    if not Items.TooltipComplete(tip) then
+        if rec.partial >= Items.REREAD_TRIES then rec.partial = nil end
+        return
+    end
+    rec.stats, rec.classes, rec.unique, rec.needs, rec.rule, rec.rep = Items.ReadStats(rec.link, tip)
+    rec.speed, rec.stats.speed = rec.stats.speed, nil
+    rec.partial = nil
 end
 
 function Items.IDFromLink(link)
@@ -333,7 +454,10 @@ end
 -- The record if the client has the item, else nil (and it's asked for).
 function Items.Get(id)
     local rec = Items.cache[id]
-    if rec then return rec end
+    if rec then
+        if rec.partial then reread(rec) end
+        return rec
+    end
     if IsCached and not IsCached(id) then
         if RequestLoad then pcall(RequestLoad, id) end
         return nil

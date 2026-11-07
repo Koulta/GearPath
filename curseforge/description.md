@@ -39,6 +39,7 @@
 
 ### Fits your setup
 
+- **Your call:** untick what you don't do (PvP rank, reputation, dungeons...), or right-click an item to hide it or the vendor it's from.
 - Item levels on the game's own Character window, a minimap button and a key binding.
 - Controller support, including ConsolePort.
 - Reads items in every WoW client language. The window is also translated (drafts made by machine; corrections welcome).

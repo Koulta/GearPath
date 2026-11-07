@@ -27,7 +27,9 @@ A class can learn more weapons than it starts with. Weapon masters in the capita
 **Crafted gear** comes from the game, not QuestieDB (which has no recipes): open your profession window and the gear your recipes make is added; open a profession trainer and the gear it teaches is added too, with the skill each recipe needs and where the trainer stands. With **ProfessionDB** installed (optional), every recipe of your professions is known from the start, with how to get it: the nearest trainer or pattern vendor of your faction, a quest, a named mob, or a random drop. A trainer's own skill number always wins over ProfessionDB's, which runs high for Forever and shows with a question mark ("Needs Tailoring (75?)") until you've seen a trainer. Only your own professions count, and each character's known recipes are its own.
 **Healer gear** (Healing is its biggest spell stat, like "+7 Healing, +3 Spell Damage") is left out, from drops, quests and vendors alike. Turn on **Healer gear** in Settings to list it anyway. (Classes whose weights count Healing aren't affected. Gear with "damage and healing" spell power isn't healer gear: it's everyone's.)
 
-**Show:** on every tab is one filter for the whole window. Tick the kinds of content you want (quests, dungeons, vendors, mob drops and rares, world drops and chests, your bags, PvP rank, reputation, professions) and untick the rest. The lists, the slot arrows, the route and Browse all follow it.
+**Show:** on every tab is one filter for the whole window. Tick the kinds of content you want (quests, dungeons, vendors, mob drops and rares, world drops and chests, your bags, PvP rank, reputation, professions) and untick the rest. The lists, the slot arrows, the route and Browse all follow it. Reputation and PvP rank gear count as such whether or not you have the standing or rank yet.
+
+**Hiding:** right-click an item in the window to hide the vendor it's from (**Hide items from <vendor>**) or the item itself. Settings > Hidden vendors and items lists what you hid, each with **Show again**.
 
 ## Client languages
 
@@ -37,7 +39,7 @@ GearPath's own window (tabs, lists, buttons, Settings) is translated into German
 
 ## Controllers
 
-With the game's gamepad mode on, GearPath's window takes the controller while it's open: the D-pad moves through the list (on the Character tab, left and right go through the slots; on Settings it scrolls), **A** clicks, **X** is the right-click (the map pin on the Character tab), **Y** puts on what you tried on (or takes it off), the shoulder buttons change tab, and **B** (or Back, or Start) closes the window and gives the controller back. Bind a button to open GearPath under Key Bindings > AddOns > GearPath. With ConsolePort installed, its own cursor drives the window instead.
+With the game's gamepad mode on, GearPath's window takes the controller while it's open: the D-pad moves through the list (on the Character tab, left and right go through the slots; on Settings it scrolls), **A** clicks, **X** is the right-click (the map pin and hiding), **Y** puts on what you tried on (or takes it off), the shoulder buttons change tab, and **B** (or Back, or Start) closes the window and gives the controller back. Bind a button to open GearPath under Key Bindings > AddOns > GearPath. With ConsolePort installed, its own cursor drives the window instead.
 
 ## Checking and sharing
 
@@ -89,7 +91,7 @@ When you get there, the pin clears itself and chat says what to do: "Talk to Nog
 
 ## Clicks
 
-On the Route and Browse tabs, click an item to put the game's map pin on where you get it and open the world map there; on the Route tab, clicking a zone or dungeon bar pins that place. On the Character tab, click an item to try it on the model; right-click for the map pin. Anywhere: Ctrl-click opens the game's dressing room and Shift-click links the item in chat, as on any item in the game.
+On the Route and Browse tabs, click an item to put the game's map pin on where you get it and open the world map there; on the Route tab, clicking a zone or dungeon bar pins that place. On the Character tab, click an item to try it on the model; right-click for the map pin or to hide it. On the other tabs, right-click to hide the item or its vendor. Anywhere: Ctrl-click opens the game's dressing room and Shift-click links the item in chat, as on any item in the game.
 
 ## License and credits
 

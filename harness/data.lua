@@ -276,6 +276,7 @@ local itemIds = {}
 for id in pairs(DB_ITEMS) do itemIds[#itemIds + 1] = id end
 table.sort(itemIds)
 
+H.DB_ITEMS, H.NPCS, H.itemIds = DB_ITEMS, NPCS, itemIds
 if not H.noDB then
     LibQuestieDB = {
         readMode = "baked",

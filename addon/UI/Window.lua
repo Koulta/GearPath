@@ -204,6 +204,11 @@ function UI.ContentOf(ev)
         if needs:find("%(%d+%??%)") then return "craft" end
         return "rep"
     end
+    -- Met already, but still reputation or PvP gear (a quartermaster's,
+    -- a PvP vendor's): unticking those under Show leaves it out too.
+    local rec = ev.rec
+    if rec and rec.rep then return "rep" end
+    if rec and rec.rule and PVP_RANKS[rec.rule] then return "pvp" end
     local src = ev.source
     if not src then return "world" end
     if src.kind == "bags" then return "bags" end
@@ -417,7 +422,7 @@ end
 -- lists, healer gear you tried on yourself counts.
 local function wearableNow(rec, slotKey)
     local level = (GP.player and GP.player.level) or UnitLevel("player") or 1
-    if (rec.reqLevel or 0) > level or rec.needs then return false end
+    if (rec.reqLevel or 0) > level or GP.Items.NeedsOf(rec) then return false end
     -- A weapon skill, armor or Dual Wield still to learn: the game won't put it on.
     if GP.Training and GP.Training.Need(rec, slotKey) then return false end
     if rec.classes and not rec.classes[select(2, UnitClass("player"))] and not rec.classes[UnitClass("player")] then return false end
@@ -575,16 +580,43 @@ end
 -- they do on any item in the game. On the Character tab a click tries it
 -- on the model; on Route and Browse a click puts the map pin on where you
 -- get it (as the row's pin button does), so nothing opens by surprise.
-function UI.ItemClick(ev, button)
+function UI.ItemClick(ev, button, owner)
     local link = linkOf(ev)
     if link and IsModifiedClick and IsModifiedClick() and HandleModifiedItemClick then
         if pcall(HandleModifiedItemClick, link) then return end
+    end
+    if button == "RightButton" and owner then
+        UI.RowMenu(ev, owner)
+        return
     end
     if button == "LeftButton" and UI.ModelShown() then
         UI.TryOn(link, ev)
         return
     end
     if ev.source and GP.Waypoint.CanSet(ev.source) then UI.Waypoint(ev.source, ev.rec.name) end
+end
+
+-- Right-click on an item row: the map pin (on the Character tab, where a
+-- click tries it on), hiding the vendor it's from, hiding the item.
+function UI.RowMenu(ev, owner)
+    if not (ev and ev.rec) then return end
+    local keys, labels = {}, {}
+    local src = ev.source
+    if src and UI.ModelShown() and GP.Waypoint.CanSet(src) then
+        keys[#keys + 1] = "pin"
+        labels.pin = L["Map pin"]
+    end
+    if src and GP.Hide.VendorKey(src) ~= nil then
+        keys[#keys + 1] = "vendor"
+        labels.vendor = string.format(L["Hide items from %s"], src.name or "?")
+    end
+    keys[#keys + 1] = "item"
+    labels.item = L["Hide this item"]
+    GP.Skin.current.Menu(owner, keys, labels, nil, function(k)
+        if k == "pin" then UI.Waypoint(src, ev.rec.name)
+        elseif k == "vendor" then GP.Hide.Vendor(src)
+        elseif k == "item" then GP.Hide.Item(ev.rec) end
+    end)
 end
 
 -- What the clicks on an item row do, for its tooltip (a controller's
@@ -596,11 +628,11 @@ function UI.ClickHint(ev)
         return pin and L["A: map pin."] or L["No map pin: where it is isn't in the database yet."]
     end
     if UI.ModelShown() then
-        return pin and L["Click: try it on.  Right-click: map pin.  Ctrl-click: dressing room.  Shift-click: link."]
-            or L["Click: try it on.  Ctrl-click: dressing room.  Shift-click: link."]
+        return pin and L["Click: try it on.  Right-click: map pin or hide.  Ctrl-click: dressing room.  Shift-click: link."]
+            or L["Click: try it on.  Right-click: hide.  Ctrl-click: dressing room.  Shift-click: link."]
     end
-    return pin and L["Click: map pin.  Ctrl-click: dressing room.  Shift-click: link."]
-        or L["No map pin: where it is isn't in the database yet.  Ctrl-click: dressing room.  Shift-click: link."]
+    return pin and L["Click: map pin.  Right-click: hide.  Ctrl-click: dressing room.  Shift-click: link."]
+        or L["No map pin: where it is isn't in the database yet.  Right-click: hide.  Ctrl-click: dressing room.  Shift-click: link."]
 end
 
 -- ---------------------------------------------------------------------

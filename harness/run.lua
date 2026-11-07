@@ -136,7 +136,20 @@ if itemRow then
     print("  tooltip:\n    " .. text:gsub("\n", "\n    "))
     itemRow:Click("LeftButton")
     check(UI.model._tried ~= nil, "click tries the item on the model")
+    H.lastMenu = nil
     itemRow:Click("RightButton")
+    do  -- Right-click opens a menu; on the Character tab its first line is the map pin.
+        local m = H.lastMenu
+        if m and m.radios then
+            check(m.radios[#m.radios].text == "Hide this item", "right-click menu ends with Hide this item")
+            for _, r in ipairs(m.radios) do if r.text == "Map pin" then r.setSel() end end
+        elseif m then
+            check(m.values[m.keys[#m.keys]] == "Hide this item", "right-click menu ends with Hide this item")
+            for _, k in ipairs(m.keys) do if k == "pin" then m.onPick(k) end end
+        else
+            check(false, "right-click opens a menu")
+        end
+    end
     if not H.noDB then check(H.waypoint ~= nil or H.printed[#H.printed]:find("Waypoint"), "right-click sets a waypoint") end
     if H.waypoint then print(string.format("  waypoint: map %d at %.3f, %.3f", H.waypoint.m, H.waypoint.x, H.waypoint.y)) end
     if not H.noDB then
@@ -1692,6 +1705,110 @@ do
     check(not GP.Crafts.Available(), "ProfessionDB gone: nothing from it")
     GP.Sources.Scan()
     for _ = 1, 60 do H.Tick(0.1) end
+end
+
+-- Reputation gear, met or not, and hiding a vendor or an item (dmann420 on
+-- CurseForge, Nov 7: Illiyana Moonblaze's reputation gear listed as plain
+-- vendor gear; "an option to blacklist a vendor").
+do
+    local Items = GP.Items
+    local rep = Items.RepNeed("Requires Silverwing Sentinels - Honored")
+    check(rep and rep.faction == "Silverwing Sentinels" and rep.standing == 6 and rep.text == "Silverwing Sentinels - Honored",
+        "a reputation requirement is read: faction, standing, text")
+    check(Items.RepNeed("Requires Sergeant") == nil and Items.RepNeed("Requires Tailoring (150)") == nil, "a rank or a skill isn't a reputation")
+    check(not Items.TooltipComplete({ lines = { { leftText = "Retrieving item information" } } }), "a tooltip still loading isn't complete")
+    check(Items.TooltipComplete({ lines = { { leftText = "Boots" }, { leftText = "Feet" } } }), "a full one is")
+    local _, _, _, needs, rule, r2 = Items.ParseTooltip({ lines = { { leftText = "Pants" },
+        { leftText = "Requires Silverwing Sentinels - Honored", leftColor = { r = 1, g = 1, b = 1 } } } })
+    check(needs == nil and rule == "Silverwing Sentinels - Honored" and r2 and r2.standing == 6, "a white (met) reputation line: no need, but known as reputation gear")
+
+    if not H.noDB then
+        -- Two pairs of pants from a quartermaster near you; the second also from Abigail Shiel.
+        H.ITEMS[257] = { "Sentinel Test Pants", 2, 28, 20, "INVTYPE_LEGS", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 25 },
+            { "Binds when picked up", { "Requires Silverwing Sentinels - Honored", 1, 1, 1 } } }
+        H.ITEMS[258] = { "Shared Test Leggings", 2, 28, 20, "INVTYPE_LEGS", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 15 },
+            { "Binds when equipped", "Legs" } }
+        H.DB_ITEMS[257] = { class = 4, subClass = 1, requiredLevel = 20, name = "Sentinel Test Pants", vendors = { 9014 } }
+        H.DB_ITEMS[258] = { class = 4, subClass = 1, requiredLevel = 20, name = "Shared Test Leggings", vendors = { 9014, 9001 } }
+        H.NPCS[9014] = { name = "Test Quartermaster", friendlyToFaction = "AH", spawns = { [85] = { { 60.5, 51.5 } } }, zoneID = 85 }
+        local ids = H.itemIds
+        ids[#ids + 1], ids[#ids + 2] = 257, 258
+        local standing = 5
+        GetNumFactions = function() return 2 end
+        GetFactionInfo = function(i)
+            if i == 1 then return "Alliance Forces", "", 4, 0, 0, 0, false, false, true, false, false end
+            return "Silverwing Sentinels", "", standing, 0, 0, 0, false, false, false, false, true
+        end
+        Items.ResetStandings()
+        GP.Sources.Scan()
+        for _ = 1, 60 do H.Tick(0.1) end
+        local pants = GP.Score.ForItem(257)
+        check(pants and pants.needs == "Silverwing Sentinels - Honored" and pants.tier == "locked",
+            "Friendly with an Honored item: needs the reputation, under Needs something first (" .. tostring(pants and pants.needs) .. ", " .. tostring(pants and pants.tier) .. ")")
+        check(GP.UI.ContentOf(pants) == "rep", "and it's under Reputation")
+        standing = 6
+        H.Fire("UPDATE_FACTION")
+        for _ = 1, 5 do H.Tick(0.1) end
+        pants = GP.Score.ForItem(257)
+        check(pants and pants.needs == nil and pants.tier ~= "locked", "Honored now: no need, without a /reload (" .. tostring(pants and pants.tier) .. ")")
+        check(GP.UI.ContentOf(pants) == "rep", "still reputation gear, so unticking Reputation leaves it out")
+
+        -- Hide the quartermaster: its own pants go, the shared ones keep Abigail Shiel.
+        local legs = GP.Score.ForItem(258)
+        check(legs and legs.source and legs.source.id == 9014, "the shared leggings: the quartermaster is nearest")
+        GP.UI.hintFor = nil
+        local row = CreateFrame("Button")
+        H.lastMenu = nil
+        GP.UI.ItemClick(pants, "RightButton", row)
+        local function menuLabels()
+            local m, out = H.lastMenu, {}
+            if not m then return out end
+            if m.radios then for _, r in ipairs(m.radios) do out[#out + 1] = r.text end
+            else for _, k in ipairs(m.keys) do out[#out + 1] = m.values[k] end end
+            return out
+        end
+        local function pick(text)
+            local m = H.lastMenu
+            if m.radios then for _, r in ipairs(m.radios) do if r.text == text then r.setSel() return true end end
+            else for _, k in ipairs(m.keys) do if m.values[k] == text then m.onPick(k) return true end end end
+        end
+        local labels = table.concat(menuLabels(), " / ")
+        check(labels == "Hide items from Test Quartermaster / Hide this item", "right-click: hide the vendor or the item (" .. labels .. ")")
+        check(pick("Hide items from Test Quartermaster"), "picked Hide items from Test Quartermaster")
+        for _ = 1, 5 do H.Tick(0.1) end
+        check(GP.Score.ForItem(257) == nil, "the quartermaster's own pants are off the lists")
+        legs = GP.Score.ForItem(258)
+        check(legs and legs.source and legs.source.id == 9001, "the shared leggings now come from Abigail Shiel (" .. tostring(legs and legs.source and legs.source.name) .. ")")
+        GameTooltip._lines = {}
+        GP.Tooltip.Add(GameTooltip, 257)
+        check(table.concat(GameTooltip._lines, "\n"):find("GearPath %("), "the hidden vendor's item still has its tooltip")
+        -- Hide an item.
+        GP.UI.ItemClick(legs, "RightButton", row)
+        check(pick("Hide this item"), "picked Hide this item")
+        for _ = 1, 5 do H.Tick(0.1) end
+        check(GP.Score.ForItem(258) == nil, "a hidden item is off the lists")
+        local list = GP.Hide.List()
+        check(#list == 2 and list[1].kind == "v" and list[1].name == "Test Quartermaster" and list[2].name == "Shared Test Leggings",
+            "Settings lists the vendor, then the item")
+        -- Settings shows them, and Show again brings them back.
+        GP.Toggle("settings")
+        local rows = GP.UI.Settings.hiddenRows or {}
+        check(rows[1] and rows[1].text:GetText() == "Test Quartermaster (vendor)" and rows[2] and rows[2].text:GetText() == "Shared Test Leggings (item)",
+            "Settings: Test Quartermaster (vendor), Shared Test Leggings (item)")
+        rows[1].show:Click("LeftButton")
+        rows[1].show:Click("LeftButton")
+        for _ = 1, 5 do H.Tick(0.1) end
+        check(#GP.Hide.List() == 0 and rows[1].text:GetText() == "Nothing hidden.", "Show again on both: Nothing hidden.")
+        check(GP.Score.ForItem(257) and GP.Score.ForItem(258), "and both are back on the lists")
+        GP.Toggle("settings")
+
+        H.ITEMS[257], H.ITEMS[258], H.DB_ITEMS[257], H.DB_ITEMS[258], H.NPCS[9014] = nil, nil, nil, nil, nil
+        ids[#ids], ids[#ids - 1] = nil, nil
+        GetNumFactions, GetFactionInfo = nil, nil
+        Items.ResetStandings()
+        GP.Sources.Scan()
+        for _ = 1, 60 do H.Tick(0.1) end
+    end
 end
 
 -- The tooltip: how much better or worse than what you have on (by your

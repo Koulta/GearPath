@@ -32,6 +32,7 @@ GearPath looks at your class, spec and level, finds every upgrade you can actual
 | **Rare watch** | An icon and a sound when a rare that drops an upgrade for you comes into view. |
 | **Crafted gear** | The gear your professions can make: what you can craft now, which trainer or vendor has the recipe, what needs more skill. From your profession window and trainers, or every recipe at once with ProfessionDB. |
 | **Weapon training** | Found a great staff but never learned Staves? GearPath says so and puts the weapon master on your route. |
+| **Your call** | Untick what you don't do under Show: (PvP rank, reputation, dungeons...), or right-click an item to hide it or the vendor it's from. Settings lists what you hid. |
 | **Learns and shares** | Quest rewards, loot and vendor gear you see are remembered and shared with other GearPath players, so new Forever gear shows up before the database has it. |
 
 Plus: every class and spec (tanks, healers and Forever's melee Survival hunters included), stat weights you can change and share as a short string, item levels on the Character window, a minimap button, controller and ConsolePort support, and the DaylightUI and EllesmereUI looks.
