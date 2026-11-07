@@ -219,6 +219,13 @@ it into a "craft" source: known (effort 1, route group "Craft it yourself"), tra
 adds learned crafts (addLearnedCrafts). Trainer recipe tooltips: hooksecurefunc on
 GameTooltip.SetTrainerService. Untested in game until Koulta opens a trainer.
 
+## Tooltip wording (0.7.11)
+
+Read through every tooltip shape on the real QuestieDB (a level-14 Horde warlock dump:
+scratchpad tips.lua = sweep.lua's setup + Tooltip.Add on one item per shape). Unscored
+items get Tooltip.QuickEval (CanUse + class limits + Score.Upgrade; never a tier). Known
+data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor) "AH".
+
 ## Version history (short)
 
 - 0.4.8 – personal release after two days of real play.

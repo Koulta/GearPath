@@ -48,7 +48,7 @@ function UI.Describe(src, long)
         if src.chain and src.chain[1] then
             local inner = string.format(L["chain of %d, starts with %s"], src.chainLength or (#src.chain + 1),
                 src.chain[1].name or "?")
-            if long and src.chainStart and src.chainStart.giver then inner = inner .. " " .. string.format(L["from %s"], src.chainStart.giver) end
+            if long and src.chainStart and src.chainStart.giver then inner = inner .. ", " .. string.format(L["from %s"], src.chainStart.giver) end
             t = t .. " (" .. inner .. ")"
         elseif long and src.giver then
             t = t .. " " .. string.format(L["from %s"], src.giver)
@@ -79,7 +79,8 @@ function UI.Describe(src, long)
             if src.count and src.count > 1 then
                 return string.format(L["Random chest loot (%d kinds of chest, like %s)"], src.count, src.name or "?")
             end
-            return string.format(L["Random chests: %s (spawns all over)"], src.name or "?")
+            if not src.name then return L["Random chests (spawns all over)"] end
+            return string.format(L["Random chests: %s (spawns all over)"], src.name)
         end
         t = string.format(L["Found in: %s"], src.name or "?")
         where = src.dungeon or src.zone
@@ -90,13 +91,7 @@ function UI.Describe(src, long)
     if where and where ~= "" then
         t = t .. ", " .. where
     elseif not (src.kind == "quest" and src.startItem) then   -- an item that starts a quest says where itself
-        t = t .. (long and (" (" .. L["where isn't in the database yet"] .. ")") or (", " .. L["location unknown"]))
-    end
-    -- Out in the other faction's home zones (Westfall for a Horde player):
-    -- why it's Worth chasing and not Best now.
-    if GP.Sources.EnemyLand and GP.Sources.EnemyLand(src) then
-        local f = (GP.player or GP.PlayerInfo()).faction
-        t = t .. " (" .. L[f == "Horde" and "Alliance territory" or "Horde territory"] .. ")"
+        t = t .. (long and (" (" .. L["location not in the database yet"] .. ")") or (", " .. L["location unknown"]))
     end
     -- Only other players say so (the database doesn't): never passed off as fact.
     if src.shared and not src.dbKnown then t = t .. " (" .. L["reported by other players"] .. ")" end
@@ -109,6 +104,13 @@ function UI.Describe(src, long)
         else
             t = t .. string.format(" (%.1f, %.1f)", place.x * 100, place.y * 100)
         end
+    end
+    -- Out in the other faction's home zones (Westfall for a Horde player):
+    -- why it's Worth chasing and not Best now. After the coordinates, so
+    -- the zone's (x, y) never sits beside another bracket.
+    if GP.Sources.EnemyLand and GP.Sources.EnemyLand(src) then
+        local f = (GP.player or GP.PlayerInfo()).faction
+        t = t .. ", " .. L[f == "Horde" and "Alliance territory" or "Horde territory"]
     end
     return t
 end

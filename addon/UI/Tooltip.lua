@@ -33,6 +33,38 @@ function Tooltip.WandLine(rec)
     return left, string.format("%+.1f %s yours", d, d > 0 and "over" or "under"), d > 0 and GOOD or BAD
 end
 
+-- An item GearPath hasn't scored (an auction, a recipe at a trainer
+-- before its list is read, a link in chat): weighed on the spot, if you
+-- could wear it. Where it comes from isn't known, so it's never Best now.
+function Tooltip.QuickEval(rec)
+    if not (rec and rec.equipLoc and rec.classID) then return nil end
+    if rec.classes and not rec.classes[UnitClass("player")] then return nil end
+    if not GP.Classes.CanUse(rec.classID, rec.subClassID, rec.equipLoc) then return nil end
+    local slot, delta, pct, base = GP.Score.Upgrade(rec)
+    if not slot then return nil end
+    return { rec = rec, slot = slot, delta = delta, pct = pct, base = base, quick = true, req = rec.reqLevel }
+end
+
+-- Better, but not on your lists: why, in a few words.
+local function offList(ev)
+    local src = ev.source
+    if ev.quick then
+        local level = (GP.player and GP.player.level) or 0
+        if (ev.req or 0) > level then return "GearPath: better, from level " .. ev.req end
+        return "GearPath: better"
+    end
+    if src and (src.worldDrop or src.randomChest) then return "GearPath: better, but only from random loot" end
+    if src and src.dungeon and GP.Setting("dungeons") == false then
+        return "GearPath: better, but dungeons are off in Settings"
+    end
+    return "GearPath: better, not on your lists"
+end
+
+local function line(tt, left, right, lc, rc)
+    rc = rc or lc
+    tt:AddDoubleLine(left, right, lc[1], lc[2], lc[3], rc[1], rc[2], rc[3])
+end
+
 function Tooltip.Add(tt, id, link)
     if type(id) ~= "number" then return end
     local ev = GP.Score.ForItem(id)
@@ -45,46 +77,47 @@ function Tooltip.Add(tt, id, link)
         for key, e in pairs(GP.Score.equipped or {}) do
             if e.id == id then worn = key break end
         end
-        if worn or wl then tt:AddLine(" ") end
         if worn then
-            tt:AddDoubleLine("GearPath: currently equipped", GP.Slots.Label(worn), DIM[1], DIM[2], DIM[3], DIM[1], DIM[2], DIM[3])
+            tt:AddLine(" ")
+            line(tt, "GearPath: currently equipped", GP.Slots.Label(worn), DIM)
+            if wl then line(tt, wl, wr, DIM, wc) end
+            return
         end
-        if wl then tt:AddDoubleLine(wl, wr, DIM[1], DIM[2], DIM[3], wc[1], wc[2], wc[3]) end
-        return
+        ev = Tooltip.QuickEval(rec)
+        if not ev then
+            if wl then tt:AddLine(" "); line(tt, wl, wr, DIM, wc) end
+            return
+        end
     end
     local slot = GP.Slots.Label(ev.slot)
     local gain = GP.UI.GainText(ev)
     if gain == "new" then gain, slot = "", slot .. " (empty now)" end
+    local right = (gain ~= "" and (gain .. " ") or "") .. slot
+    local better = ev.delta and ev.delta > 0 and GP.Score.BigEnough(ev.delta, ev.base)
     tt:AddLine(" ")
     if ev.needs then
-        tt:AddDoubleLine("GearPath: needs " .. ev.needs, (gain ~= "" and (gain .. " ") or "") .. slot,
-            BAD[1], BAD[2], BAD[3], DIM[1], DIM[2], DIM[3])
+        line(tt, "GearPath: needs " .. ev.needs, right, BAD, DIM)
     elseif ev.healerPass then
         -- Seen in a loot roll too: say what to do before anyone asks.
         local what = GP.Score.GroupLoot(ev.source) and "GearPath: healer gear, let your healer roll first"
             or "GearPath: healer gear, not listed for you"
-        tt:AddDoubleLine(what, (gain ~= "" and (gain .. " ") or "") .. slot,
-            WARN[1], WARN[2], WARN[3], DIM[1], DIM[2], DIM[3])
+        line(tt, what, right, WARN, DIM)
     elseif ev.elsewhere then
-        tt:AddDoubleLine("GearPath: on another continent", (gain ~= "" and (gain .. " ") or "") .. slot,
-            DIM[1], DIM[2], DIM[3], DIM[1], DIM[2], DIM[3])
+        line(tt, "GearPath: better, but on another continent", right, DIM)
     elseif ev.tier then
         local c = ev.tier == "primary" and GOOD or WARN
-        tt:AddDoubleLine("GearPath: " .. GP.UI.TIER_TEXT[ev.tier], (gain ~= "" and (gain .. " ") or "") .. slot,
-            c[1], c[2], c[3], c[1], c[2], c[3])
-    elseif ev.delta and ev.delta > 0 and GP.Score.BigEnough(ev.delta, ev.base) then
-        -- Better, but off your lists (a world drop, a dungeon you've turned
-        -- off, a level still to reach): never "not an upgrade +40%".
-        tt:AddDoubleLine("GearPath: better, not on your lists", (gain ~= "" and (gain .. " ") or "") .. slot,
-            DIM[1], DIM[2], DIM[3], DIM[1], DIM[2], DIM[3])
+        line(tt, "GearPath: " .. GP.UI.TIER_TEXT[ev.tier], right, c)
+    elseif better then
+        -- Never "not an upgrade +40%": a real gain says why it isn't listed.
+        line(tt, offList(ev), right, ev.quick and WARN or DIM)
     elseif ev.delta and ev.delta > 0 then
         -- A sliver better (9 armor over 9 armor is +100% of almost
-        -- nothing): about the same, and no number that says otherwise.
-        tt:AddDoubleLine("GearPath: about the same as yours", slot,
-            DIM[1], DIM[2], DIM[3], DIM[1], DIM[2], DIM[3])
+        -- nothing): no number that says otherwise.
+        line(tt, "GearPath: barely better", slot, DIM)
     else
-        tt:AddDoubleLine("GearPath: not an upgrade", (gain ~= "" and (gain .. " ") or "") .. slot,
-            DIM[1], DIM[2], DIM[3], DIM[1], DIM[2], DIM[3])
+        -- Worse shows by how much; no better and no worse ("+0 pts")
+        -- shows nothing.
+        line(tt, "GearPath: not an upgrade", (ev.delta or 0) < 0 and right or slot, DIM)
     end
     if wl then tt:AddDoubleLine(wl, wr, DIM[1], DIM[2], DIM[3], wc[1], wc[2], wc[3]) end
     -- A skill still to learn first, and who teaches it.
@@ -98,13 +131,18 @@ function Tooltip.Add(tt, id, link)
         if place and place.detail then tt:AddLine(place.detail, DIM[1], DIM[2], DIM[3], true) end
         -- The next easiest ways too, so a doubtful first answer can be checked.
         local all = ev.entry and ev.entry.sources or {}
-        local shown = 0
+        local said, others = { [GP.UI.Describe(ev.source)] = true }, {}
         for i = 2, #all do
+            local d = GP.UI.Describe(all[i])
+            if not said[d] then said[d] = true; others[#others + 1] = d end
+        end
+        local shown = 0
+        for _, d in ipairs(others) do
             if shown >= Tooltip.MORE then break end
-            tt:AddLine("or " .. GP.UI.Describe(all[i]), DIM[1], DIM[2], DIM[3], true)
+            tt:AddLine("or " .. d, DIM[1], DIM[2], DIM[3], true)
             shown = shown + 1
         end
-        local rest = #all - 1 - shown
+        local rest = #others - shown
         if rest > 0 then
             tt:AddLine(string.format("and %d more way%s to get it", rest, rest == 1 and "" or "s"), DIM[1], DIM[2], DIM[3])
         end
@@ -123,9 +161,6 @@ function Tooltip.Add(tt, id, link)
             if not said[wn.key] then
                 tt:AddLine(GP.Check.ICON_WARN .. " " .. wn.text, WARN[1], WARN[2], WARN[3], true)
             end
-        end
-        if #r.warnings == 0 and not r.confirmed and not r.reported then
-            tt:AddLine("Checked " .. (GP.Check.Ago(r.at) or "") .. ": the game and the database agree", DIM[1], DIM[2], DIM[3], true)
         end
     end
     -- Over a row of GearPath's window: what the clicks do.
@@ -158,7 +193,9 @@ local function buildIndex()
         else
             return
         end
-        for _, e in ipairs(list) do if e.ev == ev then return end end
+        for _, e in ipairs(list) do
+            if e.ev == ev or (e.what == what and e.ev.rec.name == ev.rec.name) then return end
+        end
         list[#list + 1] = { what = what, ev = ev, quest = quest }
     end
     for _, ev in ipairs(GP.Score.results.all or {}) do

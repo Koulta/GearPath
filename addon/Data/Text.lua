@@ -344,12 +344,14 @@ t("Random chest loot (%d kinds of chest, like %s)", "Zufällige Truhenbeute (%d 
     "무작위 상자 전리품 (상자 %d종류, 예: %s)", "随机宝箱掉落（%d 种宝箱，如%s）", "隨機寶箱掉落（%d 種寶箱，如%s）")
 t("Random chests: %s (spawns all over)", "Zufällige Truhen: %s (überall)", "Coffres au hasard : %s (un peu partout)", "Cofres al azar: %s (por todas partes)",
     "Baús aleatórios: %s (em todo lugar)", "Случайные сундуки: %s (повсюду)", "무작위 상자: %s (곳곳에 생성)", "随机宝箱：%s（到处刷新）", "隨機寶箱：%s（到處重生）")
+t("Random chests (spawns all over)", "Zufällige Truhen (überall)", "Coffres au hasard (un peu partout)", "Cofres al azar (por todas partes)",
+    "Baús aleatórios (em todo lugar)", "Случайные сундуки (повсюду)", "무작위 상자 (곳곳에 생성)", "随机宝箱（到处刷新）", "隨機寶箱（到處重生）")
 t("Random chest loot", "Zufällige Truhenbeute", "Butin de coffres", "Botín de cofres", "Saque de baús", "Добыча из сундуков", "무작위 상자 전리품", "随机宝箱", "隨機寶箱")
 t("Random world drops", "Zufällige Weltbeute", "Butin mondial", "Botín del mundo", "Saque mundial", "Мировая добыча", "무작위 월드 드롭", "随机世界掉落", "隨機世界掉落")
 t("Somewhere unknown", "Unbekannter Ort", "Lieu inconnu", "Lugar desconocido", "Lugar desconhecido", "Неизвестно где", "알 수 없는 장소", "未知地点", "未知地點")
 t("reported by other players", "von anderen Spielern gemeldet", "signalé par d'autres joueurs", "informado por otros jugadores",
     "relatado por outros jogadores", "по сообщениям игроков", "다른 플레이어 제보", "其他玩家报告", "其他玩家回報")
-t("where isn't in the database yet", "Ort noch nicht in der Datenbank", "lieu absent de la base", "lugar aún no está en la base de datos",
+t("location not in the database yet", "Ort noch nicht in der Datenbank", "lieu absent de la base", "lugar aún no está en la base de datos",
     "local ainda não está no banco de dados", "места ещё нет в базе", "위치가 아직 데이터베이스에 없음", "数据库中尚无位置", "資料庫中尚無位置")
 t("location unknown", "Ort unbekannt", "lieu inconnu", "lugar desconocido", "local desconhecido", "место неизвестно", "위치 모름", "位置未知", "位置未知")
 t("Who starts it isn't in the database yet", "Wer sie vergibt, steht noch nicht in der Datenbank", "Qui la donne n'est pas encore dans la base",

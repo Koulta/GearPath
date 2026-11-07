@@ -1489,7 +1489,7 @@ if not H.noDB then
     Src.SortSources(sorted)
     check(sorted[1].mapID == 1431, "a quest in enemy land goes after one elsewhere")
     local said = GP.UI.Describe({ kind = "quest", name = "Captain Sander's Hidden Treasure", level = 16, mapID = 1436, zone = "Westfall" })
-    check(said:find("(Alliance territory)", 1, true), "the line says why: " .. said)
+    check(said:find(", Alliance territory", 1, true), "the line says why: " .. said)
     said = GP.UI.Describe({ kind = "quest", name = "Rear Guard Patrol", level = 13, mapID = 1420, zone = "Tirisfal Glades" })
     check(not said:find("territory", 1, true), "nothing on your own side: " .. said)
     said = GP.UI.Describe({ kind = "vendor", name = "Jang", mapID = 1436, zone = "Westfall" })
@@ -1614,7 +1614,7 @@ do
         return ""
     end
     local tiny = line({ rec = rec, slot = "HandsSlot", delta = 0.07, pct = 100, base = 0.07 })
-    check(tiny:find("about the same") and not tiny:find("%%"), "a sliver better reads as about the same (" .. tiny .. ")")
+    check(tiny:find("barely better") and not tiny:find("%%"), "a sliver better reads as barely better (" .. tiny .. ")")
     local off = line({ rec = rec, slot = "HandsSlot", delta = 12, pct = 40, base = 30 })
     check(off:find("better, not on your lists"), "a real gain off your lists says so (" .. off .. ")")
     local wornID
@@ -1622,6 +1622,13 @@ do
     GameTooltip._lines = {}
     GP.Tooltip.Add(GameTooltip, wornID)
     check(table.concat(GameTooltip._lines, "\n"):find("GearPath: currently equipped"), "an item you wear says so")
+    local same = line({ rec = rec, slot = "HandsSlot", delta = 0, base = 0 })
+    check(same:find("not an upgrade") and not same:find("pts"), "no better and no worse shows no \"+0 pts\" (" .. same .. ")")
+    local worldEv = { rec = rec, slot = "HandsSlot", delta = 12, pct = 40, base = 30, source = { kind = "drop", worldDrop = true } }
+    check(line(worldEv):find("only from random loot"), "a world drop off your lists says why")
+    -- An item GearPath never scored (an auction, a trainer's recipe): weighed on the spot.
+    local q = GP.Tooltip.QuickEval(rec)
+    check(q and q.quick and q.slot, "an unscored item you can wear is weighed on the spot")
     local worse = line({ rec = rec, slot = "HandsSlot", delta = -5, pct = -20, base = 25 })
     check(worse:find("not an upgrade"), "a worse item is not an upgrade (" .. worse .. ")")
 end

@@ -1,5 +1,17 @@
 # GearPath changelog
 
+## 0.7.11
+
+Tooltips, read through line by line:
+- **Every piece of gear you could wear gets a line.** An item GearPath hasn't scored (a trainer's recipe the first time you hover it, an auction, a link in chat) is weighed on the spot: "better", "better, from level 20", "barely better" or "not an upgrade". It never says Best now, since where it comes from isn't known.
+- **Better but not listed says why:** "better, but only from random loot", "better, but dungeons are off in Settings", "better, but on another continent".
+- **"Barely better"** replaces "about the same as yours", which read wrong when the slot was empty.
+- **No more "+0 pts".** "Not an upgrade" shows a number only when the item is worse.
+- **"Alliance territory" goes after the map spot** ("Darkshore (34.8, 87.3), Alliance territory"), so two brackets never sit side by side.
+- **No repeats.** The same chest or NPC isn't listed twice under "or", and a vendor selling two items with the same name lists it once.
+- **One line fewer.** "Checked just now: the game and the database agree" is gone from every tooltip; warnings and "Seen in game: confirmed" stay.
+- Smaller wording: "chain of 2, starts with X, from Y" (a comma before who gives it), "location not in the database yet", and "Random chests (spawns all over)" when the chest's name isn't known.
+
 ## 0.7.10
 
 - **Crafted gear.** QuestieDB has no recipes, so gear you can make never showed up. Open your profession window or a profession trainer and GearPath now reads what gear those recipes make (from the game itself, for the professions you have). A recipe you know is **Best now** ("Crafting: Tailoring (you know the recipe)"); one you can train now points the map pin at the trainer; one above your skill waits under Needs something first ("Needs Tailoring (75)"). Each character's recipes are its own, and crafted gear sits under Professions in Show.
