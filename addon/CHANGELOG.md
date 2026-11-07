@@ -1,5 +1,16 @@
 # GearPath changelog
 
+## 0.7.13
+
+- **Tooltips, settled.** Gear you could wear shows how much better or worse it is than what you have on, by your class and spec's weights, and under it, where to get it:
+  ```
+  GearPath (Affliction)                             +12%
+  Vendor: Harold Raims, Tirisfal Glades (32.4, 66.4)
+  ```
+  - The right side reads **+12%**, **-8%**, **same** (a difference too small to matter), **empty slot** or **equipped**.
+  - The colour is the verdict: green Best now, gold Worth chasing, red needs something first (with a line saying what), white better but not on your lists, grey not an upgrade.
+  - This replaces the tooltip in the 0.7.12 file on CurseForge, which was an in-between version. Nothing else changed.
+
 ## 0.7.12
 
 - **Crafted gear from ProfessionDB.** With the ProfessionDB addon installed (optional), GearPath knows every piece of gear your professions can make, from Forever's own game files and including Forever's new recipes, without opening a profession window first. Each one says how to get the recipe: the nearest trainer or pattern vendor of your faction (with a map pin), a quest, a named mob, or "random drop".
