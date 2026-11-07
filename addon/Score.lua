@@ -306,6 +306,13 @@ function Score.Effort(source)
         if GP.Sources and GP.Sources.ZoneTooHigh and GP.Sources.ZoneTooHigh(source) then return 2 end
         return 1
     end
+    if source.kind == "craft" then
+        -- Known: make it (mats aside). Trainable now: a trip to the trainer.
+        if source.known then return 1 end
+        if source.needs or not source.mapID then return 2 end
+        if GP.Sources and GP.Sources.ZoneTooHigh and GP.Sources.ZoneTooHigh(source) then return 2 end
+        return 1
+    end
     if source.kind == "drop" or source.kind == "object" then
         if source.worldDrop then return 3 end
         return 2
@@ -455,7 +462,8 @@ function Score.Run()
             local slot, delta, pct, base, points = Score.Upgrade(rec)
             if slot and req <= level + ahead then
                 local ev = { entry = entry, rec = rec, slot = slot, delta = delta, pct = pct, base = base,
-                    points = points, source = src, effort = effort, req = req, srcLevel = srcLevel, needs = rec.needs,
+                    points = points, source = src, effort = effort, req = req, srcLevel = srcLevel,
+                    needs = rec.needs or (src and src.needs),
                     far = far }
                 -- A weapon skill, Mail or Plate, or Dual Wield still to learn (Training.lua).
                 if GP.Training then ev.train = GP.Training.Need(rec, slot) end
@@ -533,6 +541,7 @@ end
 local function bigEnough(delta, base)
     return delta >= Score.MIN_POINTS and (not base or base <= 0 or delta / base * 100 >= Score.MIN_PCT)
 end
+Score.BigEnough = bigEnough
 
 function Score.BuildPlan(res, keep)
     local picks, usedQuest, usedItem = {}, {}, {}

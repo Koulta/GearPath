@@ -380,6 +380,17 @@ function Object:SetHyperlink(link)
     self._lines = { "[item " .. link .. "]" }
     runTooltip(self, tonumber(link:match("item:(%d+)")))
 end
+function Object:SetTrainerService(i) self._lines = { "[recipe " .. i .. "]" } end
+-- hooksecurefunc(table, name, fn) or hooksecurefunc(name, fn): fn runs after.
+function hooksecurefunc(t, name, fn)
+    if type(t) == "string" then t, name, fn = _G, t, name end
+    local orig = t[name]
+    t[name] = function(...)
+        local r = { orig(...) }
+        fn(...)
+        return unpack(r)
+    end
+end
 function Object:SetItemByID(id) self._lines = { "[item " .. id .. "]" }; runTooltip(self, id) end
 function Object:SetInventoryItem(_, slot) self._lines = { "[slot " .. slot .. "]" } end
 function Object:GetItem() return nil, nil end

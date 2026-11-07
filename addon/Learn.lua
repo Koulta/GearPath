@@ -219,6 +219,89 @@ GP.RegisterEvent("MERCHANT_SHOW", function()
     end
 end)
 
+-- ---------------------------------------------------------------------
+-- Crafting: your profession window and profession trainers
+-- ---------------------------------------------------------------------
+-- QuestieDB has no recipes, so crafted gear is learned here, from the
+-- game's own lists, for the professions you have:
+--   c[profession] = { p = profession, k = { [character] = true } (knows the
+--   recipe), r = skill it needs, t = trainer, m, x, y = the trainer's spot }
+-- Kept to yourself (never shared): it's about your own characters.
+
+function Learn.Me()
+    local name = GP.Plain(UnitName("player")) or "?"
+    local realm = GetRealmName and GP.Plain(GetRealmName()) or nil
+    return realm and (name .. "-" .. realm) or name
+end
+
+local function craftRec(id, prof)
+    local rec = store(id)
+    rec.c = rec.c or {}
+    local c = rec.c[prof] or { p = prof }
+    rec.c[prof] = c
+    c.s = now()
+    return c
+end
+
+-- The profession window: every recipe you know.
+local function readTradeSkills()
+    if not on() or not (GetTradeSkillLine and GetNumTradeSkills and GetTradeSkillItemLink) then return end
+    local prof = GP.Plain(GetTradeSkillLine())
+    if type(prof) ~= "string" or prof == "" or prof == "UNKNOWN" then return end
+    local me, changed = Learn.Me(), {}
+    for i = 1, GP.Plain(GetNumTradeSkills()) or 0 do
+        local _, kind = GetTradeSkillInfo(i)
+        if kind ~= "header" then
+            local link = GP.Plain(GetTradeSkillItemLink(i))
+            local id = type(link) == "string" and isGear(link)
+            if id then
+                local c = craftRec(id, prof)
+                c.k = type(c.k) == "table" and c.k or {}
+                if not c.k[me] then
+                    c.k[me] = true
+                    changed[#changed + 1] = id
+                end
+            end
+        end
+    end
+    for _, id in ipairs(changed) do GP.Sources.Learned(id) end
+end
+
+GP.RegisterEvent("TRADE_SKILL_SHOW", readTradeSkills)
+GP.RegisterEvent("TRADE_SKILL_UPDATE", function() GP.Soon("tradeskills", readTradeSkills) end)
+
+-- A trainer: the gear its recipes make, the skill each needs, and where
+-- the trainer stands (only for professions you have).
+local function readTrainer()
+    if not on() or not (GetNumTrainerServices and GetTrainerServiceItemLink and GetTrainerServiceSkillReq) then return end
+    local trainer = GP.Plain(UnitName("npc"))
+    local map, x, y = here()
+    local me, changed = Learn.Me(), {}
+    for i = 1, GP.Plain(GetNumTrainerServices()) or 0 do
+        local link = GP.Plain(GetTrainerServiceItemLink(i))
+        local id = type(link) == "string" and isGear(link)
+        if id then
+            local prof, rank = GetTrainerServiceSkillReq(i)
+            prof, rank = GP.Plain(prof), GP.Plain(rank)
+            if type(prof) == "string" and prof ~= "" and GP.Sources.ProfessionSkill(prof) then
+                local _, _, category = GetTrainerServiceInfo(i)
+                local c = craftRec(id, prof)
+                c.r = type(rank) == "number" and rank or c.r
+                c.t, c.m, c.x, c.y = trainer, map, x, y
+                if category == "used" then
+                    c.k = type(c.k) == "table" and c.k or {}
+                    c.k[me] = true
+                end
+                changed[#changed + 1] = id
+            end
+        end
+    end
+    for _, id in ipairs(changed) do GP.Sources.Learned(id) end
+end
+
+GP.RegisterEvent("TRAINER_SHOW", readTrainer)
+GP.RegisterEvent("TRAINER_UPDATE", function() GP.Soon("trainer", readTrainer) end)
+
 GP.RegisterCommand("forget", "forget the gear sources you saw in game and the ones other players shared", function()
     GP.db.learned.items = {}
     GP.db.shared = { items = {} }

@@ -323,6 +323,13 @@ t("Alliance territory", "Allianzgebiet", "territoire de l'Alliance", "territorio
     "территория Альянса", "얼라이언스 영토", "联盟领地", "聯盟領地")
 t("Horde territory", "Hordengebiet", "territoire de la Horde", "territorio de la Horda", "território da Horda",
     "территория Орды", "호드 영토", "部落领地", "部落領地")
+t("Crafting: %s", "Handwerk: %s", "Artisanat : %s", "Artesanía: %s", "Artesanato: %s", "Ремесло: %s", "제작: %s", "制作：%s", "製作：%s")
+t("you know the recipe", "du kennst das Rezept", "vous connaissez la recette", "conoces la receta", "você conhece a receita",
+    "рецепт изучен", "제조법을 알고 있음", "已学会配方", "已學會配方")
+t("recipe from %s", "Rezept bei %s", "recette auprès de %s", "receta de %s", "receita com %s", "рецепт у %s",
+    "제조법: %s", "配方：%s", "配方：%s")
+t("Craft it yourself", "Selbst herstellen", "À fabriquer vous-même", "Fabrícalo tú mismo", "Fabrique você mesmo",
+    "Изготовьте сами", "직접 제작", "自己制作", "自己製作")
 t("from %s", "bei %s", "auprès de %s", "de %s", "com %s", "у %s", "%s에게서", "从%s处", "從%s處")
 t("in your quest log", "im Questlog", "dans votre journal", "en tu registro", "no seu registro", "в журнале заданий", "퀘스트 목록에 있음", "在任务日志中", "在任務日誌中")
 t("starts inside the dungeon", "beginnt im Dungeon", "commence dans le donjon", "empieza dentro de la mazmorra", "começa dentro da masmorra",

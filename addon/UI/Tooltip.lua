@@ -39,10 +39,17 @@ function Tooltip.Add(tt, id, link)
     local rec = ev and ev.rec or (link and GP.Items.FromLink(link)) or GP.Items.Get(id)
     local wl, wr, wc = Tooltip.WandLine(rec)
     if not ev then
-        if wl then
-            tt:AddLine(" ")
-            tt:AddDoubleLine(wl, wr, DIM[1], DIM[2], DIM[3], wc[1], wc[2], wc[3])
+        -- The one you have on: said, so a silent tooltip never looks like
+        -- GearPath missed it (Koulta's own crafted cape and bracers, Nov 6).
+        local worn
+        for key, e in pairs(GP.Score.equipped or {}) do
+            if e.id == id then worn = key break end
         end
+        if worn or wl then tt:AddLine(" ") end
+        if worn then
+            tt:AddDoubleLine("GearPath: currently equipped", GP.Slots.Label(worn), DIM[1], DIM[2], DIM[3], DIM[1], DIM[2], DIM[3])
+        end
+        if wl then tt:AddDoubleLine(wl, wr, DIM[1], DIM[2], DIM[3], wc[1], wc[2], wc[3]) end
         return
     end
     local slot = GP.Slots.Label(ev.slot)
@@ -65,6 +72,16 @@ function Tooltip.Add(tt, id, link)
         local c = ev.tier == "primary" and GOOD or WARN
         tt:AddDoubleLine("GearPath: " .. GP.UI.TIER_TEXT[ev.tier], (gain ~= "" and (gain .. " ") or "") .. slot,
             c[1], c[2], c[3], c[1], c[2], c[3])
+    elseif ev.delta and ev.delta > 0 and GP.Score.BigEnough(ev.delta, ev.base) then
+        -- Better, but off your lists (a world drop, a dungeon you've turned
+        -- off, a level still to reach): never "not an upgrade +40%".
+        tt:AddDoubleLine("GearPath: better, not on your lists", (gain ~= "" and (gain .. " ") or "") .. slot,
+            DIM[1], DIM[2], DIM[3], DIM[1], DIM[2], DIM[3])
+    elseif ev.delta and ev.delta > 0 then
+        -- A sliver better (9 armor over 9 armor is +100% of almost
+        -- nothing): about the same, and no number that says otherwise.
+        tt:AddDoubleLine("GearPath: about the same as yours", slot,
+            DIM[1], DIM[2], DIM[3], DIM[1], DIM[2], DIM[3])
     else
         tt:AddDoubleLine("GearPath: not an upgrade", (gain ~= "" and (gain .. " ") or "") .. slot,
             DIM[1], DIM[2], DIM[3], DIM[1], DIM[2], DIM[3])
@@ -264,4 +281,19 @@ elseif GameTooltip and GameTooltip.HookScript then
     end
     pcall(GameTooltip.HookScript, GameTooltip, "OnTooltipSetUnit", function(tt) onUnit(tt) end)
     Tooltip.hooked = ok
+end
+
+-- A trainer's recipe shows the spell, not the item: GearPath's line for
+-- the gear it makes goes under it.
+if hooksecurefunc and GameTooltip and GameTooltip.SetTrainerService and GetTrainerServiceItemLink then
+    hooksecurefunc(GameTooltip, "SetTrainerService", function(tt, index)
+        if not GP.Setting("tooltip") then return end
+        if tt.IsForbidden and tt:IsForbidden() then return end
+        local link = GP.Plain(GetTrainerServiceItemLink(index))
+        if type(link) ~= "string" then return end
+        local id = GP.Items.IDFromLink(link)
+        if not id then return end
+        GP.SafeCall(Tooltip.Add, tt, id, link)
+        tt:Show()
+    end)
 end

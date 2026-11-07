@@ -34,6 +34,11 @@ local ITEMS = {
     [218] = { "Keep Bracers", 2, 26, 23, "INVTYPE_WRIST", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 6 } },
     [219] = { "Keep Gloves", 2, 26, 23, "INVTYPE_HAND", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 6 } },
     [234] = { "Lesser Test Wand", 2, 18, 15, "INVTYPE_RANGEDRIGHT", 2, 19, { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 10 } },
+    -- Crafted (Learn.lua's crafting test): known, trainable, more skill needed, another profession's.
+    [244] = { "Test Tailored Belt", 2, 26, 22, "INVTYPE_WAIST", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 9 } },
+    [245] = { "Test Tailored Boots", 2, 26, 22, "INVTYPE_FEET", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 9 } },
+    [246] = { "Test Tailored Gloves", 2, 27, 23, "INVTYPE_HAND", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 10 } },
+    [247] = { "Test Leather Cap", 2, 26, 22, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 9 } },
     [215] = { "Sergeant's Cloak", 3, 30, 23, "INVTYPE_CLOAK", 4, 1, { ITEM_MOD_STAMINA_SHORT = 9 }, { { "Requires Sergeant", 1, 0.125, 0.125 }, { "Requires Level 23", 1, 0.125, 0.125 } } },
 }
 H.ITEMS = ITEMS
@@ -294,6 +299,27 @@ function GetQuestItemInfo(kind, i)
 end
 function GetNumLootItems() return 0 end
 function GetLootSlotLink() end
+-- Professions (Learn.lua's crafting): H.skills = { { name, rank } };
+-- the profession window H.trade = { line = "Tailoring", items = { ids } };
+-- a trainer H.trainer = { { itemID, profession, rank, category } }.
+function GetRealmName() return "Forever" end
+function GetNumSkillLines() return 1 + #(H.skills or {}) end
+function GetSkillLineInfo(i)
+    if i == 1 then return "Professions", 1, 1, 0 end
+    local s = H.skills and H.skills[i - 1]
+    if s then return s[1], nil, nil, s[2] end
+end
+function GetTradeSkillLine() return H.trade and H.trade.line or "UNKNOWN", 40, 75 end
+function GetNumTradeSkills() return H.trade and (#H.trade.items + 1) or 0 end
+function GetTradeSkillInfo(i)
+    if i == 1 then return "Cloth", "header" end
+    return "Recipe " .. i, "easy"
+end
+function GetTradeSkillItemLink(i) local id = H.trade and H.trade.items[i - 1]; return id and H.Link(id) end
+function GetNumTrainerServices() return H.trainer and #H.trainer or 0 end
+function GetTrainerServiceInfo(i) local r = H.trainer and H.trainer[i]; if r then return "Recipe", "", r[4] end end
+function GetTrainerServiceItemLink(i) local r = H.trainer and H.trainer[i]; return r and H.Link(r[1]) end
+function GetTrainerServiceSkillReq(i) local r = H.trainer and H.trainer[i]; if r then return r[2], r[3], true end end
 -- A vendor's list: H.merchant = { { id, price }, ... }.
 function GetMerchantNumItems() return H.merchant and #H.merchant or 0 end
 function GetMerchantItemLink(i) local m = H.merchant and H.merchant[i]; return m and H.Link(m[1]) end

@@ -27,6 +27,7 @@ end
 local function groupInfo(src, fallbackName)
     src = src or {}
     if src.kind == "bags" then return L["In your bags"], "bags" end
+    if src.kind == "craft" and src.known then return L["Craft it yourself"], "zone" end
     if src.worldDrop then return src.randomChest and L["Random chest loot"] or L["Random world drops"], "random" end
     if src.dungeon then
         local d = GP.Journal and GP.Journal.Dungeon(src.dungeon)

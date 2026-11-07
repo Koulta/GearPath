@@ -88,7 +88,7 @@ Class sweep (real data): from `harness/`,
 `GPDIR=<addon folder> CLASS=WARRIOR FACTION=Horde LEVEL=30 [SPEC=arms] [VERBOSE=1] lua5.1 qdb.lua <QuestieDB folder> ../queries/sweep.lua`.
 It checks each pick against its own table of what each class can use (Forever's
 changes included), the slot rules (off-hand weapons only with Dual Wield, shields,
-relics, two-handers), your faction's vendors and no item picked twice; since 0.7.6 also faction rules checked on their own (no quest only the other faction gives or whose race list leaves you out, no drop from your own faction's people, nothing Best now in the other faction's home zones by area id, neutral givers and vendors excepted). Also nothing Best now in a zone 10+ levels above you (by area id). November 5, 2026 (0.7.6), QuestieDB 1.0.10: 162 runs (both factions, levels 5/8/10/15/20/30/40/50/60), 0 problems. November 6, 2026 (0.7.7), QuestieDB 1.0.11 and ForeverDungeonJournal 1.7.0: 210 runs (108 + every non-default spec at 20/40/60, both factions), 0 problems; zones OK (129 dungeons, 129 entrances); speed 80 ms rescan, 5.1 MB. Run it for
+relics, two-handers), your faction's vendors and no item picked twice; since 0.7.6 also faction rules checked on their own (no quest only the other faction gives or whose race list leaves you out, no drop from your own faction's people, nothing Best now in the other faction's home zones by area id, neutral givers and vendors excepted). Also nothing Best now in a zone 10+ levels above you (by area id). November 5, 2026 (0.7.6), QuestieDB 1.0.10: 162 runs (both factions, levels 5/8/10/15/20/30/40/50/60), 0 problems. November 6, 2026 (0.7.7), QuestieDB 1.0.11 and ForeverDungeonJournal 1.7.0: 210 runs (108 + every non-default spec at 20/40/60, both factions), 0 problems; zones OK (129 dungeons, 129 entrances); speed 80 ms rescan, 5.1 MB. November 7, 2026 (0.7.10): 210 runs again, 0 problems. Run it for
 all nine classes, both factions, levels 10/20/30/40/50/60 (108 runs) plus each
 non-default spec; every run must say 0 problems. October 23, 2026: 0 problems.
 October 29, 2026, on QuestieDB 1.0.9 (the live client's): 204 runs (108 + every non-default
@@ -206,6 +206,18 @@ older notes and check-ins may still say C:\World of Warcraft\GearPath-dev).
       report Healing apart?) and on Bloodvine Vest (does "2.0% hit" come back as 2 or a rating?).
 - [ ] Recheck `Classes.HIT_CAP` and the racials against launch notes.
 - [x] GitHub: noreply commit email set; LICENSE (now GPL-3) at the root. Repo: github.com/Koulta/GearPath.
+
+## Crafted gear (0.7.10)
+
+QuestieDB has no recipes. Learn.lua reads the profession window (TRADE_SKILL_SHOW/UPDATE:
+GetTradeSkillLine, GetTradeSkillItemLink) and trainers (TRAINER_SHOW/UPDATE:
+GetTrainerServiceItemLink, GetTrainerServiceSkillReq, category "used" = known) into
+learned.items[id].c[profession] = { k = { [Name-Realm] = true }, r = skill, t = trainer, m, x, y }.
+Only professions the character has (GetSkillLineInfo); never shared. Sources.CraftSource turns
+it into a "craft" source: known (effort 1, route group "Craft it yourself"), trainable now
+(effort 1, pin on the trainer), or needs "Tailoring (75)" (Needs something first). Every scan
+adds learned crafts (addLearnedCrafts). Trainer recipe tooltips: hooksecurefunc on
+GameTooltip.SetTrainerService. Untested in game until Koulta opens a trainer.
 
 ## Version history (short)
 

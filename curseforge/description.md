@@ -33,6 +33,7 @@
 ### Built for your class
 
 - **Every spec:** pick yours, and GearPath weighs gear for it, including tanks, healers and Forever's melee Survival hunters. Weapon speed and type follow the spec too.
+- **Crafted gear:** open your profession window or a trainer and the gear your recipes make joins your lists.
 - **Weapon training:** found a great staff but never learned Staves? GearPath says so and puts the weapon master on your route.
 - **Your weights:** change any stat weight, and share yours with a short string other players of your class can paste.
 

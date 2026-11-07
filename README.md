@@ -30,6 +30,7 @@ GearPath looks at your class, spec and level, finds every upgrade you can actual
 | **Tooltips** | Every item says how much better it is for you and where to get it. Mobs and NPCs list the upgrades they drop or sell. |
 | **Quest reward pick** | Shows which reward to take, or the one that sells for the most if none is an upgrade. |
 | **Rare watch** | An icon and a sound when a rare that drops an upgrade for you comes into view. |
+| **Crafted gear** | Open your profession window or a trainer and the gear your recipes make joins your lists: what you can craft now, what to train next, what needs more skill. |
 | **Weapon training** | Found a great staff but never learned Staves? GearPath says so and puts the weapon master on your route. |
 | **Learns and shares** | Quest rewards, loot and vendor gear you see are remembered and shared with other GearPath players, so new Forever gear shows up before the database has it. |
 

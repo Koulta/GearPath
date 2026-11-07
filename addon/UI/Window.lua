@@ -67,6 +67,13 @@ function UI.Describe(src, long)
         t = string.format(L["Drop: %s"], src.name or "?")
         if src.rank then t = t .. " (" .. L[src.rank] .. ")" end
         where = src.dungeon or src.zone
+    elseif src.kind == "craft" then
+        -- Crafting: Tailoring (you know the recipe)
+        -- Crafting: Tailoring, recipe from Victor Ward, Undercity
+        t = string.format(L["Crafting: %s"], src.profession or src.name or "?")
+        if src.known then return t .. " (" .. L["you know the recipe"] .. ")" end
+        if src.trainer then t = t .. ", " .. string.format(L["recipe from %s"], src.trainer) end
+        where = src.zone
     elseif src.kind == "object" then
         if src.randomChest then
             if src.count and src.count > 1 then
@@ -189,6 +196,7 @@ function UI.ContentOf(ev)
     local src = ev.source
     if not src then return "world" end
     if src.kind == "bags" then return "bags" end
+    if src.kind == "craft" then return "craft" end
     if src.worldDrop then return "world" end
     if src.dungeon then return "dungeon" end
     if src.kind == "quest" then return "quest" end

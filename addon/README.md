@@ -23,6 +23,8 @@ A class can learn more weapons than it starts with. Weapon masters in the capita
 **Best now** means easy to get at your level: a quest or vendor out in the world, at most 2 levels above you, not out in the other faction's home zones, and not in a zone 10 or more levels above you. Quests and vendors of the other faction, and loot from your own faction's people, are left out altogether.
 **Worth chasing** means a dungeon, an elite or rare, a quest chain of 3 or more, a quest or mob above your level, or an item a few levels away.
 **Needs something first** holds gear that needs a PvP rank, a reputation or a profession you don't have yet.
+
+**Crafted gear** comes from the game, not QuestieDB (which has no recipes): open your profession window and the gear your recipes make is added; open a profession trainer and the gear it teaches is added too, with the skill each recipe needs and where the trainer stands. Only your own professions count, and each character's known recipes are its own.
 **Healer gear** (Healing is its biggest spell stat, like "+7 Healing, +3 Spell Damage") is left out, from drops, quests and vendors alike. When it drops in a group, its tooltip says to let your healer roll. Turn on **Healer gear** in Settings to list it anyway. (Classes whose weights count Healing aren't affected. Gear with "damage and healing" spell power isn't healer gear: it's everyone's.)
 
 **Show:** on every tab is one filter for the whole window. Tick the kinds of content you want (quests, dungeons, vendors, mob drops and rares, world drops and chests, your bags, PvP rank, reputation, professions) and untick the rest. The lists, the slot arrows, the route and Browse all follow it.

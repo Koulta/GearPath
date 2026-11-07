@@ -1,5 +1,12 @@
 # GearPath changelog
 
+## 0.7.10
+
+- **Crafted gear.** QuestieDB has no recipes, so gear you can make never showed up. Open your profession window or a profession trainer and GearPath now reads what gear those recipes make (from the game itself, for the professions you have). A recipe you know is **Best now** ("Crafting: Tailoring (you know the recipe)"); one you can train now points the map pin at the trainer; one above your skill waits under Needs something first ("Needs Tailoring (75)"). Each character's recipes are its own, and crafted gear sits under Professions in Show.
+- **"Currently equipped".** An item you have on now says so in its tooltip, instead of GearPath saying nothing.
+- **Trainer tooltips.** Hovering a recipe at a profession trainer now shows GearPath's line for the item it makes.
+- **Fixed: "not an upgrade +100%".** A piece a sliver better than yours (9 armor over 9 armor, +100% of almost nothing) said "not an upgrade" next to a big percent. It now reads "about the same as yours" with no number, and a real gain that's off your lists (a world drop, a dungeon you've turned off) says "better, not on your lists".
+
 ## 0.7.9
 
 - **Fixed: hit on a lighter armor type.** A piece of an armor type below yours (cloth for a rogue) counts for part of its worth, but the hit cap's correction to it counted in full, so hit gear of that kind could score too low or too high. The correction is now scaled the same way (a cloth piece a rogue values at 60% gets 60% of what its hit is really worth).

@@ -364,7 +364,7 @@ function Sources.EnemyLand(src)
     -- A neutral town or giver out there is fine (Ratchet in the Barrens,
     -- the Darkmoon Faire in Elwynn): a vendor GearPath lists is one who
     -- deals with you, and a quest giver marked for both factions is neutral.
-    if src.kind == "vendor" then return false end
+    if src.kind == "vendor" or src.kind == "craft" then return false end
     if src.giverID and DB and field(DB.Npc, "friendlyToFaction", src.giverID) == "AH" then return false end
     local f = (GP.player or GP.PlayerInfo()).faction
     local enemy = (f == "Horde" and HOME.Alliance) or (f == "Alliance" and HOME.Horde) or nil
@@ -548,6 +548,38 @@ local function objectSource(obj)
 end
 
 -- What you've seen in game yourself (Learn.lua).
+-- Your skill in a profession ("Tailoring"), or nil when you don't have it.
+function Sources.ProfessionSkill(prof)
+    if not (GetNumSkillLines and GetSkillLineInfo) then return nil end
+    for i = 1, GP.Plain(GetNumSkillLines()) or 0 do
+        local name, header, _, rank = GetSkillLineInfo(i)
+        name, rank = GP.Plain(name), GP.Plain(rank)
+        if not header and name == prof then return type(rank) == "number" and rank or 0 end
+    end
+    return nil
+end
+
+-- A crafted item's way in, for this character (Learn.lua saved what the
+-- profession window and trainers showed): you know the recipe; you can
+-- train it now; or it needs more skill first. nil: not your profession,
+-- or a recipe you'd have to find somewhere (only someone else knows it).
+function Sources.CraftSource(prof, info)
+    local skill = Sources.ProfessionSkill(prof)
+    if not skill or type(info) ~= "table" then return nil end
+    local known = type(info.k) == "table" and info.k[GP.Learn.Me()] == true
+    local s = { kind = "craft", id = prof, name = prof, profession = prof, known = known, rank = info.r,
+        trainer = info.t, learned = true }
+    if known then
+        s.zone = "Craft it yourself"
+        return s
+    end
+    if type(info.r) ~= "number" then return nil end
+    s.mapID, s.x, s.y = info.m, info.x, info.y
+    s.zone = info.m and Sources.MapName(info.m) or nil
+    if skill < info.r then s.needs = string.format("%s (%d)", prof, info.r) end
+    return s
+end
+
 local function learnedSources(id)
     local out = {}
     local L = GP.db and GP.db.learned and GP.db.learned.items and GP.db.learned.items[id]
@@ -566,6 +598,10 @@ local function learnedSources(id)
     for key, info in pairs(L.d or {}) do
         out[#out + 1] = { kind = "drop", id = key, name = info.n, mapID = info.m, x = info.x, y = info.y,
             zone = Sources.MapName(info.m), learned = true, dungeon = info.dg }
+    end
+    for prof, info in pairs(L.c or {}) do
+        local s = Sources.CraftSource(prof, info)
+        if s then out[#out + 1] = s end
     end
     return out
 end
@@ -821,6 +857,32 @@ local function addJournalItems(level, ahead)
     return toLoad
 end
 
+-- Crafted gear you've seen in your profession window or at a trainer:
+-- not in the database's item sources, so added to every scan here.
+local function addLearnedCrafts(level, ahead)
+    local toLoad = {}
+    local items = GP.db and GP.db.learned and GP.db.learned.items
+    if type(items) ~= "table" then return toLoad end
+    for id, L in pairs(items) do
+        if type(L) == "table" and type(L.c) == "table" and not Sources.entries[id] then
+            local equipLoc, classID, subClassID = Items.Instant(id)
+            local ok, opensAt = false, nil
+            if equipLoc then ok, opensAt = usableFor(classID, subClassID, equipLoc, level, ahead) end
+            if ok then
+                local entry = newEntry(id)
+                entry.opensAt = opensAt
+                Sources.Resolve(entry)
+                if entry.best then
+                    Sources.entries[id] = entry
+                    Sources.counts.candidates = Sources.counts.candidates + 1
+                    toLoad[#toLoad + 1] = id
+                end
+            end
+        end
+    end
+    return toLoad
+end
+
 -- Each scan has a number: loading left over from an earlier scan (a
 -- level-up right after login starts another) must not finish the new one
 -- or fill its list.
@@ -869,6 +931,7 @@ function Sources.Scan()
         Sources.status = "nodb"
         GP.Fire("SourcesChanged")
         local toLoad = addJournalItems(level, ahead)
+        for _, id in ipairs(addLearnedCrafts(level, ahead)) do toLoad[#toLoad + 1] = id end
         for _, id in ipairs(applyBags()) do toLoad[#toLoad + 1] = id end
         loadRecords(toLoad, finished)
         return
@@ -912,6 +975,7 @@ function Sources.Scan()
     end, function()
         local toLoad = {}
         addJournalItems(level, ahead)
+        addLearnedCrafts(level, ahead)
         for id, entry in pairs(Sources.entries) do
             if not entry.rec then toLoad[#toLoad + 1] = id end
         end

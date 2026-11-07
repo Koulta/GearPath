@@ -1563,6 +1563,69 @@ if look == "daylight" then
     check(H.pluginPage ~= nil, "plugin page added")
 end
 
+-- Crafted gear: the profession window and a trainer (Learn.lua), only for professions you have.
+do
+    H.skills = { { "Tailoring", 40 } }
+    H.trade = { line = "Tailoring", items = { 244 } }
+    H.Fire("TRADE_SKILL_SHOW")
+    H.trainer = { { 245, "Tailoring", 35, "available" }, { 246, "Tailoring", 75, "unavailable" },
+        { 244, "Tailoring", 25, "used" }, { 247, "Leatherworking", 30, "available" } }
+    H.units.npc = { name = "Victor Ward" }
+    H.Fire("TRAINER_SHOW")
+    for _ = 1, 10 do H.Tick(0.1) end
+    local belt, boots, gloves = GP.Score.ForItem(244), GP.Score.ForItem(245), GP.Score.ForItem(246)
+    local d = function(ev) return ev and GP.UI.Describe(ev.source, true) or "?" end
+    check(belt and belt.source.kind == "craft" and belt.source.known, "a recipe you know: crafted gear joins the list (" .. d(belt) .. ")")
+    check(belt and belt.tier == "primary", "and it's Best now")
+    check(d(belt):find("you know the recipe"), "it says you know the recipe")
+    check(boots and boots.tier and not boots.needs, "a recipe you can train now is listed (" .. d(boots) .. ")")
+    check(d(boots):find("recipe from Victor Ward"), "with the trainer who teaches it")
+    check(gloves and gloves.needs == "Tailoring (75)" and gloves.tier == "locked", "a recipe above your skill needs the skill first (" .. tostring(gloves and gloves.needs) .. ")")
+    check(GP.UI.ContentOf(belt) == "craft" and GP.UI.ContentOf(gloves) == "craft", "both under Professions in Show")
+    check(not (GP.db.learned.items[247] and GP.db.learned.items[247].c), "another profession's trainer recipes aren't saved")
+    GP.Sources.Scan()
+    for _ = 1, 40 do H.Tick(0.1) end
+    check(GP.Score.ForItem(244) ~= nil, "crafted gear is still there after a rescan")
+    -- The trainer's recipe tooltip gets the line for the item it makes.
+    GameTooltip:SetTrainerService(1)
+    local tl = table.concat(GameTooltip._lines, "\n")
+    check(tl:find("GearPath:"), "a trainer's recipe tooltip gets GearPath's line")
+    -- Another character with the same profession hasn't learned the belt.
+    local me = GP.Learn.Me
+    GP.Learn.Me = function() return "Alt-Forever" end
+    local e = GP.Sources.entries[244]
+    GP.Sources.Resolve(e)
+    check(not (e.best and e.best.kind == "craft" and e.best.known), "a recipe one character knows isn't known by another")
+    GP.Learn.Me = me
+    GP.Sources.Resolve(e)
+    H.skills, H.trade, H.trainer, H.units.npc = nil, nil, nil, nil
+end
+
+-- The tooltip never says "not an upgrade" next to a gain.
+do
+    local real = GP.Score.ForItem
+    local rec = GP.Items.Get(210)
+    local function line(ev)
+        GP.Score.ForItem = function() return ev end
+        GameTooltip._lines = {}
+        GP.Tooltip.Add(GameTooltip, 210)
+        GP.Score.ForItem = real
+        for _, l in ipairs(GameTooltip._lines) do if l:find("GearPath:") then return l end end
+        return ""
+    end
+    local tiny = line({ rec = rec, slot = "HandsSlot", delta = 0.07, pct = 100, base = 0.07 })
+    check(tiny:find("about the same") and not tiny:find("%%"), "a sliver better reads as about the same (" .. tiny .. ")")
+    local off = line({ rec = rec, slot = "HandsSlot", delta = 12, pct = 40, base = 30 })
+    check(off:find("better, not on your lists"), "a real gain off your lists says so (" .. off .. ")")
+    local wornID
+    for _, e in pairs(GP.Score.equipped) do if e.id then wornID = e.id break end end
+    GameTooltip._lines = {}
+    GP.Tooltip.Add(GameTooltip, wornID)
+    check(table.concat(GameTooltip._lines, "\n"):find("GearPath: currently equipped"), "an item you wear says so")
+    local worse = line({ rec = rec, slot = "HandsSlot", delta = -5, pct = -20, base = 25 })
+    check(worse:find("not an upgrade"), "a worse item is not an upgrade (" .. worse .. ")")
+end
+
 local unknown = {}
 for k in pairs(H.unknown) do unknown[#unknown + 1] = k end
 table.sort(unknown)
