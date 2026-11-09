@@ -9,6 +9,7 @@
 - **A route, not just a list.** Every upgrade you can get right now, grouped by zone and dungeon, with a map pin on the exact spot.
 - **Never out of date.** It reads QuestieDB while you play, so when the database updates, GearPath does too.
 - **Learns as you play.** Quest rewards, loot and vendor gear you come across are remembered and shared with every other GearPath player, so new Forever gear shows up even before the database has it.
+- **Dungeon loot.** Walk into a dungeon and a small panel shows what drops there for you, by boss, and how much better each is.
 - **Rare watch.** An icon and a sound the moment a rare that drops an upgrade for you comes into view.
 - **Weights you can trust.** Every class and spec, tanks and healers included, ordered by Forever's class guides and checked against simulator numbers.
 - **Looks like it belongs.** Matches the game's own UI, DaylightUI or EllesmereUI.

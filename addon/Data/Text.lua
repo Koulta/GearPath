@@ -675,6 +675,20 @@ t("When a quest offers a choice, shows the best upgrade for you (or the best sel
     "퀘스트 보상을 고를 때 퀘스트 창 옆에 최고의 업그레이드(또는 가장 비싼 것)를 보여주고, 완료할 때 채팅에도 알려줍니다.",
     "任务提供选择时，在任务窗口旁显示对你最好的提升（或售价最高的），交任务时在聊天中提示。",
     "任務提供選擇時，在任務視窗旁顯示對你最好的提升（或售價最高的），交任務時在聊天中提示。")
+t("Dungeon loot", "Dungeonbeute", "Butin de donjon", "Botín de mazmorra", "Saque de masmorra", "Добыча подземелья", "던전 전리품", "地下城掉落", "地城掉落")
+t("When you enter a dungeon or raid, a panel with its drops that are upgrades for you, by boss. Closes when you pull; /gp loot brings it back.",
+    "Beim Betreten eines Dungeons oder Schlachtzugs ein Fenster mit seiner Beute, die für dich eine Verbesserung ist, nach Boss. Schließt sich beim Pullen; /gp loot holt es zurück.",
+    "En entrant dans un donjon ou un raid, un panneau avec ses butins qui sont des améliorations pour vous, par boss. Se ferme quand vous engagez ; /gp loot le rouvre.",
+    "Al entrar en una mazmorra o banda, un panel con su botín que es una mejora para ti, por jefe. Se cierra al empezar un combate; /gp loot lo vuelve a mostrar.",
+    "Ao entrar numa masmorra ou raide, um painel com os itens que são melhorias para você, por chefe. Fecha quando você puxa; /gp loot o traz de volta.",
+    "При входе в подземелье или рейд — панель с добычей, которая для вас улучшение, по боссам. Закрывается при пулле; /gp loot вернёт её.",
+    "던전이나 공격대에 들어가면 그곳에서 나오는 당신의 업그레이드 아이템을 우두머리별로 보여 주는 창. 전투를 시작하면 닫히며, /gp loot로 다시 엽니다.",
+    "进入地下城或团队副本时，按首领显示其中对你是提升的掉落。开怪时关闭；/gp loot 可重新打开。",
+    "進入地城或團隊副本時，依首領顯示其中對你是提升的掉落。開怪時關閉；/gp loot 可重新開啟。")
+t("Hide", "Ausblenden", "Masquer", "Ocultar", "Ocultar", "Скрыть", "숨기기", "隐藏", "隱藏")
+t("and %d more (see GearPath's window)", "und %d weitere (siehe GearPaths Fenster)", "et %d de plus (voir la fenêtre de GearPath)",
+    "y %d más (ver la ventana de GearPath)", "e mais %d (veja a janela do GearPath)", "и ещё %d (см. окно GearPath)",
+    "외 %d개 (GearPath 창 참고)", "还有 %d 件（见 GearPath 窗口）", "還有 %d 件（見 GearPath 視窗）")
 t("Rare watch", "Seltene im Blick", "Guet des rares", "Vigía de raros", "Vigia de raros", "Слежка за редкими", "희귀 몹 감시", "稀有怪监视", "稀有怪監視")
 t("In a dungeon, an icon for each rare that drops an upgrade for you, lit with a sound when it's near. Hidden in combat; /gp rare brings it back.",
     "Im Dungeon ein Symbol für jeden seltenen Gegner mit einer Verbesserung für dich, das mit einem Ton aufleuchtet, wenn er nah ist. Im Kampf versteckt; /gp rare holt es zurück.",

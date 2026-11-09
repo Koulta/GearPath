@@ -88,6 +88,23 @@ local function ensure()
     end
 end
 
+-- A dungeon's bosses in the journal's order: { [boss name] = 1, 2, ... }.
+function Journal.BossOrder(name)
+    local ns = NS()
+    local out = {}
+    local d = ns and type(name) == "string" and ns.DB[name]
+    if type(d) ~= "table" then
+        -- The journal's own name for it may differ a little (a wing, "The").
+        for _, n in ipairs(ns and ns.ORDER or {}) do
+            if GP.Waypoint.SameDungeon(n, name) then d = ns.DB[n] break end
+        end
+    end
+    for i, boss in ipairs(type(d) == "table" and d.bosses or {}) do
+        if type(boss) == "table" and type(boss.name) == "string" and not out[boss.name] then out[boss.name] = i end
+    end
+    return out
+end
+
 -- The journal's facts about a dungeon (level range, entrance, location).
 function Journal.Dungeon(name)
     ensure()

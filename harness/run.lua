@@ -630,6 +630,93 @@ do
     end
 end
 
+-- Dungeon loot: into the Deadmines, a panel with its upgrades for you, by boss.
+if not H.noDB then
+    local Loot = GP.Loot
+    local inInst, instInfo = IsInInstance, GetInstanceInfo
+    local loose = GP.RareWatch and GP.RareWatch.frame
+    IsInInstance = function() return true, "party" end
+    GetInstanceInfo = function() return "The Deadmines" end
+    Loot.place, Loot.shownFor, Loot.closed = nil, nil, nil
+    H.Fire("PLAYER_ENTERING_WORLD")
+    for _ = 1, 5 do H.Tick(0.1) end
+    local f = Loot.frame
+    check(f ~= nil and f:IsShown(), "into the Deadmines: the loot panel opens")
+    check(f and f.band and f.edge and f.edge:GetHeight() == 2, "a header band with an accent line under it")
+    check(f and f.title:GetText() == "GearPath: The Deadmines", "titled with the dungeon (" .. tostring(f and f.title:GetText()) .. ")")
+    local groups, n = Loot.Build("The Deadmines")
+    local bosses = {}
+    for _, g in ipairs(groups) do bosses[#bosses + 1] = g.boss .. ":" .. #g.items end
+    print("  dungeon loot: " .. table.concat(bosses, ", ") .. " (" .. n .. " items)")
+    check(n > 0 and groups[1].items[1].rec ~= nil, "it lists upgrades by boss")
+    local texts = {}
+    for _, r in ipairs(f.lines) do if r:IsShown() then texts[#texts + 1] = (r.text:GetText() or "") .. " | " .. (r.slot:GetText() or "") .. " | " .. (r.gain:GetText() or "") end end
+    print("  " .. table.concat(texts, "\n  "))
+    check(table.concat(texts, "\n"):find("Testson's Vestments | Chest | [%+%dx%%]+"), "an item line: name, slot, +%")
+    check(texts[1]:find("^[^|]+ |  | $"), "a boss line first, the boss's name alone")
+    -- Bigger upgrades first within a boss.
+    for _, g in ipairs(groups) do
+        for i = 2, #g.items do check((g.items[i - 1].delta or 0) >= (g.items[i].delta or 0), "biggest upgrade first under " .. g.boss) end
+    end
+    -- The corner grip: drag right to make it bigger, right-click for normal size.
+    Loot.StartResize(500)
+    Loot.Resize(500 + 150)
+    check(math.abs(f:GetScale() - 1.5) < 0.01 and GP.db.window.lootScale, "dragging the corner 150px right: half again as big (" .. f:GetScale() .. ")")
+    Loot.Resize(500 + 2000)
+    check(f:GetScale() == Loot.MAX_SCALE, "no bigger than " .. Loot.MAX_SCALE .. "x")
+    Loot.Resize(0)
+    check(f:GetScale() == Loot.MIN_SCALE, "no smaller than " .. Loot.MIN_SCALE .. "x")
+    Loot.sizing = nil
+    f.grip:GetScript("OnMouseUp")(f.grip, "RightButton")
+    check(f:GetScale() == 1 and GP.db.window.lootScale == nil, "right-click the grip: normal size")
+    GP.db.window.lootScale = 1.3
+    check(Loot.Scale() == 1.3, "the size is kept")
+    GP.db.window.lootScale = nil
+    -- A pull closes it for the visit; /gp loot brings it back.
+    H.Fire("PLAYER_REGEN_DISABLED")
+    check(not f:IsShown(), "a pull closes it")
+    H.Fire("PLAYER_REGEN_ENABLED")
+    Loot.Refresh()
+    check(not f:IsShown(), "and it stays closed this visit")
+    SlashCmdList.GEARPATH("loot")
+    check(f:IsShown(), "/gp loot brings it back")
+    -- It closes itself after a while (not with your mouse on it), even as
+    -- the gear list changes under it.
+    f.IsMouseOver = function() return true end
+    for _ = 1, Loot.CLOSE_AFTER + 2 do H.Tick(1) end
+    check(f:IsShown(), "stays while your mouse is on it")
+    f.IsMouseOver = nil
+    for _ = 1, 5 do H.Tick(1) GP.Fire("ScoresChanged", GP.Score.results) end
+    for _ = 1, Loot.CLOSE_AFTER + 2 do H.Tick(1) end
+    check(not f:IsShown(), "closes itself after " .. Loot.CLOSE_AFTER .. " seconds")
+    -- Out and back in: a new visit, it shows again.
+    IsInInstance, GetInstanceInfo = inInst, instInfo
+    Loot.Refresh()
+    IsInInstance = function() return true, "party" end
+    GetInstanceInfo = function() return "The Deadmines" end
+    Loot.Refresh()
+    check(f:IsShown(), "out and back in: it shows again")
+    -- Off in Settings.
+    GP.SetSetting("dungeonLoot", false)
+    for _ = 1, 3 do H.Tick(0.1) end
+    check(not f:IsShown(), "off in Settings: closed")
+    GP.SetSetting("dungeonLoot", true)
+    -- A dungeon with nothing for you: one chat line, no panel.
+    GetInstanceInfo = function() return "Ragefire Chasm" end
+    local before = #H.printed
+    Loot.Refresh()
+    check(not f:IsShown() and table.concat(H.printed, "\n", before + 1):find("No upgrades for you drop in Ragefire Chasm"),
+        "nothing for you: a chat line, no panel")
+    IsInInstance, GetInstanceInfo = inInst, instInfo
+    Loot.Refresh()
+    check(not f:IsShown(), "out of the dungeon, nothing")
+    -- Not in a dungeon: /gp loot says so.
+    before = #H.printed
+    SlashCmdList.GEARPATH("loot")
+    check(table.concat(H.printed, "\n", before + 1):find("not in a dungeon"), "/gp loot outside: says you're not in one")
+    if GP.RareWatch and GP.RareWatch.frame and not loose then GP.RareWatch.frame:Hide() end
+end
+
 -- Rare watch: in the Deadmines, an icon for each rare that drops an upgrade.
 if not H.noDB then
     local RW = GP.RareWatch

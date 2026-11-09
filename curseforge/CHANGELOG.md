@@ -1,5 +1,10 @@
 # GearPath changelog
 
+## 0.7.15
+
+### New
+- **Dungeon loot.** Walk into a dungeon or raid and a small panel shows its drops that are upgrades for you, by boss (in DungeonJournal's order when it's installed), each with its slot and the same +% as the tooltips. Only real upgrades: nothing you need a reputation or rank for first, nothing you've hidden. Hover an item for its tooltip, shift-click to link it to your group. It closes when you pull, or by itself after 20 seconds unless your mouse is on it, and opens again the next time you come in. Drag it where you like, and drag its corner to make it bigger or smaller (right-click the corner for normal size); `/gp loot` brings it back. Off with **Dungeon loot** in Settings > Extras.
+
 ## 0.7.14
 
 ### Fixed

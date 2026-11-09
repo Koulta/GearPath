@@ -149,6 +149,7 @@ GP.DEFAULTS = {
         minimapAngle = 200,     -- where round the minimap it sits (degrees)
         notices = true,         -- a toast for an upgrade put on; chat lines for vendor upgrades and gear a level-up opens
         learn = true,           -- remember quest rewards, loot and vendors you see
+        dungeonLoot = true,     -- into a dungeon or raid: a panel with its drops that are upgrades for you, by boss
         rareWatch = true,       -- in a dungeon, an icon per rare with an upgrade for you, lit when it's near
         rareWatchWorld = true,  -- out in the world, an icon, a sound and a chat line when such a rare comes into view
         englishText = false,    -- English instead of the (machine-made, draft) translation of GearPath's own text

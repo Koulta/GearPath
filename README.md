@@ -29,6 +29,7 @@ GearPath looks at your class, spec and level, finds every upgrade you can actual
 | **Browse** | Every piece of gear for your class near your level. Search, filter and sort it. |
 | **Tooltips** | Every piece of gear shows how much better or worse it is than what you wear, by your class and spec (+12%, -8%), and where to get it. Mobs and NPCs list the upgrades they drop or sell. |
 | **Quest reward pick** | Shows which reward to take, or the one that sells for the most if none is an upgrade. |
+| **Dungeon loot** | Walk into a dungeon and see what drops there for you, by boss, with the +%. |
 | **Rare watch** | An icon and a sound when a rare that drops an upgrade for you comes into view. |
 | **Crafted gear** | The gear your professions can make: what you can craft now, which trainer or vendor has the recipe, what needs more skill. From your profession window and trainers, or every recipe at once with ProfessionDB. |
 | **Weapon training** | Found a great staff but never learned Staves? GearPath says so and puts the weapon master on your route. |

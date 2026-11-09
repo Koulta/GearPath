@@ -2,7 +2,7 @@
 ## Title: GearPath
 ## Notes: Your character sheet, a gear database and an upgrade route in one window. Finds the best gear for each slot and tells you where to get it.
 ## Author: Koulta
-## Version: 0.7.14
+## Version: 0.7.15
 ## IconTexture: Interface\AddOns\GearPath\Media\icon
 ## X-License: GPL-3.0-or-later
 ## SavedVariables: GearPathDB
@@ -44,5 +44,6 @@ UI\Plan.lua
 UI\Settings.lua
 UI\Tooltip.lua
 UI\RareWatch.lua
+UI\DungeonLoot.lua
 UI\QuestPick.lua
 UI\Notes.lua
