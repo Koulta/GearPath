@@ -585,7 +585,10 @@ function UI.ItemClick(ev, button, owner)
     if link and IsModifiedClick and IsModifiedClick() and HandleModifiedItemClick then
         if pcall(HandleModifiedItemClick, link) then return end
     end
-    if button == "RightButton" and owner then
+    -- (Where no menu can open, a right-click is the map pin, as before 0.7.14:
+    -- never a hide with nothing to confirm it.)
+    local skin = GP.Skin.current
+    if button == "RightButton" and owner and skin and skin.HasMenu and skin.HasMenu() then
         UI.RowMenu(ev, owner)
         return
     end

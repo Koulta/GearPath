@@ -144,7 +144,7 @@ function UnitArmor() return 40, 45 end
 -- Units the tests put in view (nameplates, targets): { guid, name, dead }.
 H.units = {}
 function UnitName(u) if H.units[u] then return H.units[u].name end if u == "player" then return "Koulta Summonpls" end return "Gryan" end
-function UnitGUID(u) if H.units[u] then return H.units[u].guid end return "Creature-0-0-0-0-9000-0000" end
+function UnitGUID(u) if H.units[u] then return H.units[u].guid end if u == "player" then return "Player-1-0000CAFE" end return "Creature-0-0-0-0-9000-0000" end
 function UnitExists(u) return u == "player" or H.units[u] ~= nil end
 function UnitIsDead(u) return H.units[u] ~= nil and H.units[u].dead == true end
 H.cvars = { nameplateMaxDistance = "60", nameplateShowEnemies = "1" }

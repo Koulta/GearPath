@@ -546,6 +546,30 @@ if not H.noDB then
     check(not GP.db.shared.items[1], "a record carrying a link is refused")
     hear("Koulta-Forever", "CHANNEL", "1;Q:300:300:1:1:1:me")
     check(not GP.db.shared.items[300], "your own messages are ignored")
+    -- Forever characters have a first and a last name: addon messages come
+    -- back under the full name ("Koulta Lorn"), which UnitName doesn't give
+    -- ("Koulta"). Seen in Koulta's saved file, Nov 9: 231 of 268 "shared by
+    -- other players" sources were his own, each marked as a guild mate's.
+    do
+        GP.db.shared.items[301] = { q = { [301] = { by = { ["Koulta Lorn"] = true }, c = 1, t = true, s = H.wall, n = "old echo" } } }
+        GP.db.shared.items[302] = { q = { [302] = { by = { ["Koulta Lorn"] = true, ["Bob-Forever"] = true }, c = 2, t = true, s = H.wall, n = "old echo and Bob" } } }
+        H.sent = {}
+        GP.Share.sent = {}
+        GP.Share.Send("q", 303, 303, 1431, 0.5, 0.5, "mine")
+        H.Tick(4)
+        local out = H.sent[#H.sent]
+        check(out and out.msg:find("Q:303:303", 1, true), "a source of yours goes out")
+        hear("Koulta Lorn", "GUILD", out.msg)
+        check(not GP.db.shared.items[303], "its echo under your full name isn't kept as another player's")
+        check(GP.db.shared.items[301] == nil, "and what was kept under that name before is cleared")
+        local two = GP.db.shared.items[302] and GP.db.shared.items[302].q[302]
+        check(two and two.c == 1 and two.by["Koulta Lorn"] == nil and two.by["Bob-Forever"], "another player's report of the same source stays, counted once")
+        hear("Koulta Lorn", "GUILD", "1;Q:304:304:1431:500:500:later")
+        check(not GP.db.shared.items[304], "later messages under that name are ignored too")
+        hear("Bob-Forever", "GUILD", "1;Q:303:303:1431:500:500:mine;I:0000000000")
+        check(GP.db.shared.items[303] ~= nil, "the same record from another player (another mark) still counts")
+        check(out.msg:match(";I:%x+$") and #out.msg <= 255, "the mark rides at the end, within an addon message's size")
+    end
     -- What's saved is dated and kept in bounds.
     local Learn = GP.Learn
     check(GP.db.shared.items[203].d[9100].s == H.wall, "a shared source keeps when it was last reported")
@@ -672,6 +696,20 @@ if not H.noDB then
     GP.db.window.lootScale = 1.3
     check(Loot.Scale() == 1.3, "the size is kept")
     GP.db.window.lootScale = nil
+    do  -- Zoned in with a mob still on you (the cave before Wailing Caverns): it opens when the fight ends.
+        IsInInstance, GetInstanceInfo = inInst, instInfo
+        Loot.Refresh()
+        H.combat = true
+        IsInInstance = function() return true, "party" end
+        GetInstanceInfo = function() return "The Deadmines" end
+        H.Fire("PLAYER_ENTERING_WORLD")
+        for _ = 1, 30 do H.Tick(0.1) end
+        check(not f:IsShown(), "in combat at the door: not yet")
+        H.combat = false
+        H.Fire("PLAYER_REGEN_ENABLED")
+        for _ = 1, 3 do H.Tick(0.1) end
+        check(f:IsShown(), "the fight ends: the panel opens")
+    end
     -- A pull closes it for the visit; /gp loot brings it back.
     H.Fire("PLAYER_REGEN_DISABLED")
     check(not f:IsShown(), "a pull closes it")
@@ -1692,6 +1730,15 @@ do
     check(not (e.best and e.best.kind == "craft" and e.best.known), "a recipe one character knows isn't known by another")
     GP.Learn.Me = me
     GP.Sources.Resolve(e)
+    -- Forever names: "Koulta Lorn" and "Koulta Summonpls" are both "Koulta"
+    -- to UnitName, on the same realm. Each character is told apart anyway.
+    do
+        local a = GP.Learn.Me()
+        H.units.player = { name = "Koulta Summonpls", guid = "Player-1-0000BEEF" }
+        local b = GP.Learn.Me()
+        H.units.player = nil
+        check(a ~= b, "two characters with the same name are told apart (" .. tostring(a) .. " / " .. tostring(b) .. ")")
+    end
     H.skills, H.trade, H.trainer, H.units.npc = nil, nil, nil, nil
 end
 
@@ -1794,6 +1841,47 @@ do
     for _ = 1, 60 do H.Tick(0.1) end
 end
 
+-- Forever's stat table gives hit, crit and the like as ratings, at flat
+-- rates (10 hit, 14 crit, 12 dodge, 20 parry to 1%: Sharpie's Gear Judge
+-- 3.2.11; senseos.gg's read of the client, Nov 7). The tooltip's own
+-- percentage still wins; the table is what's left when a line isn't read.
+do
+    local Items = GP.Items
+    H.ITEMS[259] = { "Rating Test Ring", 2, 30, 25, "INVTYPE_FINGER", 4, 0,
+        { ITEM_MOD_HIT_RATING_SHORT = 5, ITEM_MOD_CRIT_RATING_SHORT = 28, ITEM_MOD_DODGE_RATING_SHORT = 12, ITEM_MOD_PARRY_RATING_SHORT = 20 } }
+    local st = Items.ReadStats("item:259", nil)
+    check(st.hit == 0.5, "5 hit rating with no tooltip line is 0.5% (" .. tostring(st.hit) .. ")")
+    check(st.crit == 2, "28 crit rating is 2% (" .. tostring(st.crit) .. ")")
+    check(st.dodge == 1 and st.parry == 1, "12 dodge and 20 parry rating are 1% each (" .. tostring(st.dodge) .. ", " .. tostring(st.parry) .. ")")
+    st = Items.ReadStats("item:259", { lines = { { leftText = "Rating Test Ring" }, { leftText = "Equip: Improves your chance to hit by 0.5%." } } })
+    check(st.hit == 0.5, "the tooltip's own percentage wins (" .. tostring(st.hit) .. ")")
+    H.ITEMS[259] = nil
+    -- Lines that name the kind of attack.
+    local found = Items.ParseTooltip({ lines = { { leftText = "Gloves" },
+        { leftText = "Equip: Improves your chance to get a critical strike with melee attacks by 2.0%." },
+        { leftText = "Equip: Improves your chance to hit with melee attacks by 1%." } } })
+    check(found.crit == 2 and found.hit == 1, "\"with melee attacks\" lines are read (" .. tostring(found.crit) .. ", " .. tostring(found.hit) .. ")")
+    found = Items.ParseTooltip({ lines = { { leftText = "Set bonus" },
+        { leftText = "Equip: Improves your chance to hit with Taunt and Challenging Shout by 5%." } } })
+    check(found.hit == nil, "a line about one ability isn't hit (" .. tostring(found.hit) .. ")")
+end
+
+-- A skill or rank an item needs, once you have it: the item stops waiting
+-- without a /reload (its "Requires" line was read once and kept).
+do
+    local Items = GP.Items
+    H.ITEMS[260] = { "Skill Test Goggles", 2, 30, 20, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 12 },
+        { "Binds when picked up", { "Requires Engineering (150)", 1, 0.1, 0.1 } } }
+    Items.cache[260] = nil
+    local rec = Items.Get(260)
+    check(rec and rec.needs == "Engineering (150)", "a skill you don't have: needs it (" .. tostring(rec and rec.needs) .. ")")
+    H.ITEMS[260][9][2] = { "Requires Engineering (150)", 1, 1, 1 }
+    H.Fire("SKILL_LINES_CHANGED")
+    for _ = 1, 3 do H.Tick(0.1) end
+    check(Items.Get(260).needs == nil, "the skill is yours now: nothing needed (" .. tostring(Items.Get(260).needs) .. ")")
+    H.ITEMS[260], Items.cache[260] = nil, nil
+end
+
 -- Reputation gear, met or not, and hiding a vendor or an item (dmann420 on
 -- CurseForge, Nov 7: Illiyana Moonblaze's reputation gear listed as plain
 -- vendor gear; "an option to blacklist a vendor").
@@ -1869,6 +1957,16 @@ do
         GameTooltip._lines = {}
         GP.Tooltip.Add(GameTooltip, 257)
         check(table.concat(GameTooltip._lines, "\n"):find("GearPath %("), "the hidden vendor's item still has its tooltip")
+        do  -- A client with no menu system: a right-click hides nothing (it's the map pin).
+            local mu = MenuUtil
+            if mu and GP.Skin.current ~= GP.Skin.looks.daylight then
+                MenuUtil = nil
+                local before = #GP.Hide.List()
+                GP.UI.ItemClick(legs, "RightButton", row)
+                check(#GP.Hide.List() == before, "no menu system: a right-click hides nothing")
+                MenuUtil = mu
+            end
+        end
         -- Hide an item.
         GP.UI.ItemClick(legs, "RightButton", row)
         check(pick("Hide this item"), "picked Hide this item")

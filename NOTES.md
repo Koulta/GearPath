@@ -70,6 +70,7 @@ Upgrade math: `lua5.1 scoring_test.lua <addon folder>` and zone data:
 October 23, 2026 (0.7.1 work): every suite above, 3,192 checks, 0 failed.
 October 29, 2026 (0.7.2): every suite above, 0 failed.
 November 7, 2026 (0.7.14): every suite above, 0 failed (native 459 checks).
+November 9, 2026 (0.7.16): every suite above, 0 failed (native 499 checks).
 
 QuestieDB zone check after a QuestieDB update: from `harness/`,
 `GPDIR=<addon folder> lua5.1 qdb.lua <QuestieDB folder> ../queries/zones.lua` (shape only;
@@ -207,6 +208,39 @@ older notes and check-ins may still say C:\World of Warcraft\GearPath-dev).
       report Healing apart?) and on Bloodvine Vest (does "2.0% hit" come back as 2 or a rating?).
 - [ ] Recheck `Classes.HIT_CAP` and the racials against launch notes.
 - [x] GitHub: noreply commit email set; LICENSE (now GPL-3) at the root. Repo: github.com/Koulta/GearPath.
+
+## Review, November 9, 2026 (0.7.16)
+
+Koulta asked for a once-over on Fable's trial. What was checked, and what it found:
+
+- **Databases on his PC**: QuestieDB 1.0.13 (contract 4, zones OK: 129 dungeons, 129 entrances),
+  ForeverDungeonJournal 1.7.4 (every field GearPath reads still there; `queries/gp_journal.lua` OK),
+  ProfessionDB 1.9.1 (unchanged since the Nov 7 fixture), EllesmereUI 9.8.3, Interface 16001.
+  Real-data sweep on 1.0.13: 210 runs, 0 problems, before and after the fixes.
+- **Online**: Blizzard hotfixes Nov 5 and 6 (nothing GearPath models; Tanning Rack skill 140 -> 125 is
+  ProfessionDB's to pick up). Class tuning announced for Nov 10 (Kaivax, Nov 6): Enhancement to have
+  Strength always its strongest stat and not prefer caster gear (GearPath: str 1.0, int 0.55, sp 0.45:
+  already that way; recheck once the hotfix text is out), pet durability, Affliction's Wrack vs DoTs
+  (no stat change). Hit caps: method.gg (Oct 6) still 5% attacks, 4% spells, 24% dual wield vs your
+  level; no official numbers. Icy Veins' Forever pages couldn't be fetched (the site refused).
+- **Forever names**: a character has a first and a last name. UnitName("player") gives the first
+  ("Koulta"); addon messages arrive under the full name ("Koulta Lorn"). Seen in his SavedVariables:
+  231 of 268 shared sources were his own echoes, each marked trusted. Fixed with a per-session mark
+  on every message (Share.mark, the "I:" piece; older versions skip it) and GP.char.shareNames.
+  Learn.Me() is the character's GUID now.
+- **Ratings**: the stat table gives hit/crit/dodge/parry as ratings at flat rates (Gear Judge 3.2.11
+  GetGearPower: hit 10, crit 14, dodge 12, parry 20; senseos.gg from client 1.60.1.70862: hit 10,
+  crit 14, dodge 12). Items.RATING_PER_PERCENT. The tooltip's percentage still wins.
+- **Dungeon panel**: PLAYER_REGEN_ENABLED now retries (zoned in in combat). Known limit: Scarlet
+  Monastery's wings are one instance name ("Scarlet Monastery"), so the panel lists all four wings
+  there; the same for Dire Maul, Stratholme and Blackrock Spire if the game names them as one.
+- **Not explained**: his saved file has no crafting records (learned.items[*].c) after three days with
+  Tailoring. Other Forever addons use the same calls (GetTradeSkillLine, GetTradeSkillItemLink,
+  TRADE_SKILL_SHOW), so either the window wasn't opened since 0.7.10 or GetTrainerServiceSkillReq /
+  the trade skill calls answer differently. Ask him to open the Tailoring window, /reload, and read
+  SavedVariables\GearPath.lua again.
+- His Show: filter has drop, craft, rep, vendor and pvp unticked (his choice; the dungeon panel
+  ignores Show:, on purpose).
 
 ## Crafted gear (0.7.10)
 

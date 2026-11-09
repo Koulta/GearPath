@@ -349,6 +349,10 @@ function N.Popup(parent)
 end
 
 -- A choice from a list: keys in order, labels[key], the current key.
+-- Whether a real menu can open (without one, N.Menu's fallback picks the
+-- next choice at once: fine for a dropdown, not for "Hide this item").
+function N.HasMenu() return MenuUtil ~= nil and MenuUtil.CreateContextMenu ~= nil end
+
 function N.Menu(owner, keys, labels, current, onPick)
     if MenuUtil and MenuUtil.CreateContextMenu then
         MenuUtil.CreateContextMenu(owner, function(_, root)

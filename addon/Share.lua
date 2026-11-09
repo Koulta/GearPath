@@ -138,12 +138,13 @@ end
 -- One message every few seconds, as many records as fit.
 local function flush()
     if #Share.queue == 0 or not on() or not canSend() then return end
-    local parts, len = { tostring(Share.VERSION) }, 1
+    local parts, len = { tostring(Share.VERSION) }, 1 + #Share.mark + 3
     while Share.queue[1] and len + #Share.queue[1] + 1 <= Share.MAX_LEN do
         local rec = table.remove(Share.queue, 1)
         parts[#parts + 1] = rec
         len = len + #rec + 1
     end
+    parts[#parts + 1] = "I:" .. Share.mark
     local msg = table.concat(parts, ";")
     if IsInGuild and IsInGuild() then send(msg, "GUILD") end
     if IsInRaid and IsInRaid() then send(msg, "RAID")
@@ -166,9 +167,57 @@ local function me()
     return name, realm
 end
 
-local function fromMe(sender)
+-- Forever characters have a first and a last name, and addon messages come
+-- back under the full one ("Koulta Lorn"), which the game's name functions
+-- don't give ("Koulta"). So every message carries a mark made up for this
+-- session ("I:3fa91c07b2"; older GearPaths skip a piece they don't know):
+-- one that comes back with your mark is yours. The name it came under is
+-- remembered as yours (for this character), and what was kept under it
+-- before is cleared.
+Share.mark = string.format("%06x%04x", math.random(0, 0xffffff), math.random(0, 0xffff))
+
+local function myNames()
+    local c = GP.char
+    if not c then return {} end
+    if type(c.shareNames) ~= "table" then c.shareNames = {} end
+    return c.shareNames
+end
+
+-- Drops everything kept as reported by `name` (it was you): the name comes
+-- off each source, and a source nobody else reported goes.
+function Share.ForgetReporter(name)
+    local changed = {}
+    for item, kinds in pairs(store()) do
+        if type(kinds) == "table" then
+            for kind, list in pairs(kinds) do
+                if type(list) == "table" then
+                    for id, s in pairs(list) do
+                        if type(s) == "table" and type(s.by) == "table" and s.by[name] then
+                            s.by[name] = nil
+                            s.c = math.max(0, (s.c or 1) - 1)
+                            if next(s.by) == nil then list[id] = nil end
+                            changed[item] = true
+                        end
+                    end
+                    if next(list) == nil then kinds[kind] = nil end
+                end
+            end
+            if next(kinds) == nil then store()[item] = nil end
+        end
+    end
+    return changed
+end
+
+local function fromMe(sender, text)
     local name, realm = me()
-    return sender == name or sender == (name .. "-" .. realm)
+    if sender == name or sender == (name .. "-" .. realm) then return true end
+    if myNames()[sender] then return true end
+    if type(text) == "string" and text:sub(-(#Share.mark + 3)) == ";I:" .. Share.mark then
+        myNames()[sender] = true
+        for item in pairs(Share.ForgetReporter(sender)) do GP.Sources.Learned(item) end
+        return true
+    end
+    return false
 end
 
 -- Rate counts older than a minute are of no use; cleared as messages go out.
@@ -228,7 +277,7 @@ local TRUSTED = { GUILD = true, PARTY = true, RAID = true, INSTANCE_CHAT = true 
 GP.RegisterEvent("CHAT_MSG_ADDON", function(_, prefix, text, channel, sender)
     prefix, text, channel, sender = GP.Plain(prefix), GP.Plain(text), GP.Plain(channel), GP.Plain(sender)
     if prefix ~= Share.PREFIX or type(text) ~= "string" or type(sender) ~= "string" then return end
-    if not on() or fromMe(sender) or #text > 255 then return end
+    if not on() or fromMe(sender, text) or #text > 255 then return end
     local version, rest = text:match("^(%d+);(.*)$")
     if tonumber(version) ~= Share.VERSION or not rest then return end
     local changed = {}
@@ -267,6 +316,7 @@ GP.On("Login", function()
         pcall(C_ChatInfo.RegisterAddonMessagePrefix, Share.PREFIX)
     end
     store()
+    for name in pairs(myNames()) do Share.ForgetReporter(name) end
     -- After the game's own channels (General, Trade...) have their numbers:
     -- join it when it's on, and leave it when it's off (the game rejoins
     -- channels from earlier sessions by itself).

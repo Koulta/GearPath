@@ -412,7 +412,13 @@ GP.RegisterEvent("PLAYER_REGEN_DISABLED", function()
     Loot.fighting = true
     if Loot.frame and Loot.frame:IsShown() then Loot.Close() end
 end)
-GP.RegisterEvent("PLAYER_REGEN_ENABLED", function() Loot.fighting = false end)
+-- The fight's over: if the panel hasn't opened this visit (you zoned in with
+-- a mob still on you, as in the cave before Wailing Caverns: Koulta, Nov 9),
+-- it opens now. One a pull closed stays closed.
+GP.RegisterEvent("PLAYER_REGEN_ENABLED", function()
+    Loot.fighting = false
+    soon()
+end)
 
 -- And by itself after a while, unless your mouse is on it.
 function Loot.Tick()

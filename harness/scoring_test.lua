@@ -36,12 +36,12 @@ I[420] = { "Dmg-Heal Robe", 2, 26, 20, "INVTYPE_ROBE", 4, 1, {}, { "Equip: Incre
 I[421] = { "Heal Robe", 2, 26, 20, "INVTYPE_ROBE", 4, 1, { ITEM_MOD_SPELL_HEALING_DONE_SHORT = 12, ITEM_MOD_SPELL_DAMAGE_DONE_SHORT = 4 } }
 I[422] = { "Spell Power Robe", 2, 26, 20, "INVTYPE_ROBE", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 20 } }
 I[430] = { "Expertise Gloves", 2, 26, 20, "INVTYPE_HAND", 4, 3, {}, { "Equip: Reduces chance to be Dodged or Parried by 1.0%." } }
-I[431] = { "Crit Gloves", 2, 26, 20, "INVTYPE_HAND", 4, 3, { ITEM_MOD_CRIT_RATING_SHORT = 6 }, { "Equip: Improves your chance to get a critical strike by 6%." } }
-I[440] = { "Hit Hood", 2, 25, 20, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_HIT_RATING_SHORT = 4 } }
-I[441] = { "Hit Gloves", 2, 25, 20, "INVTYPE_HAND", 4, 1, { ITEM_MOD_HIT_RATING_SHORT = 2 } }
+I[431] = { "Crit Gloves", 2, 26, 20, "INVTYPE_HAND", 4, 3, { ITEM_MOD_CRIT_RATING_SHORT = 84 }, { "Equip: Improves your chance to get a critical strike by 6%." } }
+I[440] = { "Hit Hood", 2, 25, 20, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_HIT_RATING_SHORT = 40 } }
+I[441] = { "Hit Gloves", 2, 25, 20, "INVTYPE_HAND", 4, 1, { ITEM_MOD_HIT_RATING_SHORT = 20 } }
 I[442] = { "Plain Gloves", 2, 25, 20, "INVTYPE_HAND", 4, 1, {} }
-I[443] = { "Leather Hit Hood", 2, 25, 20, "INVTYPE_HEAD", 4, 2, { ITEM_MOD_HIT_RATING_SHORT = 4 } }
-I[444] = { "Leather Hit Gloves", 2, 25, 20, "INVTYPE_HAND", 4, 2, { ITEM_MOD_HIT_RATING_SHORT = 2 } }
+I[443] = { "Leather Hit Hood", 2, 25, 20, "INVTYPE_HEAD", 4, 2, { ITEM_MOD_HIT_RATING_SHORT = 40 } }
+I[444] = { "Leather Hit Gloves", 2, 25, 20, "INVTYPE_HAND", 4, 2, { ITEM_MOD_HIT_RATING_SHORT = 20 } }
 I[445] = { "Leather Gloves", 2, 25, 20, "INVTYPE_HAND", 4, 2, {} }
 I[450] = { "Worse Chest", 2, 20, 15, "INVTYPE_CHEST", 4, 1, { ITEM_MOD_STAMINA_SHORT = 5 } }
 

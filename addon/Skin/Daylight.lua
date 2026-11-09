@@ -275,6 +275,8 @@ function D.Popup(parent)
     return f
 end
 
+function D.HasMenu() return true end
+
 function D.Menu(owner, keys, labels, current, onPick)
     DUI().Widgets.OpenMenu(owner, keys, labels, current, onPick)
 end

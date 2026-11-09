@@ -228,7 +228,13 @@ end)
 --   recipe), r = skill it needs, t = trainer, m, x, y = the trainer's spot }
 -- Kept to yourself (never shared): it's about your own characters.
 
+-- This character, for "knows the recipe": the game's own id for it. (Not
+-- its name: Forever characters have a first and a last name and UnitName
+-- gives only the first, so "Koulta Lorn" and "Koulta Summonpls" on one
+-- realm were the same character here until 0.7.16.)
 function Learn.Me()
+    local guid = UnitGUID and GP.Plain(UnitGUID("player"))
+    if type(guid) == "string" and guid ~= "" then return guid end
     local name = GP.Plain(UnitName("player")) or "?"
     local realm = GetRealmName and GP.Plain(GetRealmName()) or nil
     return realm and (name .. "-" .. realm) or name

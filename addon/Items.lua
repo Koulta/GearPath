@@ -44,14 +44,19 @@ local STAT_KEYS = {
 }
 Items.STAT_KEYS = STAT_KEYS
 
--- Forever shows hit, crit and the like as percentages. The tooltip's own
--- percentage is used when it has one (see ReadStats). Without one, a big
--- number from the stat table is taken for a rating (an older item):
--- roughly 14 rating to 1% at 60. That ratio is a guess, not Forever's.
+-- Forever shows hit, crit and the like as percentages on the tooltip, and
+-- the tooltip's own percentage is used when it has one (see ReadStats).
+-- The stat table carries the same thing as a rating, at flat rates: 10 hit
+-- or expertise, 14 crit, 12 dodge and 20 parry to 1% (Sharpie's Gear Judge
+-- 3.2.11's Forever rates; senseos.gg's read of the client's items, Nov 7:
+-- "1% hit = 10", "1% crit = 14"). Haste has no published rate: crit's.
+-- (Until 0.7.16 this was a guess: 14 for everything, and a number of 5 or
+-- less taken for a percentage, so 0.5% hit read from the table was 5%.)
 local PERCENT_STATS = { hit = true, crit = true, haste = true, dodge = true, parry = true, expertise = true }
-local function asPercent(v)
-    if v > 5 then return v / 14 end
-    return v
+local RATING_PER_PERCENT = { hit = 10, expertise = 10, crit = 14, haste = 14, dodge = 12, parry = 20 }
+Items.RATING_PER_PERCENT = RATING_PER_PERCENT
+local function asPercent(v, key)
+    return v / (RATING_PER_PERCENT[key] or 14)
 end
 
 -- Spell power that heals as much as it damages ("Increases damage and
@@ -76,8 +81,16 @@ local LINE_PATTERNS = {
     { "increases healing done by magical spells and effects by up to (%d+)", "heal" },
     { "improves your chance to hit with spells by ([%d%.]+)%%", "hit" },
     { "improves your chance to hit by ([%d%.]+)%%", "hit" },
+    { "improves your chance to hit with melee attacks by ([%d%.]+)%%", "hit" },
+    { "improves your chance to hit with ranged attacks by ([%d%.]+)%%", "hit" },
+    { "improves your chance to hit with melee and ranged attacks by ([%d%.]+)%%", "hit" },
+    { "improves your chance to hit with all attacks and spells by ([%d%.]+)%%", "hit" },
     { "improves your chance to get a critical strike with spells by ([%d%.]+)%%", "crit" },
     { "improves your chance to get a critical strike by ([%d%.]+)%%", "crit" },
+    { "improves your chance to get a critical strike with melee attacks by ([%d%.]+)%%", "crit" },
+    { "improves your chance to get a critical strike with ranged attacks by ([%d%.]+)%%", "crit" },
+    { "improves your chance to get a critical strike with melee and ranged attacks by ([%d%.]+)%%", "crit" },
+    { "improves your chance to get a critical strike with all attacks and spells by ([%d%.]+)%%", "crit" },
     { "restores (%d+) mana per 5 sec", "mp5" },
     { "(%d+) mana per 5 sec", "mp5" },
     { "%+(%d+) ranged attack power", "rap" },
@@ -377,7 +390,7 @@ function Items.ReadStats(link, tooltipData)
                 if school then key = SCHOOLS[school:lower()] end
             end
             if key and type(v) == "number" and not GP.IsSecret(v) then
-                if PERCENT_STATS[key] then v = asPercent(v) end
+                if PERCENT_STATS[key] then v = asPercent(v, key) end
                 stats[key] = (stats[key] or 0) + v
                 if BOTH_SPELL_POWER[k] and not healing then stats.heal = (stats.heal or 0) + v end
             end
@@ -452,6 +465,31 @@ function Items.Instant(id)
 end
 
 -- The record if the client has the item, else nil (and it's asked for).
+-- A skill or rank changed: items waiting on a requirement are read again
+-- (their "Requires" line was read once and kept, so gear stayed under
+-- Needs something first until a /reload). Reputations are checked live
+-- (Items.NeedsOf), so only the tooltip's own red line needs this.
+function Items.RefreshNeeds()
+    local n = 0
+    for _, cache in ipairs({ Items.cache, Items.linkCache }) do
+        for _, rec in pairs(cache) do
+            if rec.needs then
+                local tip = tooltipFor(rec.link or rec.id)
+                if Items.TooltipComplete(tip) then
+                    local _, _, _, needs, rule, rep = Items.ParseTooltip(tip)
+                    rec.needs, rec.rule, rec.rep = needs, rule, rep
+                    n = n + 1
+                end
+            end
+        end
+    end
+    if n > 0 and GP.Score then GP.Score.Request() end
+    return n
+end
+for _, e in ipairs({ "SKILL_LINES_CHANGED", "PLAYER_PVP_RANK_CHANGED" }) do
+    GP.RegisterEvent(e, function() GP.Soon("needs", Items.RefreshNeeds) end)
+end
+
 function Items.Get(id)
     local rec = Items.cache[id]
     if rec then

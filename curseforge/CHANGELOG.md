@@ -1,5 +1,17 @@
 # GearPath changelog
 
+## 0.7.16
+
+A full review of the addon against the databases installed on November 9 (QuestieDB 1.0.13, DungeonJournal 1.7.4, ProfessionDB 1.9.1), Blizzard's hotfix notes to November 6 and the class tuning announced for November 10. No stat weights changed: Enhancement already puts Strength first, as Blizzard says it will be.
+
+### Fixed
+- **The dungeon loot panel didn't open if you zoned in while in combat** (a mob still on you in the cave before Wailing Caverns). It now opens as soon as the fight ends.
+- **Your own sightings were being saved as "shared by other players".** Forever characters have a first and a last name, and GearPath didn't recognise its own messages coming back under the full name. Yours are now recognised, and the ones saved by mistake are cleared the first time you share something (`/gp status` will show a much smaller "other players shared" count).
+- **Two of your characters with the same first name were treated as one** for "you know the recipe". Each character is now told apart.
+- **Hit read from the game's stat table was wrong** whenever an item's tooltip line couldn't be read: 0.5% hit could count as 5%. Forever's own rates are used now (10 hit, 14 crit, 12 dodge, 20 parry to 1%). Lines such as "chance to get a critical strike with melee attacks" are read too.
+- **Gear that needs a profession skill or a PvP rank stayed under Needs something first** after you got the skill or rank, until a /reload. It's checked again when your skills change.
+- On a client with no menu system, a right-click on an item can no longer hide something by accident.
+
 ## 0.7.15
 
 ### New
