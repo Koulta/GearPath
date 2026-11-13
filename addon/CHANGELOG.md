@@ -1,5 +1,25 @@
 # GearPath changelog
 
+## 0.8.0
+
+The biggest update yet: your own stat weights front and centre, a dungeon checklist, help at the Need/Greed window, a coin on gear that's safe to sell, Scarlet Monastery by wing, and more ways to look at your Route.
+
+### New
+- **Your own stat weights, easy to find.** Click your spec at the top of GearPath's window (the pencil), or **Change what counts for you: Stat weights** under the stats panel. Every weight shows its default beside it, and the ones you changed are marked **yours**. Make up to 8 **custom sets** of your own (a PvP set, a "my way" set...) and switch between them like specs; **Reset this spec** puts a spec back to its defaults. Tooltips and the window say whose weights they use, "(your weights)" when you've changed them.
+- **Dungeon checklist.** In the dungeon loot panel, a boss you've killed is ticked off and dimmed with its items, and gear you loot gets a check mark. It's kept through a wipe and the run back, and starts over in another dungeon (or two hours later).
+- **Dungeon quests in the loot panel.** Quests for the dungeon you're in whose rewards are upgrades for you are listed under the bosses. Click one for its quest giver on the map.
+- **"Upgrade!"** When you pick up gear that's an upgrade, a note at the top of the screen says how much better it is. Off with **Upgrade toast** in Settings.
+- **Loot roll help.** On the Need/Greed window, a line under the item: `GearPath: +105% for you (Waist)`, `GearPath: not an upgrade for you`, or `GearPath: for your other spec, Demonology: +12%`. Off with **Loot roll help** in Settings.
+- **Safe to sell.** A small coin on gear in your bags that isn't an upgrade for any of your specs (custom sets included), or that you can never wear, and a tooltip line: `GearPath: not an upgrade for any of your specs, safe to sell`. Trinkets, tools, epics and gear without stats GearPath reads are never marked. On the game's bags, EllesmereUI's, DaylightUI's and Baganator. Off with **Safe to sell mark** in Settings.
+- **Upgrade arrows in DaylightUI's bags and Baganator** (EllesmereUI's had them already), and their `upgrade` search finds GearPath's upgrades.
+- **Route: Group by place or slot.** The Route is grouped by where you go, as always; pick **Group by: slot** to see it by Head, Chest, Weapon and so on, each item saying where it's from.
+- **Route: This zone only.** Tick it to see only what you can get in the zone you're in (its dungeons too) and what's in your bags. It follows you as you travel.
+- **Level-up note.** When a new level puts new upgrades on your Route, one chat line says how many: `GearPath: level 27, 3 new upgrades to get. Open the Route (/gp).`
+- **Scarlet Monastery by wing.** In the Graveyard, Library, Armory or Cathedral, the loot panel is titled for that wing (`GearPath: Scarlet Monastery (Library)`) and lists only that wing's bosses.
+
+### Changed
+- **Enhancement shaman weights:** Intellect and Spell Power count for less, after Blizzard's November 10 class tuning cut Mental Dexterity (Intellect to attack power, 150% to 100%) and advised Strength and attack power gear for Enhancement.
+
 ## 0.7.17
 
 ### Changed

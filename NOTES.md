@@ -111,6 +111,9 @@ stripped stubs; the data is in the TOC).
 
 ## Rules for the work
 
+- Testing in game with computer use: never "open" Wow.exe to focus it (that starts a second
+  copy of the game at the login screen). Click inside the game window instead. (Nov 13)
+
 - Use DaylightUI's public API only; copy none of its code or art.
 - Don't copy GearQuest's data (All Rights Reserved).
 - QuestieDB and ForeverDungeonJournal are read live, never copied.
@@ -171,7 +174,7 @@ Checked October 2026 on the beta, where guides called the numbers guesswork.
 | Hunter (Marksmanship) | Weapon > Agi > Spi > Int > Sta > Hit > Crit |
 | Warrior (Fury) | Weapon > Hit > Crit > Str > Agi > Sta |
 | Paladin (Retribution) | Weapon > Hit/Exp > Crit > Str > SP > Int > Agi |
-| Shaman (Enhancement) | Weapon > Hit/Exp > Crit > Str > Int > Agi > SP > Spi > Sta |
+| Shaman (Enhancement) | Weapon > Hit/Exp > Crit > Str > Agi > Int > Spi > Sta > SP (Nov 13, after the Nov 10 tuning: Blizzard says Strength and attack power) |
 | Druid (Feral) | Weapon > Hit/Exp > Crit > Str > Agi > Sta > Spi > Int > SP |
 
 ## Launch (November 4, 2026, 6 PM Eastern)
@@ -317,6 +320,25 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
   count cap at 8, in-session item cap), Survival hunter spec (melee in Forever; Shaman has no
   tank spec in Forever, so none was added: tanking is an Enhancement option), GPL-3. Includes 0.7.1.
 
+- 0.8.0 (November 2026) – custom stat weights made easy to find (header link with a pencil,
+  stats-panel link, defaults beside each weight, custom sets up to 8, Reset this spec), dungeon
+  checklist (Loot.state, kept 2 h through a wipe), dungeon quests in the loot panel, loot toast
+  (UI/Toast.lua), Route Group by place/slot and This zone only (Plan.Here: zone by map, dungeons
+  by entrance, bags always), loot roll help (UI/Roll.lua, GroupLootFrame1-4), safe to sell
+  (Score.SafeToSell: every spec incl. custom sets via Score.UpgradeAs, never trinkets, tools,
+  epics, statless gear, unsellable; coin on the game's bags and EllesmereUI's, UI/Sell.lua),
+  level-up "new upgrades" line (Notes: counted once scorings settle, Notes.SETTLE), Scarlet
+  Monastery wings (Waypoint.WINGS: uiMapID 302-305 -> "Scarlet Monastery: <wing>", drops filed
+  under the whole monastery go by boss, Loot.WING_BOSSES or the journal), Enhancement Int 0.4,
+  SP 0.3 after the Nov 10 tuning. All wording okayed by Koulta Nov 13 from mockups.
+  Found in game test: Forever's client blocks an addon registering COMBAT_LOG_EVENT_UNFILTERED
+  (the "GearPath has been blocked from an action" box on every load; taint.log named
+  DungeonLoot's RegisterEvent even inside pcall). Boss deaths now come from UNIT_HEALTH /
+  target / mouseover / boss units, LOOT_OPENED's corpse GUIDs and ENCOUNTER_END. The harness
+  fails any test run that registers an event in H.PROTECTED_EVENTS (wow.lua).
+  Bag marks for DaylightUI's bags and Baganator: UI/BagMarks.lua through Baganator.API
+  (DaylightUI_Bags answers it while Baganator is off; its Plugins.lua/API.md, read as text).
+
 ## Done in 0.6.0 (the list agreed on October 20)
 
 1. Saved shared/learned sources capped. 2. Put it on. 3. `/gp report`. 4. Speed check
@@ -357,12 +379,17 @@ against the game's maps, reporter count capped at 8, in-session new-item cap.
   under EllesmereUI's tooltip skin, the arrows in its bags, its Character sheet with no
   doubled item levels, and the new icon on the minimap button and in the addon list.
 
+- 0.8.0: the roll line on a real Need/Greed window (frame names GroupLootFrame1-4 and
+  .rollID are the classic UI's; if Forever's differ, nothing shows), the coin on the game's
+  own bags (ContainerFrameNItemM), Scarlet Monastery wing detection (uiMapIDs 302-305 from
+  C_Map.GetBestMapForUnit inside), the level-up line on a real level.
+
 ## Later ideas
 
 - Translate item tooltip lines and chat messages; native-speaker corrections of the drafts.
 - Auction House upgrade scan (after launch).
 - Opt-in `/gp export` plus a merge script, toward GearPath's own crowd-sourced database (after launch).
-- 0.8.0 (after launch): Alts tab (snapshots of each character's gear, bags and bank; include
+- 0.9.0: group-aware loot, Auction House upgrades. Alts tab (snapshots of each character's gear, bags and bank; include
   or remove), gear for alts (any tradeable item on any character, scored for every alt in
   each spec), Questie's data built in as a fallback (only with the Questie team's OK).
 - Leveling curves (weights that change with level), as Gear Judge has: needs a design pass.

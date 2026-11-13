@@ -84,7 +84,20 @@ function Score.ReadEquipped()
     Score.gearHit = hit
 end
 
-local function eq(key) return Score.equipped[key] or { points = 0 } end
+-- While another spec's weights are weighed (Score.UpgradeAs), what you wear
+-- is scored by those weights too.
+local rescore
+
+local function eq(key)
+    local e = Score.equipped[key] or { points = 0 }
+    if not rescore then return e end
+    local c = rescore.cache[key]
+    if not c then
+        c = setmetatable({ points = e.rec and Score.Points(e.rec, key, rescore.weights) or 0 }, { __index = e })
+        rescore.cache[key] = c
+    end
+    return c
+end
 
 -- Whether something is worn in a slot (worth anything or not): a slot
 -- whose item is worth 0 points to your spec (a starter dagger to a
@@ -150,10 +163,10 @@ end
 -- Returns slotKey, delta (points gained), pct (nil when the slot is empty),
 -- base (the points of what it replaces) and its points for the best place
 -- to put rec.
-function Score.Upgrade(rec)
+function Score.Upgrade(rec, weights)
     local places = rec and Slots.FOR_EQUIPLOC[rec.equipLoc]
     if not places then return nil end
-    local weights = Classes.Weights()
+    weights = weights or Classes.Weights()
     local hitIn = hitOf(rec)
     local best
     for _, slotKey in ipairs(places) do
@@ -363,6 +376,61 @@ function Score.Gain(rec)
     if slot and delta and delta >= Score.MIN_POINTS and (pct == nil or pct >= Score.MIN_PCT) then
         return slot, delta, pct
     end
+end
+
+-- Score.Upgrade by another of your specs (a spec table from Classes.Specs):
+-- its weights (with your own changes to it), its weapon likes, and what you
+-- wear weighed the same way.
+function Score.UpgradeAs(rec, spec)
+    if not spec or spec == Classes.Spec() then return Score.Upgrade(rec) end
+    local weights = Classes.SpecWeights(spec)
+    rescore = { weights = weights, cache = {} }
+    Classes.asSpec = spec
+    local ok, slot, delta, pct, base, points = pcall(Score.Upgrade, rec, weights)
+    rescore, Classes.asSpec = nil, nil
+    if not ok then return nil end
+    return slot, delta, pct, base, points
+end
+
+-- The first of your specs (yours first, then the others) that rec is an
+-- upgrade big enough to mention for: spec, slot, delta, pct. Nil: none.
+function Score.AnySpecGain(rec)
+    local mine = Classes.Spec()
+    local order = { mine }
+    for _, s in ipairs(Classes.Specs()) do
+        if s.key ~= mine.key then order[#order + 1] = s end
+    end
+    for _, spec in ipairs(order) do
+        local slot, delta, pct, base = Score.UpgradeAs(rec, spec)
+        if slot and delta and Score.BigEnough(delta, base) then return spec, slot, delta, pct end
+    end
+end
+
+-- Gear that's safe to sell: you can never wear it, or it isn't an upgrade
+-- for any of your specs (custom sets too). Never for something a vendor
+-- won't buy, an epic or better, or while what you wear is still loading.
+function Score.SafeToSell(rec)
+    if not (rec and rec.equipLoc and Slots.FOR_EQUIPLOC[rec.equipLoc]) then return false end
+    if (rec.quality or 0) >= 4 then return false end
+    if rec.sellPrice ~= nil and rec.sellPrice <= 0 then return false end
+    -- Kept for what GearPath doesn't weigh: a trinket's Use: effect, a
+    -- fishing pole or other tool, gear with no stats it reads.
+    if rec.equipLoc == "INVTYPE_TRINKET" then return false end
+    if rec.classID == Classes.WEAPON and (rec.subClassID == Classes.W.FISHING or rec.subClassID == Classes.W.MISC) then return false end
+    if not rec.stats or next(rec.stats) == nil then return false end
+    for _, e in pairs(Score.equipped) do
+        if e.pending then return false end
+    end
+    if next(Score.equipped) == nil then return false end
+    -- Never yours: another class's, or armor you won't ever wear.
+    if rec.classes and not rec.classes[UnitClass("player")] then return true end
+    if Classes.CanUse(rec.classID, rec.subClassID, rec.equipLoc, nil, 999) ~= true then return true end
+    -- Not yet (a level, a rank, a reputation): kept, it may be later.
+    if not Score.CanWear(rec, GP.player and GP.player.level) then
+        local _, healer = Score.CanWear(rec, GP.player and GP.player.level)
+        if not healer then return false end
+    end
+    return Score.AnySpecGain(rec) == nil
 end
 
 -- Loot a group rolls on: mob drops, and chests in dungeons. (A quest reward

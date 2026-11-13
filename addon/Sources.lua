@@ -1331,6 +1331,7 @@ function Sources.ReportLine()
         Sources.SpeedText(false),
         e.count > 0 and string.format("errors %d (last: %s)", e.count, e.last or "?") or "errors 0",
     }
+    if #(GP.blocked or {}) > 0 then parts[#parts + 1] = "blocked " .. table.concat(GP.blocked, ", ") end
     return table.concat(parts, " | ")
 end
 

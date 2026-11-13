@@ -93,36 +93,33 @@ local function levels(n) return GP.Count(n, "%d level", "%d levels") end
 -- ---------------------------------------------------------------------
 
 -- Every stat any of your class's specs weighs (the spec in use sets the
--- numbers; a stat it doesn't use shows 0).
+-- numbers; a stat it doesn't use shows 0). One a line: the stat, your
+-- number, and the spec's default beside it, marked when yours differs.
 local function weightRows(parent, y)
     local skin = GP.Skin.current
     local Classes = GP.Classes
     local keys = Classes.WeightKeys()
-    local colW = 0.5
+    Settings.weightCells = {}
     for i, k in ipairs(keys) do
-        local col = (i - 1) % 2
-        local r = math.floor((i - 1) / 2)
         local cell = CreateFrame("Frame", nil, parent)
         cell:SetHeight(26)
-        cell:SetPoint("TOPLEFT", parent, "TOPLEFT", 12, -(y + r * 30))
+        cell:SetPoint("TOPLEFT", parent, "TOPLEFT", 12, -(y + (i - 1) * 30))
         cell:SetPoint("RIGHT", parent, "RIGHT", -16, 0)
         local label = skin.Text(cell, "body", "TEXT")
-        local input = skin.Input(cell, { width = 64, height = 22 })
-        cell:SetScript("OnSizeChanged", function(self, w)
-            if type(w) ~= "number" then return end
-            local half = w * colW
-            label:ClearAllPoints()
-            label:SetPoint("LEFT", self, "LEFT", col * half, 0)
-            input:ClearAllPoints()
-            input:SetPoint("LEFT", self, "LEFT", col * half + 170, 0)
-        end)
         label:SetPoint("LEFT", cell, "LEFT", 0, 0)
-        input:SetPoint("LEFT", cell, "LEFT", 170, 0)
         label:SetText(Classes.STAT_LABELS[k] or k)
+        local input = skin.Input(cell, { width = 64, height = 22 })
+        input:SetPoint("LEFT", cell, "LEFT", 190, 0)
+        local default = skin.Text(cell, "small", "LABEL")
+        default:SetPoint("LEFT", input, "RIGHT", 12, 0)
+        cell.key, cell.input, cell.default = k, input, default
         local function show()
             local w = Classes.Weights()[k]
             input:SetText(w and tostring(GP.Round(w, 3)) or "0")
             input:SetCursorPosition(0)
+            local d = Classes.DefaultWeights()[k] or 0
+            local mine = math.abs((w or 0) - d) > 1e-6
+            default:SetText(string.format(L["default %s"], tostring(GP.Round(d, 3))) .. (mine and ("  |cff40c0ff\194\183 " .. L["yours"] .. "|r") or ""))
         end
         local function apply()
             local v = tonumber(input:GetText())
@@ -134,12 +131,52 @@ local function weightRows(parent, y)
             if v == (base[k] or 0) then GP.char.weights[k] = nil else GP.char.weights[k] = v end
             if next(GP.char.weights) == nil then GP.char.weights = nil end
             GP.Fire("WeightsChanged")
+            show()
         end
+        cell.apply, cell.show = apply, show
         input:HookScript("OnEditFocusLost", apply)
         onRefresh(show)
+        Settings.weightCells[#Settings.weightCells + 1] = cell
     end
-    return y + math.ceil(#keys / 2) * 30 + 6
+    return y + #keys * 30 + 6
 end
+
+-- The name box for a new custom set.
+function Settings.NewCustomBox(onDone)
+    if not (UI.TextBox) then return end
+    UI.TextBox({ title = L["New custom set"],
+        note = L["Name it (\"Leveling\", \"Dungeons\"...). It starts from the weights you use now, and you can switch to it like a spec."],
+        action = { label = L["Create"], fn = function(text)
+            local key, why = GP.Classes.NewCustom(text)
+            if not key then return false, why end
+            GP.Print(string.format(L["Made the custom set %s; it's in use now."], GP.Classes.SpecName()))
+            if onDone then onDone() end
+            return true
+        end } })
+end
+
+-- Settings, scrolled to your stat weights (the spec in the window's
+-- header and the link under your stats on the Character tab open it).
+-- Scrolls Settings to the stat weights. The page is laid out a frame after
+-- it's first shown (until then it can't scroll at all), so this is done
+-- again a moment later: one click lands there (Koulta, Nov 13).
+local function toWeights()
+    local sf = Settings.sf
+    if not (sf and Settings.weightsY and sf.SetVerticalScroll) then return end
+    local max = sf.GetVerticalScrollRange and sf:GetVerticalScrollRange() or Settings.weightsY
+    sf:SetVerticalScroll(math.min(Settings.weightsY, max or Settings.weightsY))
+end
+Settings.ToWeights = toWeights
+
+function Settings.OpenWeights()
+    UI.Show("settings")
+    toWeights()
+    if C_Timer and C_Timer.After then
+        C_Timer.After(0, toWeights)
+        C_Timer.After(0.1, toWeights)
+    end
+end
+UI.OpenWeights = Settings.OpenWeights
 
 -- ---------------------------------------------------------------------
 -- The page
@@ -224,6 +261,15 @@ UI.RegisterPage("settings", {
         y = row(c, y, "Dungeon loot",
             "In a dungeon or raid, a panel with its drops that are upgrades for you, by boss. It steps aside while you fight; Hide closes it, /gp loot brings it back.",
             toggle(c, "dungeonLoot"))
+        y = row(c, y, "Upgrade toast",
+            "When you pick up gear that's an upgrade for you, a note at the top of the screen says how much better it is.",
+            toggle(c, "upgradeToast"))
+        y = row(c, y, "Loot roll help",
+            "On the Need/Greed window, a line under the item says how much better it is for you, or for your other spec.",
+            toggle(c, "rollHelp"))
+        y = row(c, y, "Safe to sell mark",
+            "A small coin on gear in your bags that isn't an upgrade for any of your specs, and a line on its tooltip.",
+            toggle(c, "sellMark"))
         y = row(c, y, "Rare watch",
             "In a dungeon, an icon for each rare that drops an upgrade for you, lit with a sound when it's near. Hidden in combat; /gp rare brings it back.",
             toggle(c, "rareWatch"))
@@ -253,27 +299,41 @@ UI.RegisterPage("settings", {
             "Also trades with every other GearPath user online, through a hidden chat channel. Turn it off to share with only your guild and group.",
             toggle(c, "shareChannel", function() if GP.Share then GP.Share.Changed() end end))
 
+        Settings.weightsY = y
         y = section(c, y, "Stat weights",
             "How many points 1 of each stat is worth to you (hit, crit and haste: per 1%). Type a number; it's used as soon as you click away.")
-        -- The spec: its own weights (and weapon speed), healer gear for healing specs.
-        local specs = GP.Classes.Specs()
-        if #specs > 1 then
-            local specKeys, specLabels = {}, {}
-            for _, s in ipairs(specs) do
-                specKeys[#specKeys + 1] = s.key
-                specLabels[s.key] = L[s.name]
-            end
-            local specPick = GP.Dropdown(c, { width = 200, keys = specKeys, labels = specLabels,
-                get = function() return GP.Classes.Spec().key end,
-                set = function(k)
-                    GP.Classes.SetSpec(k)
-                    for _, fn in ipairs(Settings.refreshers) do fn() end
-                end })
-            onRefresh(function() specPick.Refresh() end)
-            y = row(c, y, "Spec",
-                "Which stats count, and for melee and hunters which weapon speed. Healing specs list healer gear. Your own changes to the weights are kept for each spec.",
-                specPick)
+        -- The spec: its own weights (and weapon speed), healer gear for healing
+        -- specs. Your custom sets are listed with them, and "New custom set..."
+        -- makes one from the weights you use now.
+        local function specKeys()
+            local keys = {}
+            for _, s in ipairs(GP.Classes.Specs()) do keys[#keys + 1] = s.key end
+            keys[#keys + 1] = "_new"
+            return keys
         end
+        local specLabels = setmetatable({}, { __index = function(_, k)
+            if k == "_new" then return L["New custom set..."] end
+            for _, s in ipairs(GP.Classes.Specs()) do
+                if s.key == k then return GP.Classes.SpecName(s) end
+            end
+            return tostring(k)
+        end })
+        local function refreshAll() for _, fn in ipairs(Settings.refreshers) do fn() end end
+        local specPick = GP.Dropdown(c, { width = 200, keys = specKeys, labels = specLabels,
+            get = function() return GP.Classes.Spec().key end,
+            set = function(k)
+                if k == "_new" then
+                    Settings.NewCustomBox(refreshAll)
+                    return
+                end
+                GP.Classes.SetSpec(k)
+                refreshAll()
+            end })
+        onRefresh(function() specPick.Refresh() end)
+        Settings.specPick = specPick
+        y = row(c, y, "Spec",
+            "Which stats count, and for melee and hunters which weapon speed. Healing specs list healer gear. Your own changes to the weights are kept for each spec. New custom set... saves the weights you use now under a name of your own.",
+            specPick)
         y = weightRows(c, y)
         local copyW = skin.Button(c, L["Copy my weights"], 150, 24)
         copyW:SetPoint("TOPLEFT", c, "TOPLEFT", 12, -y)
@@ -281,28 +341,38 @@ UI.RegisterPage("settings", {
         local pasteW = skin.Button(c, L["Paste weights"], 150, 24)
         pasteW:SetPoint("LEFT", copyW, "RIGHT", 10, 0)
         pasteW:SetScript("OnClick", function()
-            GP.Classes.ShowImport(function() for _, fn in ipairs(Settings.refreshers) do fn() end end)
+            GP.Classes.ShowImport(refreshAll)
+        end)
+        local resetSpec = skin.Button(c, L["Reset this spec"], 150, 24)
+        resetSpec:SetPoint("LEFT", pasteW, "RIGHT", 10, 0)
+        resetSpec:SetScript("OnClick", function()
+            GP.Classes.ResetSpec()
+            refreshAll()
+        end)
+        local deleteSet = skin.Button(c, L["Delete this set"], 150, 24)
+        deleteSet:SetPoint("LEFT", resetSpec, "RIGHT", 10, 0)
+        deleteSet:SetScript("OnClick", function()
+            GP.Classes.DeleteCustom(GP.Classes.Spec().key)
+            refreshAll()
+        end)
+        onRefresh(function()
+            if GP.Classes.Spec().custom then deleteSet:Show() else deleteSet:Hide() end
         end)
         Settings.copyWeights, Settings.pasteWeights = copyW, pasteW
+        Settings.resetSpec, Settings.deleteSet = resetSpec, deleteSet
         y = y + 34
 
         local rescan = skin.Button(c, L["Rescan database"], 150, 24)
         rescan:SetPoint("TOPLEFT", c, "TOPLEFT", 12, -y)
         rescan:SetScript("OnClick", function() GP.Fire("RescanRequested") end)
-        local reset = skin.Button(c, L["Reset stat weights"], 150, 24)
-        reset:SetPoint("LEFT", rescan, "RIGHT", 10, 0)
-        reset:SetScript("OnClick", function()
-            GP.char.weights = nil
-            GP.Fire("WeightsChanged")
-            for _, fn in ipairs(Settings.refreshers) do fn() end
-        end)
+        -- (Reset stat weights was here: Reset this spec, above, does it now.)
         local forget = skin.Button(c, L["Forget learned gear"], 160, 24)
-        forget:SetPoint("LEFT", reset, "RIGHT", 10, 0)
+        forget:SetPoint("LEFT", rescan, "RIGHT", 10, 0)
         forget:SetScript("OnClick", function() SlashCmdList.GEARPATH("forget") end)
         local check = skin.Button(c, L["Check everything now"], 170, 24)
-        check:SetPoint("TOPLEFT", rescan, "BOTTOMLEFT", 0, -10)
+        check:SetPoint("LEFT", forget, "RIGHT", 10, 0)
         check:SetScript("OnClick", function() SlashCmdList.GEARPATH("check") end)
-        y = y + 74
+        y = y + 34
 
         -- What you hid with a right-click (Hide.lua), each with Show again.
         y = section(c, y, "Hidden vendors and items",

@@ -89,6 +89,14 @@ function Object:GetSize() return self:GetWidth(), self:GetHeight() end
 function Object:SetPoint(...)
     local p = select(1, ...)
     if type(p) ~= "string" then error("SetPoint: bad point " .. tostring(p), 2) end
+    -- The game refuses (or lays out nothing) when two regions are anchored
+    -- to each other: caught here (the blank window, Nov 13).
+    local rel = select(2, ...)
+    if type(rel) == "table" and rel._points then
+        for _, q in ipairs(rel._points) do
+            if q[2] == self then error("SetPoint: anchored to a region anchored to it", 2) end
+        end
+    end
     table.insert(self._points, { ... })
 end
 function Object:GetPoint(i) local p = self._points[i or 1]; if p then return p[1], p[2], p[3], p[4], p[5] end end
@@ -133,7 +141,15 @@ function Object:Click(button)
     if self._scripts.OnClick then self:_run("OnClick", button or "LeftButton", false) end
     if self._scripts.PostClick then self:_run("PostClick", button or "LeftButton") end
 end
+-- Events Forever's client won't let an addon register (it shows the
+-- "has been blocked from an action" box): counted, so a test can fail on them.
+H.PROTECTED_EVENTS = { COMBAT_LOG_EVENT_UNFILTERED = true }
+H.protectedTried = {}
 function Object:RegisterEvent(e)
+    if H.PROTECTED_EVENTS[e] then
+        H.protectedTried[#H.protectedTried + 1] = e
+        error("blocked: " .. e)
+    end
     H.events[e] = H.events[e] or {}
     H.events[e][self] = true
 end

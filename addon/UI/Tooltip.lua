@@ -36,9 +36,8 @@ end
 
 -- "GearPath (Affliction)": whose weights the % is by.
 local function title()
-    local spec = GP.Classes.Spec().name
-    if not spec then return "GearPath" end
-    return "GearPath (" .. (L[spec] or spec) .. ")"
+    if not GP.Classes.Spec().name then return "GearPath" end
+    return "GearPath (" .. GP.Classes.SpecName() .. ")"
 end
 
 local function line(tt, left, right, lc, rc)
@@ -85,7 +84,15 @@ function Tooltip.Add(tt, id, link)
     local rec = ev and ev.rec or (link and GP.Items.FromLink(link)) or GP.Items.Get(id)
     if not ev then
         ev = Tooltip.QuickEval(rec)
-        if not ev then return end
+        if not ev then
+            -- Gear you'll never wear, in your bags: safe to sell.
+            local l = link or (rec and rec.link)
+            if GP.Sell and GP.Sell.inBags[id] and GP.Sell.Safe(l) then
+                tt:AddLine(" ")
+                GP.Sell.TooltipLine(tt, id, l)
+            end
+            return
+        end
     end
     local color, better = Tooltip.Color(ev)
     tt:AddLine(" ")
@@ -103,6 +110,8 @@ function Tooltip.Add(tt, id, link)
     if src and not (src.kind == "bags" and not better) then
         tt:AddLine(GP.UI.Describe(src, true), WHERE[1], WHERE[2], WHERE[3], true)
     end
+    -- In your bags and no use to any of your specs: safe to sell.
+    if not better and GP.Sell then GP.Sell.TooltipLine(tt, id, link or (rec and rec.link)) end
     -- Over a row of GearPath's window: what the clicks do.
     if GP.UI and GP.UI.hintFor == id then
         tt:AddLine(GP.UI.ClickHint(ev), DIM[1], DIM[2], DIM[3], true)

@@ -48,6 +48,10 @@ local ITEMS = {
     [253] = { "PDB Never Hat", 2, 26, 20, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 30 } },
     [254] = { "PDB Leather Cap", 2, 26, 20, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 30 } },
     [256] = { "PDB Starter Band", 2, 26, 20, "INVTYPE_FINGER", 4, 0, { ITEM_MOD_SPELL_POWER_SHORT = 20 } },
+    -- Safe to sell and the roll helper (0.8.0): worse than the Old Hood for
+    -- every warlock spec, and Strength only (an upgrade only for a set that values it).
+    [260] = { "Plain Test Hood", 1, 10, 5, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_STAMINA_SHORT = 1 } },
+    [261] = { "Brawler's Test Hood", 2, 22, 20, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_STRENGTH_SHORT = 5 } },
     [215] = { "Sergeant's Cloak", 3, 30, 23, "INVTYPE_CLOAK", 4, 1, { ITEM_MOD_STAMINA_SHORT = 9 }, { { "Requires Sergeant", 1, 0.125, 0.125 }, { "Requires Level 23", 1, 0.125, 0.125 } } },
 }
 H.ITEMS = ITEMS

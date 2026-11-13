@@ -116,7 +116,7 @@ Classes.DATA = {
         weights = { agi = 1.0, spi = 0.5, int = 0.45, sta = 0.4, hit = 5.2, crit = 4.8, ap = 0.45, rap = 0.5,
             haste = 6, mp5 = 0.8, armor = 0.01, dpsRanged = 7.0, dpsMelee = 0.4, dpsOff = 0.2 },
     },
-    -- Enhancement: Weapon > Hit/Expertise > Crit > Strength > Intellect > Agility > Spell Power > Spirit > Stamina
+    -- Enhancement: Weapon > Hit/Expertise > Crit > Strength > Agility > Intellect > Spell Power > Spirit > Stamina
     -- (Intellect: Mental Dexterity turns it into attack power).
     SHAMAN = {
         armor = { [A.LEATHER] = 1, [A.MAIL] = { 1.1, at = 40 }, [A.CLOTH] = 0.6, [A.SHIELD] = 1 },
@@ -124,7 +124,10 @@ Classes.DATA = {
             [W.MACE1H] = true, [W.MACE2H] = true, [W.STAFF] = true },
         dualWield = false,
         relic = A.TOTEM,
-        weights = { str = 1.0, hit = 15, expertise = 8, crit = 14.5, int = 0.55, agi = 0.5, sp = 0.45, spi = 0.32,
+        -- Nov 13 (0.8.0): Intellect 0.55 -> 0.4 and Spell Power 0.45 -> 0.3 after the Nov 10 tuning
+        -- (Mental Dexterity's Intellect to attack power 150% -> 100%; Blizzard: collect Strength and
+        -- attack power gear while leveling). Koulta okayed it.
+        weights = { str = 1.0, hit = 15, expertise = 8, crit = 14.5, int = 0.4, agi = 0.5, sp = 0.3, spi = 0.32,
             sta = 0.3, ap = 0.5, haste = 10, mp5 = 1.0, armor = 0.015, block = 0.1, dpsMelee = 7.0 },
     },
     -- Fury/Arms: Weapon > Hit > Crit > Strength > Agility > Stamina.
@@ -293,9 +296,141 @@ Classes.SPECS = {
     },
 }
 
--- Your class's specs, and the one in use (your choice, or its first).
-function Classes.Specs(class)
+-- Custom sets (0.8.0, like GearQuest's "+ custom"): a copy of a spec's
+-- weights under a name you choose ("Leveling"), listed with your specs and
+-- switched the same way. Kept per character in GP.char.customSets:
+--   [key "custom:<name>"] = { name, base = spec key, weights = { ... } }
+-- A set takes its weapon speed, weapon type and role from the spec it was
+-- copied from. Its own name is never translated.
+Classes.CUSTOM_MAX = 8
+
+local function customSets()
+    local c = GP.char
+    if not c then return {} end
+    if type(c.customSets) ~= "table" then c.customSets = {} end
+    return c.customSets
+end
+
+local function builtIn(class)
     return Classes.SPECS[class or (GP.player and GP.player.class)] or {}
+end
+
+-- Your class's specs (and your custom sets), and the one in use (your
+-- choice, or its first).
+function Classes.Specs(class)
+    local list = builtIn(class)
+    local mine = not class or class == (GP.player and GP.player.class)
+    if not mine then return list end
+    local sets = customSets()
+    if next(sets) == nil then return list end
+    local out = {}
+    for i, s in ipairs(list) do out[i] = s end
+    local keys = {}
+    for k in pairs(sets) do keys[#keys + 1] = k end
+    table.sort(keys)
+    for _, k in ipairs(keys) do
+        local set = sets[k]
+        local base
+        for _, s in ipairs(list) do if s.key == set.base then base = s end end
+        base = base or list[1] or {}
+        out[#out + 1] = { key = k, name = set.name, custom = true, base = base.key, weights = set.weights,
+            speed = base.speed, mainType = base.mainType, role = base.role }
+    end
+    return out
+end
+
+-- A new custom set: the weights you use now (the spec's with your changes),
+-- under `name`. Returns the set's key, or nil and why not.
+function Classes.NewCustom(name)
+    name = type(name) == "string" and name:gsub("^%s+", ""):gsub("%s+$", "") or ""
+    if name == "" then return nil, GP.L["Give the set a name first."] end
+    if #name > 24 then return nil, GP.L["That name is too long (24 letters at most)."] end
+    local sets = customSets()
+    local n = 0
+    for _ in pairs(sets) do n = n + 1 end
+    if n >= Classes.CUSTOM_MAX then return nil, string.format(GP.L["You can keep up to %d custom sets."], Classes.CUSTOM_MAX) end
+    local key = "custom:" .. name
+    for _, s in ipairs(builtIn()) do
+        if s.name:lower() == name:lower() then return nil, GP.L["One of your specs already has that name."] end
+    end
+    if sets[key] then return nil, GP.L["You already have a set with that name."] end
+    local spec = Classes.Spec()
+    local weights = {}
+    for k, v in pairs(Classes.Weights()) do weights[k] = v end
+    sets[key] = { name = name, base = spec.custom and spec.base or spec.key, weights = weights }
+    Classes.SetSpec(key)
+    return key
+end
+
+-- Deletes the custom set in use, back to the spec it came from.
+function Classes.DeleteCustom(key)
+    local sets = customSets()
+    local set = sets[key]
+    if not set then return false end
+    if GP.char.spec == key then Classes.SetSpec(set.base) end
+    sets[key] = nil
+    if GP.char.specWeights then GP.char.specWeights[key] = nil end
+    GP.Fire("WeightsChanged")
+    return true
+end
+
+-- The defaults to show beside your numbers: the built-in spec's weights
+-- (for a custom set, the spec it was copied from).
+function Classes.DefaultWeights(class)
+    local spec = Classes.Spec(class)
+    if spec.custom then
+        for _, s in ipairs(builtIn(class)) do
+            if s.key == spec.base then return s.weights or Classes.Data(class).weights end
+        end
+    end
+    return spec.weights or Classes.Data(class).weights
+end
+
+-- Back to the defaults for the spec in use (a custom set goes back to the
+-- spec it was copied from, and stays a set).
+function Classes.ResetSpec()
+    local spec = Classes.Spec()
+    GP.char.weights = nil
+    if spec.custom then
+        local set = customSets()[spec.key]
+        if set then
+            local w = {}
+            for k, v in pairs(Classes.DefaultWeights()) do w[k] = v end
+            set.weights = w
+        end
+    end
+    GP.Fire("WeightsChanged")
+end
+
+-- Whether the weights in use differ from their spec's defaults (your own
+-- changes, or a custom set).
+function Classes.Customised()
+    local spec = Classes.Spec()
+    if spec.custom then return true end
+    local own = GP.char and GP.char.weights
+    if type(own) ~= "table" then return false end
+    local base = Classes.BaseWeights()
+    for k, v in pairs(own) do
+        if math.abs(v - (base[k] or 0)) > 1e-6 then return true end
+    end
+    return false
+end
+
+-- Said once, after the update that made weights easy to find (0.8.0).
+GP.On("Login", function()
+    local db = GP.db
+    if not db then return end
+    db.tips = type(db.tips) == "table" and db.tips or {}
+    if db.tips.weights then return end
+    db.tips.weights = true
+    GP.Print(GP.L["You can set your own stat weights: click your spec at the top of GearPath's window."])
+end)
+
+-- A spec's name for the screen: built-in names are translated, yours aren't.
+function Classes.SpecName(spec)
+    spec = spec or Classes.Spec()
+    if spec.custom then return spec.name or "?" end
+    return GP.L[spec.name or ""]
 end
 
 function Classes.Spec(class)
@@ -357,7 +492,7 @@ end
 -- weapon (type); 1 = no change.
 function Classes.WeaponFactor(rec, slotKey)
     if not rec or rec.classID ~= Classes.WEAPON then return 1, 1 end
-    local spec = Classes.Spec()
+    local spec = Classes.asSpec or Classes.Spec()
     local f, t = 1, 1
     local kind
     if slotKey == "RangedSlot" then kind = "ranged"
@@ -371,6 +506,19 @@ function Classes.WeaponFactor(rec, slotKey)
         t = spec.mainType[rec.subClassID]
     end
     return f, t
+end
+
+-- Another of your specs' weights, with the changes you made to it (kept
+-- per spec while it isn't in use).
+function Classes.SpecWeights(spec)
+    if not spec or spec.key == Classes.Spec().key then return Classes.Weights() end
+    local base = spec.weights or Classes.Data().weights
+    local own = GP.char and GP.char.specWeights and GP.char.specWeights[spec.key]
+    if type(own) ~= "table" or next(own) == nil then return base end
+    local merged = {}
+    for k, v in pairs(base) do merged[k] = v end
+    for k, v in pairs(own) do merged[k] = v end
+    return merged
 end
 
 -- The weights in use: the spec's, with any the player set over them.
@@ -504,7 +652,7 @@ function Classes.ImportWeights(text)
     end
     GP.char.weights = next(own) and own or nil
     GP.Fire("WeightsChanged")
-    return true, string.format("Using the pasted stat weights (%d stats). Settings > Reset stat weights goes back to the defaults.", n)
+    return true, string.format("Using the pasted stat weights (%d stats). Settings > Reset this spec goes back to the defaults.", n)
 end
 
 -- The copy box with your weights, or the paste box for someone else's.
@@ -520,7 +668,7 @@ end
 function Classes.ShowImport(onDone)
     if not (GP.UI and GP.UI.TextBox) then return false end
     GP.UI.TextBox({ title = GP.L["Paste stat weights"],
-        note = GP.L["Paste weights another GearPath user copied (Ctrl+V). They replace yours; Reset stat weights brings the defaults back."],
+        note = GP.L["Paste weights another GearPath user copied (Ctrl+V). They replace yours; Reset this spec brings the defaults back."],
         action = { label = GP.L["Use these"], fn = function(text)
             local ok, msg = Classes.ImportWeights(text)
             if ok then

@@ -673,15 +673,75 @@ function UI.WindowTitle()
     return GP.TITLE .. "  |cff9d9d9d" .. v .. "|r"
 end
 
+UI.PENCIL = "|TInterface\\Buttons\\UI-GuildButton-PublicNote-Up:12:12|t"
+
+-- The Stat weights button sits in the line under the title, right after
+-- your spec: "Koulta, level 29 Affliction Warlock [pencil Stat weights] | ..."
+-- (Koulta, Nov 13: an actual button, in a natural spot). It's placed by the
+-- width of the text before it, never anchored the other way round (the line
+-- anchored to the button and the button to the line left the window blank).
+function UI.WeightsButton()
+    local f = UI.frame
+    local sub = f and (f.sub or f.subText)
+    if not sub then return nil end
+    if UI.weightsButton then return UI.weightsButton end
+    local label = UI.PENCIL .. " " .. L["Stat weights"]
+    local btn = UI.skin.Button(f, label, 100, 18)
+    btn:SetFrameLevel(f:GetFrameLevel() + 10)
+    btn:SetScript("OnClick", function() if UI.OpenWeights then UI.OpenWeights() end end)
+    btn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:SetText(L["Click to change your stat weights."], 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    -- A hidden copy of the line's font, to measure text with.
+    local m = f:CreateFontString(nil, "OVERLAY")
+    if sub.GetFontObject and sub:GetFontObject() then m:SetFontObject(sub:GetFontObject()) end
+    if sub.GetFont and m.SetFont then
+        local font, size, flags = sub:GetFont()
+        if font then pcall(m.SetFont, m, font, size, flags) end
+    end
+    m:Hide()
+    UI.measure = m
+    m:SetText(label)
+    btn:SetWidth(math.floor((m:GetStringWidth() or 80) + 18))
+    UI.weightsButton, UI.weightsLink = btn, btn
+    return btn
+end
+
+local function widthOf(text)
+    local m = UI.measure
+    if not m then return 0 end
+    m:SetText(text)
+    return m:GetStringWidth() or 0
+end
+
 function UI.UpdateSub()
     if not UI.frame then return end
     local p = GP.PlayerInfo()
     local name = GP.Plain(UnitName("player")) or ""
     local className = GP.Plain(UnitClass("player")) or ""
-    -- The spec too, for classes with more than one: "level 30 Affliction Warlock".
-    if GP.Classes and #GP.Classes.Specs() > 1 then className = L[GP.Classes.Spec().name or ""] .. " " .. className end
-    UI.skin.SetTitle(UI.frame, UI.WindowTitle(),
-        string.format(L["%s, level %d %s"], name, p.level or 1, className) .. "  |  " .. UI.StatusText())
+    -- The spec too, for classes with more than one: "level 30 Affliction Warlock",
+    -- with "(your weights)" when they're your own, and a pencil: a click on
+    -- the line opens your stat weights (0.8.0: so players find them).
+    if GP.Classes and #GP.Classes.Specs() > 1 then className = GP.Classes.SpecName() .. " " .. className end
+    if GP.Classes and GP.Classes.Customised() then className = className .. " " .. L["(your weights)"] end
+    local who = string.format(L["%s, level %d %s"], name, p.level or 1, className)
+    local btn = UI.WeightsButton()
+    local gap = ""
+    if btn then
+        -- Room in the line for the button: spaces as wide as it, plus a margin.
+        -- (Measured between two letters: a line of only spaces can measure 0.)
+        local space = math.max((widthOf("i          i") - widthOf("ii")) / 10, 1)
+        gap = string.rep(" ", math.ceil(((btn:GetWidth() or 100) + 16) / space))
+    end
+    UI.skin.SetTitle(UI.frame, UI.WindowTitle(), who .. gap .. "|  " .. UI.StatusText())
+    if btn then
+        local sub = UI.frame.sub or UI.frame.subText
+        btn:ClearAllPoints()
+        btn:SetPoint("LEFT", sub, "LEFT", math.floor(widthOf(who) + 8), 0)
+    end
     -- While the database is read the line counts down by itself.
     local S = GP.Sources
     if (S.status == "scanning" or S.status == "loading" or S.status == "idle") and UI.frame:IsShown() and not UI.ticking then

@@ -114,6 +114,9 @@ t("Best now: easy to get at your level.  Worth chasing: dungeons, rares, long ch
     "现在可得：你的等级容易获得。  值得追求：地下城、稀有怪、长任务链、几级之后。",
     "現在可得：你的等級容易取得。  值得追求：地城、稀有怪、長任務鏈、幾級之後。")
 t("All slots", "Alle Plätze", "Tous", "Todas", "Todos", "Все ячейки", "모든 슬롯", "所有栏位", "所有欄位")
+t("Group by:", "Gruppieren:", "Grouper par :", "Agrupar por:", "Agrupar por:", "Группировать:", "묶기:", "分组：", "分組：")
+t("place", "Ort", "lieu", "lugar", "local", "место", "장소", "地点", "地點")
+t("slot", "Platz", "emplacement", "ranura", "espaço", "слот", "부위", "部位", "部位")
 t("Sort:", "Sortieren:", "Tri :", "Ordenar:", "Ordenar:", "Порядок:", "정렬:", "排序：", "排序：")
 t("Show:", "Zeigen:", "Afficher :", "Mostrar:", "Mostrar:", "Показать:", "표시:", "显示：", "顯示：")
 t("Search gear", "Ausrüstung suchen", "Chercher", "Buscar equipo", "Buscar equipamento", "Поиск снаряжения", "장비 검색", "搜索装备", "搜尋裝備")
@@ -514,15 +517,15 @@ t("Press Ctrl+C to copy, then give it to another %s: Settings > Paste weights, o
     "按 Ctrl+C 复制，然后交给另一位%s：设置 > 粘贴权重，或输入 /gp weights 加上该文本。",
     "按 Ctrl+C 複製，然後交給另一位%s：設定 > 貼上權重，或輸入 /gp weights 加上該文字。")
 t("Paste stat weights", "Wertgewichte einfügen", "Coller des poids", "Pegar pesos", "Colar pesos", "Вставить веса", "가중치 붙여넣기", "粘贴属性权重", "貼上屬性權重")
-t("Paste weights another GearPath user copied (Ctrl+V). They replace yours; Reset stat weights brings the defaults back.",
-    "Füge Gewichte ein, die ein anderer GearPath-Nutzer kopiert hat (Strg+V). Sie ersetzen deine; Gewichte zurücksetzen stellt die Standardwerte wieder her.",
-    "Collez les poids copiés par un autre joueur GearPath (Ctrl+V). Ils remplacent les vôtres ; Réinitialiser les poids rétablit les valeurs par défaut.",
-    "Pega los pesos que copió otro usuario de GearPath (Ctrl+V). Sustituyen a los tuyos; Restablecer pesos recupera los predeterminados.",
-    "Cole os pesos copiados por outro usuário do GearPath (Ctrl+V). Eles substituem os seus; Redefinir pesos volta ao padrão.",
-    "Вставьте веса, скопированные другим игроком с GearPath (Ctrl+V). Они заменят ваши; «Сбросить веса» вернёт стандартные.",
-    "다른 GearPath 사용자가 복사한 가중치를 붙여넣으세요 (Ctrl+V). 기존 값을 대체하며, 가중치 초기화로 기본값을 되돌립니다.",
-    "粘贴其他 GearPath 用户复制的权重（Ctrl+V）。它们会替换你的权重；“重置属性权重”可恢复默认。",
-    "貼上其他 GearPath 使用者複製的權重（Ctrl+V）。它們會取代你的權重；「重設屬性權重」可恢復預設。")
+t("Paste weights another GearPath user copied (Ctrl+V). They replace yours; Reset this spec brings the defaults back.",
+    "Füge Gewichte ein, die ein anderer GearPath-Nutzer kopiert hat (Strg+V). Sie ersetzen deine; Diese Spez. zurücksetzen stellt die Standardwerte wieder her.",
+    "Collez les poids copiés par un autre joueur GearPath (Ctrl+V). Ils remplacent les vôtres ; Réinit. cette spé. rétablit les valeurs par défaut.",
+    "Pega los pesos que copió otro usuario de GearPath (Ctrl+V). Sustituyen a los tuyos; Restablecer esta espec. recupera los predeterminados.",
+    "Cole os pesos copiados por outro usuário do GearPath (Ctrl+V). Eles substituem os seus; Redefinir esta espec. volta ao padrão.",
+    "Вставьте веса, скопированные другим игроком с GearPath (Ctrl+V). Они заменят ваши; «Сбросить эту спец.» вернёт стандартные.",
+    "다른 GearPath 사용자가 복사한 가중치를 붙여넣으세요 (Ctrl+V). 기존 값을 대체하며, 이 전문화 초기화로 기본값을 되돌립니다.",
+    "粘贴其他 GearPath 用户复制的权重（Ctrl+V）。它们会替换你的权重；“重置此专精”可恢复默认。",
+    "貼上其他 GearPath 使用者複製的權重（Ctrl+V）。它們會取代你的權重；「重設此專精」可恢復預設。")
 t("%s Checked %s: %d of %d need a second look. Hover them to see why.",
     "%s Geprüft %s: %d von %d brauchen einen zweiten Blick. Zeig darauf, um den Grund zu sehen.",
     "%s Vérifié %s : %d sur %d méritent un second regard. Survolez-les pour savoir pourquoi.",
@@ -689,6 +692,18 @@ t("Hide", "Ausblenden", "Masquer", "Ocultar", "Ocultar", "Скрыть", "숨기
 t("and %d more (see GearPath's window)", "und %d weitere (siehe GearPaths Fenster)", "et %d de plus (voir la fenêtre de GearPath)",
     "y %d más (ver la ventana de GearPath)", "e mais %d (veja a janela do GearPath)", "и ещё %d (см. окно GearPath)",
     "외 %d개 (GearPath 창 참고)", "还有 %d 件（见 GearPath 窗口）", "還有 %d 件（見 GearPath 視窗）")
+t("Upgrade toast", "Verbesserungs-Hinweis", "Alerte d'amélioration", "Aviso de mejora", "Aviso de melhoria", "Уведомление об улучшении", "업그레이드 알림", "提升提示", "提升提示")
+t("When you pick up gear that's an upgrade for you, a note at the top of the screen says how much better it is.",
+    "Wenn du Ausrüstung aufhebst, die für dich besser ist, zeigt ein Hinweis oben am Bildschirm, um wie viel.",
+    "Quand vous ramassez une pièce qui est une amélioration, une note en haut de l'écran dit de combien.",
+    "Cuando recoges equipo que es una mejora para ti, un aviso arriba en la pantalla dice cuánto mejor es.",
+    "Quando você pega um equipamento que é melhoria para você, um aviso no topo da tela diz quanto é melhor.",
+    "Когда вы подбираете снаряжение лучше вашего, вверху экрана появляется заметка, насколько оно лучше.",
+    "더 좋은 장비를 얻으면 화면 위쪽에 얼마나 좋은지 알려 줍니다.",
+    "拾取对你是提升的装备时，屏幕上方会提示提升了多少。",
+    "拾取對你是提升的裝備時，螢幕上方會提示提升了多少。")
+t("Upgrade!", "Verbesserung!", "Amélioration !", "¡Mejora!", "Melhoria!", "Улучшение!", "업그레이드!", "提升！", "提升！")
+t("done", "erledigt", "fait", "hecho", "feito", "готово", "완료", "完成", "完成")
 t("Rare watch", "Seltene im Blick", "Guet des rares", "Vigía de raros", "Vigia de raros", "Слежка за редкими", "희귀 몹 감시", "稀有怪监视", "稀有怪監視")
 t("In a dungeon, an icon for each rare that drops an upgrade for you, lit with a sound when it's near. Hidden in combat; /gp rare brings it back.",
     "Im Dungeon ein Symbol für jeden seltenen Gegner mit einer Verbesserung für dich, das mit einem Ton aufleuchtet, wenn er nah ist. Im Kampf versteckt; /gp rare holt es zurück.",
@@ -904,15 +919,68 @@ t("for %d upgrades", "für Verbesserungen: %d", "pour améliorations : %d", "par
 -- ---------------------------------------------------------------------
 
 t("Spec", "Spezialisierung", "Spécialisation", "Especialización", "Especialização", "Специализация", "전문화", "专精", "專精")
-t("Which stats count, and for melee and hunters which weapon speed. Healing specs list healer gear. Your own changes to the weights are kept for each spec.",
-    "Welche Werte zählen, für Nahkämpfer und Jäger auch das Waffentempo. Heilerspezialisierungen führen Heilerausrüstung auf. Deine eigenen Gewichte bleiben je Spezialisierung erhalten.",
-    "Quelles caractéristiques comptent, et pour la mêlée et les chasseurs la vitesse d'arme. Les spécialisations de soin listent l'équipement de soigneur. Vos propres poids sont gardés pour chaque spécialisation.",
-    "Qué atributos cuentan y, para cuerpo a cuerpo y cazadores, la velocidad del arma. Las especializaciones de sanación listan equipo de sanador. Tus propios pesos se guardan para cada especialización.",
-    "Quais atributos contam e, para corpo a corpo e caçadores, a velocidade da arma. Especializações de cura listam equipamento de curador. Seus próprios pesos ficam guardados para cada especialização.",
-    "Какие характеристики важны, а для ближнего боя и охотников — скорость оружия. Лечащие специализации показывают снаряжение лекаря. Ваши собственные веса сохраняются для каждой специализации.",
-    "어떤 능력치가 중요한지, 근접과 사냥꾼은 무기 속도도 정합니다. 치유 전문화는 치유 장비를 표시합니다. 직접 바꾼 가중치는 전문화마다 따로 저장됩니다.",
-    "决定哪些属性重要，近战和猎人还包括武器速度。治疗专精会列出治疗装备。你自己调整的权重会按专精分别保存。",
-    "決定哪些屬性重要，近戰和獵人還包括武器速度。治療專精會列出治療裝備。你自己調整的權重會按專精分別保存。")
+t("Which stats count, and for melee and hunters which weapon speed. Healing specs list healer gear. Your own changes to the weights are kept for each spec. New custom set... saves the weights you use now under a name of your own.",
+    "Welche Werte zählen, für Nahkämpfer und Jäger auch das Waffentempo. Heilerspezialisierungen führen Heilerausrüstung auf. Deine eigenen Gewichte bleiben je Spezialisierung erhalten. Neues eigenes Set... speichert deine jetzigen Gewichte unter einem eigenen Namen.",
+    "Quelles caractéristiques comptent, et pour la mêlée et les chasseurs la vitesse d'arme. Les spécialisations de soin listent l'équipement de soigneur. Vos propres poids sont gardés pour chaque spécialisation. Nouveau jeu perso... enregistre vos poids actuels sous un nom de votre choix.",
+    "Qué atributos cuentan y, para cuerpo a cuerpo y cazadores, la velocidad del arma. Las especializaciones de sanación listan equipo de sanador. Tus propios pesos se guardan para cada especialización. Nuevo conjunto propio... guarda tus pesos actuales con un nombre tuyo.",
+    "Quais atributos contam e, para corpo a corpo e caçadores, a velocidade da arma. Especializações de cura listam equipamento de curador. Seus próprios pesos ficam guardados para cada especialização. Novo conjunto próprio... salva seus pesos atuais com um nome seu.",
+    "Какие характеристики важны, а для ближнего боя и охотников — скорость оружия. Лечащие специализации показывают снаряжение лекаря. Ваши собственные веса сохраняются для каждой специализации. «Новый свой набор...» сохраняет текущие веса под вашим названием.",
+    "어떤 능력치가 중요한지, 근접과 사냥꾼은 무기 속도도 정합니다. 치유 전문화는 치유 장비를 표시합니다. 직접 바꾼 가중치는 전문화마다 따로 저장됩니다. '새 사용자 세트...'는 지금 가중치를 원하는 이름으로 저장합니다.",
+    "决定哪些属性重要，近战和猎人还包括武器速度。治疗专精会列出治疗装备。你自己调整的权重会按专精分别保存。“新建自定义方案...”会用你取的名字保存当前权重。",
+    "決定哪些屬性重要，近戰和獵人還包括武器速度。治療專精會列出治療裝備。你自己調整的權重會按專精分別保存。「新增自訂方案...」會用你取的名字儲存目前權重。")
+t("(your weights)", "(deine Gewichte)", "(vos poids)", "(tus pesos)", "(seus pesos)", "(ваши веса)", "(내 가중치)", "（你的权重）", "（你的權重）")
+t("Click to change your stat weights.", "Klicken, um deine Gewichte zu ändern.", "Cliquez pour changer vos poids de caractéristiques.",
+    "Haz clic para cambiar tus pesos de atributos.", "Clique para mudar seus pesos de atributos.", "Нажмите, чтобы изменить веса характеристик.",
+    "클릭해서 능력치 가중치를 바꿉니다.", "点击修改你的属性权重。", "點擊修改你的屬性權重。")
+t("Change what counts for you: Stat weights", "Ändern, was für dich zählt: Gewichte", "Changer ce qui compte pour vous : poids",
+    "Cambia lo que cuenta para ti: pesos", "Mude o que conta para você: pesos", "Изменить, что важно для вас: веса",
+    "나에게 중요한 것 바꾸기: 능력치 가중치", "修改对你重要的属性：属性权重", "修改對你重要的屬性：屬性權重")
+t("default %s", "Standard %s", "par défaut %s", "por defecto %s", "padrão %s", "по умолчанию %s", "기본 %s", "默认 %s", "預設 %s")
+t("yours", "deins", "le vôtre", "tuyo", "seu", "ваш", "내 값", "你的", "你的")
+t("New custom set...", "Neues eigenes Set...", "Nouveau jeu perso...", "Nuevo conjunto propio...", "Novo conjunto próprio...",
+    "Новый свой набор...", "새 사용자 세트...", "新建自定义方案...", "新增自訂方案...")
+t("New custom set", "Neues eigenes Set", "Nouveau jeu perso", "Nuevo conjunto propio", "Novo conjunto próprio",
+    "Новый свой набор", "새 사용자 세트", "新建自定义方案", "新增自訂方案")
+t("Name it (\"Leveling\", \"Dungeons\"...). It starts from the weights you use now, and you can switch to it like a spec.",
+    "Gib ihm einen Namen (\"Leveln\", \"Dungeons\"...). Es beginnt mit deinen jetzigen Gewichten, und du wechselst dazu wie zu einer Spezialisierung.",
+    "Donnez-lui un nom (\"Montée\", \"Donjons\"...). Il part de vos poids actuels, et vous y passez comme à une spécialisation.",
+    "Ponle un nombre (\"Subir nivel\", \"Mazmorras\"...). Empieza con tus pesos actuales y cambias a él como a una especialización.",
+    "Dê um nome (\"Evoluir\", \"Masmorras\"...). Ele começa com seus pesos atuais, e você troca para ele como para uma especialização.",
+    "Назовите его («Прокачка», «Подземелья»...). Он начинается с ваших текущих весов, и на него можно переключиться, как на специализацию.",
+    "이름을 정하세요(\"레벨업\", \"던전\"...). 지금 가중치로 시작하며, 전문화처럼 바꿀 수 있습니다.",
+    "给它起个名字（“升级”“地下城”...）。它从你当前的权重开始，可以像专精一样切换。",
+    "給它取個名字（「升級」「地城」...）。它從你目前的權重開始，可以像專精一樣切換。")
+t("Create", "Erstellen", "Créer", "Crear", "Criar", "Создать", "만들기", "创建", "建立")
+t("Reset this spec", "Diese Spez. zurücksetzen", "Réinit. cette spé.", "Restablecer esta espec.", "Redefinir esta espec.",
+    "Сбросить эту спец.", "이 전문화 초기화", "重置此专精", "重設此專精")
+t("Delete this set", "Dieses Set löschen", "Supprimer ce jeu", "Borrar este conjunto", "Apagar este conjunto",
+    "Удалить этот набор", "이 세트 삭제", "删除此方案", "刪除此方案")
+t("Made the custom set %s; it's in use now.", "Eigenes Set %s erstellt; es ist jetzt aktiv.", "Jeu perso %s créé ; il est utilisé maintenant.",
+    "Conjunto propio %s creado; ya está en uso.", "Conjunto próprio %s criado; já está em uso.", "Набор %s создан и уже используется.",
+    "사용자 세트 %s를 만들었고 지금 사용 중입니다.", "已创建自定义方案 %s，现在正在使用。", "已建立自訂方案 %s，現在正在使用。")
+t("Give the set a name first.", "Gib dem Set zuerst einen Namen.", "Donnez d'abord un nom au jeu.", "Primero ponle un nombre.",
+    "Dê um nome ao conjunto primeiro.", "Сначала дайте набору имя.", "먼저 세트 이름을 정하세요.", "请先给方案起个名字。", "請先給方案取個名字。")
+t("That name is too long (24 letters at most).", "Der Name ist zu lang (höchstens 24 Zeichen).", "Ce nom est trop long (24 lettres au plus).",
+    "Ese nombre es demasiado largo (24 letras como mucho).", "Esse nome é longo demais (no máximo 24 letras).", "Слишком длинное имя (не больше 24 букв).",
+    "이름이 너무 깁니다(최대 24자).", "名字太长了（最多 24 个字）。", "名字太長了（最多 24 個字）。")
+t("You can keep up to %d custom sets.", "Du kannst bis zu %d eigene Sets behalten.", "Vous pouvez garder jusqu'à %d jeux perso.",
+    "Puedes tener hasta %d conjuntos propios.", "Você pode manter até %d conjuntos próprios.", "Можно хранить до %d своих наборов.",
+    "사용자 세트는 최대 %d개까지 둘 수 있습니다.", "最多可以保存 %d 个自定义方案。", "最多可以儲存 %d 個自訂方案。")
+t("One of your specs already has that name.", "Eine deiner Spezialisierungen heißt schon so.", "Une de vos spécialisations porte déjà ce nom.",
+    "Una de tus especializaciones ya se llama así.", "Uma das suas especializações já tem esse nome.", "Так уже называется одна из ваших специализаций.",
+    "이미 그 이름의 전문화가 있습니다.", "已有同名的专精。", "已有同名的專精。")
+t("You already have a set with that name.", "Du hast schon ein Set mit diesem Namen.", "Vous avez déjà un jeu de ce nom.",
+    "Ya tienes un conjunto con ese nombre.", "Você já tem um conjunto com esse nome.", "У вас уже есть набор с таким именем.",
+    "같은 이름의 세트가 이미 있습니다.", "你已经有同名的方案。", "你已經有同名的方案。")
+t("You can set your own stat weights: click your spec at the top of GearPath's window.",
+    "Du kannst eigene Gewichte festlegen: Klicke oben in GearPaths Fenster auf deine Spezialisierung.",
+    "Vous pouvez régler vos propres poids : cliquez sur votre spécialisation en haut de la fenêtre de GearPath.",
+    "Puedes poner tus propios pesos: haz clic en tu especialización arriba en la ventana de GearPath.",
+    "Você pode definir seus próprios pesos: clique na sua especialização no topo da janela do GearPath.",
+    "Можно задать свои веса характеристик: нажмите на специализацию вверху окна GearPath.",
+    "능력치 가중치를 직접 정할 수 있습니다: GearPath 창 위쪽의 전문화를 클릭하세요.",
+    "你可以设置自己的属性权重：点击 GearPath 窗口顶部的专精。",
+    "你可以設定自己的屬性權重：點擊 GearPath 視窗頂部的專精。")
 t("Fury", "Furor", "Fureur", "Furia", "Fúria", "Неистовство", "분노", "狂怒", "狂怒")
 t("Arms", "Waffen", "Armes", "Armas", "Armas", "Оружие", "무기", "武器", "武器")
 t("Protection", "Schutz", "Protection", "Protección", "Proteção", "Защита", "방어", "防护", "防護")
@@ -936,3 +1004,74 @@ t("Feral (bear tank)", "Wilder Kampf (Bär, Tank)", "Combat farouche (ours, tank
     "Сила зверя (медведь, танк)", "야성 (곰, 방어 전담)", "野性战斗（熊坦）", "野性戰鬥（熊坦）")
 t("Balance", "Gleichgewicht", "Équilibre", "Equilibrio", "Equilíbrio", "Баланс", "조화", "平衡", "平衡")
 t("Relic", "Relikt", "Relique", "Reliquia", "Relíquia", "Реликвия", "유물", "圣物", "聖物")
+
+-- 0.8.0: loot roll help, safe to sell, This zone only, level-up line.
+t("GearPath: %s for you (%s)", "GearPath: %s für dich (%s)", "GearPath : %s pour vous (%s)", "GearPath: %s para ti (%s)",
+    "GearPath: %s para você (%s)", "GearPath: %s для вас (%s)", "GearPath: 내게 %s (%s)", "GearPath：对你 %s（%s）", "GearPath：對你 %s（%s）")
+t("GearPath: not an upgrade for you", "GearPath: keine Verbesserung für dich", "GearPath : pas une amélioration pour vous",
+    "GearPath: no es una mejora para ti", "GearPath: não é melhoria para você", "GearPath: не улучшение для вас",
+    "GearPath: 내게 업그레이드 아님", "GearPath：对你不是提升", "GearPath：對你不是提升")
+t("GearPath: for your other spec, %s: %s", "GearPath: für deine andere Spezialisierung, %s: %s",
+    "GearPath : pour votre autre spécialisation, %s : %s", "GearPath: para tu otra especialización, %s: %s",
+    "GearPath: para sua outra especialização, %s: %s", "GearPath: для другой специализации, %s: %s",
+    "GearPath: 다른 특성 %s에 %s", "GearPath：你的另一专精 %s：%s", "GearPath：你的另一專精 %s：%s")
+t("GearPath: not an upgrade for any of your specs, safe to sell",
+    "GearPath: für keine deiner Spezialisierungen eine Verbesserung, kann verkauft werden",
+    "GearPath : pas une amélioration pour vos spécialisations, peut être vendu",
+    "GearPath: no es mejora para ninguna de tus especializaciones, se puede vender",
+    "GearPath: não é melhoria para nenhuma especialização sua, pode vender",
+    "GearPath: не улучшение ни для одной вашей специализации, можно продать",
+    "GearPath: 어느 특성에도 업그레이드 아님, 팔아도 됨",
+    "GearPath：对你的任何专精都不是提升，可以卖掉",
+    "GearPath：對你的任何專精都不是提升，可以賣掉")
+t("level %d, 1 new upgrade to get. Open the Route (/gp).",
+    "Stufe %d, 1 neue Verbesserung zu holen. Öffne die Route (/gp).",
+    "niveau %d, 1 nouvelle amélioration à obtenir. Ouvrez l'itinéraire (/gp).",
+    "nivel %d, 1 mejora nueva que conseguir. Abre la ruta (/gp).",
+    "nível %d, 1 melhoria nova para pegar. Abra a rota (/gp).",
+    "уровень %d, 1 новое улучшение. Откройте маршрут (/gp).",
+    "레벨 %d, 새 업그레이드 1개. 경로를 여세요 (/gp).",
+    "%d 级，有 1 件新提升可拿。打开路线（/gp）。",
+    "%d 級，有 1 件新提升可拿。打開路線（/gp）。")
+t("level %d, %d new upgrades to get. Open the Route (/gp).",
+    "Stufe %d, %d neue Verbesserungen zu holen. Öffne die Route (/gp).",
+    "niveau %d, %d nouvelles améliorations à obtenir. Ouvrez l'itinéraire (/gp).",
+    "nivel %d, %d mejoras nuevas que conseguir. Abre la ruta (/gp).",
+    "nível %d, %d melhorias novas para pegar. Abra a rota (/gp).",
+    "уровень %d, новых улучшений: %d. Откройте маршрут (/gp).",
+    "레벨 %d, 새 업그레이드 %d개. 경로를 여세요 (/gp).",
+    "%d 级，有 %d 件新提升可拿。打开路线（/gp）。",
+    "%d 級，有 %d 件新提升可拿。打開路線（/gp）。")
+t("This zone only", "Nur diese Zone", "Cette zone seulement", "Solo esta zona", "Só esta zona", "Только эта зона", "이 지역만", "仅本区域", "僅本區域")
+t("Nothing to get in this zone right now. Untick This zone only to see everywhere.",
+    "In dieser Zone gibt es gerade nichts. Entferne den Haken bei Nur diese Zone, um alles zu sehen.",
+    "Rien à obtenir dans cette zone pour l'instant. Décochez Cette zone seulement pour tout voir.",
+    "Nada que conseguir en esta zona ahora. Desmarca Solo esta zona para verlo todo.",
+    "Nada para pegar nesta zona agora. Desmarque Só esta zona para ver tudo.",
+    "В этой зоне сейчас ничего нет. Снимите флажок «Только эта зона», чтобы видеть всё.",
+    "지금 이 지역에서 얻을 것이 없습니다. 전체를 보려면 '이 지역만'을 해제하세요.",
+    "本区域目前没有可拿的。取消勾选“仅本区域”可查看全部。",
+    "本區域目前沒有可拿的。取消勾選「僅本區域」可查看全部。")
+t("Loot roll help", "Hilfe beim Würfeln", "Aide aux jets de butin", "Ayuda para tiradas", "Ajuda nas rolagens", "Подсказка при розыгрыше", "주사위 도우미", "掷骰帮助", "擲骰幫助")
+t("On the Need/Greed window, a line under the item says how much better it is for you, or for your other spec.",
+    "Im Bedarf/Gier-Fenster sagt eine Zeile unter dem Gegenstand, um wie viel besser er für dich ist oder für deine andere Spezialisierung.",
+    "Dans la fenêtre Besoin/Cupidité, une ligne sous l'objet dit de combien il est meilleur pour vous, ou pour votre autre spécialisation.",
+    "En la ventana de Necesidad/Codicia, una línea bajo el objeto dice cuánto mejor es para ti o para tu otra especialización.",
+    "Na janela de Necessidade/Ganância, uma linha sob o item diz quanto ele é melhor para você ou para sua outra especialização.",
+    "В окне «Нужно/Не откажусь» строка под предметом говорит, насколько он лучше для вас или для другой специализации.",
+    "입찰/차비 창에서 아이템 아래에 내게(또는 다른 특성에) 얼마나 좋은지 한 줄로 보여 줍니다.",
+    "在需求/贪婪窗口中，物品下方一行显示它对你（或你的另一专精）提升多少。",
+    "在需求/貪婪視窗中，物品下方一行顯示它對你（或你的另一專精）提升多少。")
+t("Safe to sell mark", "Verkaufs-Markierung", "Marque « à vendre »", "Marca de vender", "Marca de vender", "Метка «можно продать»", "판매 가능 표시", "可出售标记", "可出售標記")
+t("A small coin on gear in your bags that isn't an upgrade for any of your specs, and a line on its tooltip.",
+    "Eine kleine Münze auf Ausrüstung in deinen Taschen, die für keine deiner Spezialisierungen besser ist, und eine Zeile im Tooltip.",
+    "Une petite pièce sur l'équipement de vos sacs qui n'est une amélioration pour aucune de vos spécialisations, et une ligne dans son infobulle.",
+    "Una pequeña moneda en el equipo de tus bolsas que no es mejora para ninguna de tus especializaciones, y una línea en su descripción.",
+    "Uma pequena moeda no equipamento das suas bolsas que não é melhoria para nenhuma especialização sua, e uma linha na dica.",
+    "Маленькая монетка на снаряжении в сумках, которое не лучше ни для одной вашей специализации, и строка в подсказке.",
+    "어느 특성에도 업그레이드가 아닌 가방 속 장비에 작은 동전 표시와 툴팁 한 줄.",
+    "背包里对你任何专精都不是提升的装备上显示一枚小硬币，并在其提示中加一行。",
+    "背包裡對你任何專精都不是提升的裝備上顯示一枚小硬幣，並在其提示中加一行。")
+t("Nothing worth chasing in this zone.", "In dieser Zone nichts, das sich lohnt.", "Rien qui vaille la peine dans cette zone.",
+    "Nada que valga la pena en esta zona.", "Nada que valha a pena nesta zona.", "В этой зоне нечего добывать.",
+    "이 지역에는 노려볼 만한 것이 없습니다.", "本区域没有值得追求的。", "本區域沒有值得追求的。")

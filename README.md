@@ -24,19 +24,22 @@ GearPath looks at your class, spec and level, finds every upgrade you can actual
 | | |
 |---|---|
 | **Character tab** | Your slots around your model. A green arrow means an upgrade you can get now; gold means one worth chasing. Click an item to try it on and see how your stats would change, then **Put it on** from your bags. |
-| **Route** | The best upgrade for every slot, grouped by zone and dungeon. Click one and the map pin goes there. |
+| **Route** | The best upgrade for every slot, grouped by zone and dungeon, or by slot. Tick **This zone only** for what's where you are. Click one and the map pin goes there. |
+| **Your weights** | Click your spec at the top of the window to change what each stat is worth to you (each shows its default), or make up to 8 custom sets and switch between them like specs. |
 | **Near you** | Upgrades in the zone you're standing in, closest first, with the distance to each. |
 | **Browse** | Every piece of gear for your class near your level. Search, filter and sort it. |
 | **Tooltips** | Every piece of gear shows how much better or worse it is than what you wear, by your class and spec (+12%, -8%), and where to get it. Mobs and NPCs list the upgrades they drop or sell. |
 | **Quest reward pick** | Shows which reward to take, or the one that sells for the most if none is an upgrade. |
-| **Dungeon loot** | Walk into a dungeon and see what drops there for you, by boss, with the +%. |
+| **Dungeon loot** | Walk into a dungeon and see what drops there for you, by boss, with the +%, and the dungeon's quests. Bosses you kill and gear you loot are ticked off; Scarlet Monastery goes by wing. |
+| **Loot roll help** | A line under the item on the Need/Greed window: an upgrade for you, for your other spec, or not. |
+| **Safe to sell** | A small coin on bag gear that isn't an upgrade for any of your specs. |
 | **Rare watch** | An icon and a sound when a rare that drops an upgrade for you comes into view. |
 | **Crafted gear** | The gear your professions can make: what you can craft now, which trainer or vendor has the recipe, what needs more skill. From your profession window and trainers, or every recipe at once with ProfessionDB. |
 | **Weapon training** | Found a great staff but never learned Staves? GearPath says so and puts the weapon master on your route. |
 | **Your call** | Untick what you don't do under Show: (PvP rank, reputation, dungeons...), or right-click an item to hide it or the vendor it's from. Settings lists what you hid. |
 | **Learns and shares** | Quest rewards, loot and vendor gear you see are remembered and shared with other GearPath players, so new Forever gear shows up before the database has it. |
 
-Plus: every class and spec (tanks, healers and Forever's melee Survival hunters included), stat weights you can change and share as a short string, item levels on the Character window, a minimap button, controller and ConsolePort support, and the DaylightUI and EllesmereUI looks.
+Plus: every class and spec (tanks, healers and Forever's melee Survival hunters included), a note when you loot an upgrade, a chat line when a level-up opens new ones, item levels on the Character window, a minimap button, controller and ConsolePort support, and the DaylightUI and EllesmereUI looks.
 
 ## Install
 
@@ -53,7 +56,7 @@ Then type `/gp` in game.
 | **QuestieDB** | required | Quests, drops, vendors and where they are |
 | Questie | optional | Runs happily alongside GearPath |
 | ForeverDungeonJournal | optional | Boss loot, dungeon quests, wings and entrances, including Forever's new dungeons |
-| DaylightUI / EllesmereUI | optional | GearPath matches their look; EllesmereUI's bags get upgrade arrows |
+| DaylightUI / EllesmereUI | optional | GearPath matches their look; their bags (and Baganator) get upgrade arrows and safe-to-sell coins |
 | TomTom | optional | An arrow for map pins |
 | ProfessionDB | optional | Every piece of gear your professions can make, and where to learn each recipe |
 

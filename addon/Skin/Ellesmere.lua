@@ -186,6 +186,7 @@ local function paintSlot(btn, data)
     if not parent then return end
     local up = data and E.BagUpgrade(data.itemLink)
     local a = arrows[btn]
+    if GP.Sell then GP.Sell.Mark(btn, parent, not up and data and data.itemLink or nil) end
     if not up then
         if a then a:Hide() end
         return

@@ -291,6 +291,15 @@ function Stats.Create(parent)
         c:SetScript("OnLeave", function() GameTooltip:Hide() end)
         f.cells[i] = c
     end
+    -- Under the stats: where to change what counts (0.8.0).
+    f.weights = CreateFrame("Button", nil, f)
+    f.weights:SetHeight(16)
+    f.weights:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 4, 0)
+    f.weights:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -4, 0)
+    f.weights.text = skin.Text(f.weights, "small", "TITLE")
+    f.weights.text:SetPoint("LEFT", f.weights, "LEFT", 0, 0)
+    f.weights.text:SetText(L["Change what counts for you: Stat weights"] .. " \194\187")
+    f.weights:SetScript("OnClick", function() if UI.OpenWeights then UI.OpenWeights() end end)
     f.empty = skin.Text(f, "small", "WARN")
     f.empty:SetPoint("LEFT", f, "LEFT", 4, 0)
     f.empty:SetPoint("RIGHT", f, "RIGHT", -4, 0)
@@ -306,7 +315,7 @@ function Stats.Create(parent)
             c:SetWidth(colW)
         end
         if type(h) == "number" and h > 0 then
-            local fit = math.max(1, math.floor((h - 22 - 18) / Stats.ROW))
+            local fit = math.max(1, math.floor((h - 22 - 18 - 18) / Stats.ROW))
             if fit ~= self.fitRows then
                 self.fitRows = fit
                 GP.Soon("stats", Stats.Fill)

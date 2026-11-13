@@ -67,6 +67,41 @@ function GP.SafeCall(fn, ...)
     return ok, err
 end
 
+-- When the game blocks something GearPath did (its "GearPath has been
+-- blocked from an action" box), what it was and what was open then: one
+-- chat line, and it's in /gp report.
+GP.blocked = {}
+do
+    local function shown(name)
+        local f = rawget(_G, name)
+        return type(f) == "table" and f.IsShown and f:IsShown() and true or false
+    end
+    local function open()
+        local out = {}
+        if GP.UI and GP.UI.frame and GP.UI.frame:IsShown() then out[#out + 1] = "window" end
+        if GP.Loot and GP.Loot.frame and GP.Loot.frame:IsShown() then out[#out + 1] = "loot" end
+        if GP.Toast and GP.Toast.frame and GP.Toast.frame:IsShown() then out[#out + 1] = "toast" end
+        for i = 1, 13 do if shown("ContainerFrame" .. i) then out[#out + 1] = "bags" break end end
+        for i = 1, 4 do if shown("GroupLootFrame" .. i) then out[#out + 1] = "roll" break end end
+        if shown("CharacterFrame") then out[#out + 1] = "character" end
+        if shown("MerchantFrame") then out[#out + 1] = "vendor" end
+        if InCombatLockdown and InCombatLockdown() then out[#out + 1] = "combat" end
+        return #out > 0 and table.concat(out, "+") or "nothing"
+    end
+    local ef = CreateFrame("Frame")
+    ef:RegisterEvent("ADDON_ACTION_BLOCKED")
+    ef:RegisterEvent("ADDON_ACTION_FORBIDDEN")
+    ef:SetScript("OnEvent", function(_, event, addon, func)
+        if addon ~= ADDON_NAME then return end
+        func = tostring(GP.Plain(func) or "?")
+        local entry = func .. " (" .. open() .. ")"
+        if #GP.blocked < 5 then GP.blocked[#GP.blocked + 1] = entry end
+        if #GP.blocked == 1 then
+            GP.Print("the game blocked %s (%s open). Type /gp report and include it in a bug report.", func, open())
+        end
+    end)
+end
+
 -- The NPC number in a creature's GUID ("Creature-0-...-<npc>-<spawn>"), or
 -- nil for players, pets, objects and secret values.
 function GP.NpcID(guid)
@@ -150,6 +185,9 @@ GP.DEFAULTS = {
         notices = true,         -- a toast for an upgrade put on; chat lines for vendor upgrades and gear a level-up opens
         learn = true,           -- remember quest rewards, loot and vendors you see
         dungeonLoot = true,     -- into a dungeon or raid: a panel with its drops that are upgrades for you, by boss
+        upgradeToast = true,    -- a note at the top of the screen when you pick up an upgrade
+        sellMark = true,        -- a coin on bag gear that isn't an upgrade for any of your specs
+        rollHelp = true,        -- a line under the item on the Need/Greed window
         rareWatch = true,       -- in a dungeon, an icon per rare with an upgrade for you, lit when it's near
         rareWatchWorld = true,  -- out in the world, an icon, a sound and a chat line when such a rare comes into view
         englishText = false,    -- English instead of the (machine-made, draft) translation of GearPath's own text

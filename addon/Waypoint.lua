@@ -122,6 +122,21 @@ end
 
 local ZONE_TYPE = 3   -- Enum.UIMapType.Zone
 
+-- Scarlet Monastery's four wings are one instance to the game (it names
+-- them all "Scarlet Monastery"); the map you're on tells them apart. The
+-- wing is named as the journal and database name it.
+Waypoint.WINGS = {
+    ["Scarlet Monastery"] = { [302] = "Graveyard", [303] = "Library", [304] = "Armory", [305] = "Cathedral" },
+}
+
+-- "Scarlet Monastery: Library" -> "Scarlet Monastery (Library)"; others as they are.
+function Waypoint.PlaceName(instance)
+    if type(instance) ~= "string" then return instance end
+    local base, wing = instance:match("^(.-)%s*:%s*(.+)$")
+    if base and Waypoint.WINGS[base] then return base .. " (" .. wing .. ")" end
+    return instance
+end
+
 -- { mapID, zone, x, y } for the zone you're in (a cave or a town's own map
 -- counts as its zone); in a dungeon { instance = name } as well. x, y are
 -- nil where the game won't say (in dungeons).
@@ -136,6 +151,10 @@ function Waypoint.Here()
     if not (C_Map and C_Map.GetBestMapForUnit) then return here end
     local ok, id = pcall(C_Map.GetBestMapForUnit, "player")
     id = ok and GP.Plain(id) or nil
+    local wings = here.instance and Waypoint.WINGS[here.instance]
+    if wings and type(id) == "number" and wings[id] then
+        here.instance = here.instance .. ": " .. wings[id]
+    end
     -- Up from a cave or a town map to its zone (not past it).
     for _ = 1, 4 do
         if type(id) ~= "number" or here.instance then break end

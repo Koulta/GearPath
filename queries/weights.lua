@@ -13,7 +13,7 @@ local ORDER = {
   HUNTER  = { "agi", "spi", "int", "sta", "hit", "crit" },
   WARRIOR = { "hit", "crit", "str", "agi", "sta" },
   PALADIN = { "hit", "crit", "str", "sp", "int", "agi" },
-  SHAMAN  = { "hit", "crit", "str", "int", "agi", "sp", "spi", "sta" },
+  SHAMAN  = { "hit", "crit", "str", "agi", "int", "spi", "sta", "sp" },  -- Nov 13: after the Nov 10 tuning
   DRUID   = { "hit", "crit", "str", "agi", "sta", "spi", "int", "sp" },
 }
 -- Spell power on an item costs less budget than a main stat in Classic

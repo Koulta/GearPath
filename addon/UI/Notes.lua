@@ -1,5 +1,7 @@
 -- Notes: small heads-ups as you play.
 --   A level-up that lets you wear gear from your bags: a line in chat.
+--   A level-up that puts new upgrades on your Route: a line in chat
+--   ("level 27, 3 new upgrades to get. Open the Route (/gp).").
 --   A vendor you open that sells an upgrade: a line in chat.
 --   An upgrade you put on: a toast at the top of the screen, with how much
 --   it adds to your GearPath score.
@@ -93,11 +95,62 @@ function Notes.LevelUp(from, to)
         "Level " .. to .. ": you can wear %d upgrades from your bags now:", list)
 end
 
+-- ---------------------------------------------------------------------
+-- A level-up: new upgrades on the Route
+-- ---------------------------------------------------------------------
+
+Notes.SETTLE = 4    -- seconds without a new scoring before the new upgrades are counted
+
+-- The Best now upgrades GearPath lists ([id] = true), leaving out gear in
+-- your bags (the line above covers that).
+function Notes.BestNow(res)
+    local out = {}
+    for id, ev in pairs((res or GP.Score.results or {}).byID or {}) do
+        if ev.tier == "primary" and not (ev.source and ev.source.kind == "bags") then out[id] = true end
+    end
+    return out
+end
+
+-- How many of now's Best now upgrades weren't there before.
+function Notes.NewUpgrades(before, res)
+    local n = 0
+    for id in pairs(Notes.BestNow(res)) do
+        if not before[id] then n = n + 1 end
+    end
+    return n
+end
+
+local known = {}         -- Best now at the last scoring
+local waiting            -- { level, before, token } after a level-up
+GP.On("ScoresChanged", function(res)
+    if waiting then
+        -- The new level brings a scan and a few scorings: counted once they settle.
+        local w = waiting
+        w.token = (w.token or 0) + 1
+        local token = w.token
+        C_Timer.After(Notes.SETTLE, function()
+            if waiting ~= w or w.token ~= token then return end
+            waiting = nil
+            local n = Notes.NewUpgrades(w.before, GP.Score.results)
+            known = Notes.BestNow(GP.Score.results)
+            if n > 0 and on() then
+                GP.Print(n == 1 and GP.L["level %d, 1 new upgrade to get. Open the Route (/gp)."]
+                    or GP.L["level %d, %d new upgrades to get. Open the Route (/gp)."], w.level, n)
+            end
+        end)
+        return
+    end
+    known = Notes.BestNow(res)
+end)
+
 local lastLevel
 GP.On("Login", function() lastLevel = GP.player and GP.player.level end)
 GP.On("LevelChanged", function(level)
     local from = lastLevel
     lastLevel = level
+    if type(from) == "number" and type(level) == "number" and level > from then
+        waiting = { level = level, before = known }
+    end
     -- A moment for the game to settle the new level.
     C_Timer.After(1.5, function() GP.SafeCall(Notes.LevelUp, from, level) end)
 end)

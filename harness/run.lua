@@ -232,6 +232,264 @@ UI.Show("plan")
 local pn, pk = activeRows(UI.Plan.list)
 check(pn > 0 and (pk.header or 0) > 0, "route shows zones")
 
+-- Group by slot (Koulta, Nov 13): the same picks, a group per slot in the
+-- paper doll's order, each line naming its place instead of its slot.
+-- Back to "place" and it's the route as before.
+do
+    local function snapshot()
+        local heads, items = {}, {}
+        for _, it in ipairs(UI.Plan.list.items or {}) do
+            if it.kind == "header" then heads[#heads + 1] = it.text end
+            if it.kind == "item" then items[#items + 1] = it end
+        end
+        return heads, items
+    end
+    local placeHeads, placeItems = snapshot()
+    GP.SetSetting("routeGroup", "slot")
+    UI.PAGES.plan.Fill(UI.PAGES.plan.frame)
+    local slotHeads, slotItems = snapshot()
+    check(#slotItems == #placeItems and #slotItems > 0, "by slot: the same " .. #placeItems .. " picks (" .. #slotItems .. ")")
+    local labels = {}
+    for _, k in ipairs(GP.Slots.ORDER) do labels[GP.Slots.Label(GP.Slots.GROUP[k] or k)] = true end
+    local allSlots = #slotHeads > 0
+    for _, h in ipairs(slotHeads) do if not labels[h] and not h:find("^Learn") then allSlots = false end end
+    check(allSlots, "by slot: every group is a slot (" .. table.concat(slotHeads, ", ") .. ")")
+    local noPrefix = true
+    for _, it in ipairs(slotItems) do if it.prefix then noPrefix = false end end
+    check(noPrefix, "by slot: lines don't repeat the slot")
+    GP.SetSetting("routeGroup", nil)
+    UI.PAGES.plan.Fill(UI.PAGES.plan.frame)
+    local backHeads = snapshot()
+    check(table.concat(backHeads, "|") == table.concat(placeHeads, "|"), "back to place: the route as before")
+    check(UI.Plan.group ~= nil, "the Route has a Group by choice")
+end
+
+-- This zone only (0.8.0): the Route keeps what's in the zone you're in
+-- (Tirisfal here) and gear in your bags; unticked, it's the route as before.
+do
+    local P = UI.Plan
+    check(P.here ~= nil and P.hereText and P.hereText:GetText() == "This zone only", "the Route has a This zone only box")
+    local function shown()
+        local out = {}
+        for _, it in ipairs(P.list.items or {}) do
+            if it.kind == "item" then out[#out + 1] = it end
+        end
+        return out
+    end
+    local all = shown()
+    P.here:Click()
+    check(GP.Setting("routeHere") == true, "ticking it saves the choice")
+    local here = shown()
+    local inZone = true
+    for _, it in ipairs(here) do if not P.Here(it.ev) then inZone = false end end
+    check(inZone and #here <= #all, "only what's in this zone (" .. #here .. " of " .. #all .. ")")
+    if not H.noDB then
+        local away = false
+        for _, it in ipairs(all) do if not P.Here(it.ev) then away = true end end
+        check(away and #here < #all, "and something elsewhere drops off the list")
+    end
+    check(P.Here({ source = { kind = "bags" } }), "gear in your bags is always here")
+    P.here:Click()
+    check(GP.Setting("routeHere") == nil and #shown() == #all, "unticked: the route as before")
+end
+
+-- Safe to sell (0.8.0): bag gear no spec of yours would wear gets a coin
+-- and a tooltip line; an upgrade doesn't.
+do
+    local S, Score, I = GP.Sell, GP.Score, GP.Items
+    Score.ReadEquipped()
+    local function rec(id) return I.FromLink(H.Link(id)) end
+    check(Score.SafeToSell(rec(205)), "mail a warlock can't wear: safe to sell")
+    check(Score.SafeToSell(rec(260)), "a hood worse than the one you wear, for every spec: safe to sell")
+    check(not Score.SafeToSell(rec(210)), "an upgrade isn't")
+    check(not Score.SafeToSell({ id = 1, equipLoc = "INVTYPE_TRINKET", classID = 4, subClassID = 0, quality = 2, stats = { sta = 1 } }),
+        "never a trinket (its Use: isn't weighed)")
+    check(not Score.SafeToSell({ id = 2, equipLoc = "INVTYPE_HEAD", classID = 4, subClassID = 1, quality = 1, stats = {} }),
+        "never gear with no stats GearPath reads")
+    check(not Score.SafeToSell({ id = 3, equipLoc = "INVTYPE_2HWEAPON", classID = 2, subClassID = 20, quality = 1, stats = { dps = 3 } }),
+        "never a fishing pole")
+    check(Score.SafeToSell(rec(261)), "a Strength hood: safe to sell for a warlock's own specs")
+    -- A set of your own that values Strength: not any more.
+    GP.char.customSets = { ["custom:Brawl"] = { name = "Brawl", base = GP.Classes.Spec().key, weights = { str = 1, int = 1 } } }
+    local brawl
+    for _, sp in ipairs(GP.Classes.Specs()) do if sp.key == "custom:Brawl" then brawl = sp end end
+    local slot, delta, pct = Score.UpgradeAs(rec(261), brawl)
+    check(slot == "HeadSlot" and delta and delta > 0 and pct and math.abs(pct - 66.7) < 1,
+        "weighed by another set, against what you wear weighed the same way (" .. tostring(pct) .. ")")
+    check(not Score.SafeToSell(rec(261)), "an upgrade for one of your sets isn't safe to sell")
+    local _, d2 = Score.Upgrade(rec(261))
+    check(not d2 or d2 <= 0, "and your spec in use is left as it was")
+    -- The roll helper's three lines.
+    local R = GP.Roll
+    check(R.Verdict(rec(201)):find("^GearPath: %+%d+%% for you %(Chest%)$"), "roll: an upgrade (" .. tostring(R.Verdict(rec(201))) .. ")")
+    check(R.Verdict(rec(205)) == "GearPath: not an upgrade for you", "roll: mail for a warlock")
+    check(R.Verdict(rec(261)) == "GearPath: for your other spec, Brawl: +67%", "roll: another spec's (" .. tostring(R.Verdict(rec(261))) .. ")")
+    GP.char.customSets = nil
+    check(R.Verdict(rec(261)) == "GearPath: not an upgrade for you", "roll: without that set, not an upgrade")
+    -- On the game's roll window.
+    local lf = CreateFrame("Frame", "GroupLootFrame1", UIParent)
+    lf.rollID = 7
+    lf:Show()
+    GetLootRollItemLink = function(id) if id == 7 then return H.Link(201) end end
+    check(R.Attach(7) and lf.gearPathLine and lf.gearPathLine:GetText():find("for you %(Chest%)"), "a line under the item on the roll window")
+    GP.SetSetting("rollHelp", false)
+    check(not R.Attach(7), "Loot roll help off: no line")
+    GP.SetSetting("rollHelp", nil)
+    lf:Hide()
+    GetLootRollItemLink = nil
+    -- The tooltip line, for what's in your bags.
+    H.bag = { [5] = 205, [6] = 260 }
+    S.ScanBags()
+    local function tip(id)
+        GameTooltip._lines = {}
+        GP.Tooltip.Add(GameTooltip, id, H.Link(id))
+        return table.concat(GameTooltip._lines or {}, "\n")
+    end
+    check(tip(205):find("GearPath: not an upgrade for any of your specs, safe to sell", 1, true), "tooltip: gear you'll never wear, in your bags")
+    check(tip(260):find("safe to sell", 1, true), "tooltip: a worse hood in your bags")
+    check(not tip(210):find("safe to sell", 1, true), "tooltip: not on an upgrade")
+    H.bag = nil
+    S.ScanBags()
+    check(not tip(260):find("safe to sell", 1, true), "tooltip: not once it's left your bags")
+    -- The coin on a bag button.
+    local btn = CreateFrame("Button", nil, UIParent)
+    check(S.Mark(btn, btn, H.Link(205)) and S.coins[btn]:IsShown(), "a coin on a bag slot with gear to sell")
+    check(not S.Mark(btn, btn, H.Link(210)) and not S.coins[btn]:IsShown(), "taken off for an upgrade")
+    GP.SetSetting("sellMark", false)
+    check(not S.Mark(btn, btn, H.Link(205)), "Safe to sell mark off: no coin")
+    GP.SetSetting("sellMark", nil)
+end
+
+-- Bags that take Baganator plugins (DaylightUI's, Baganator): the arrow
+-- and the coin through Baganator.API, and the "upgrade" search.
+do
+    local widgets, upgrades, refreshed = {}, {}, 0
+    Baganator = { API = {
+        RegisterCornerWidget = function(label, id, onUpdate, onInit, pos)
+            widgets[#widgets + 1] = { id = id, onUpdate = onUpdate, onInit = onInit, pos = pos }
+        end,
+        RegisterUpgradePlugin = function(label, id, fn) upgrades[#upgrades + 1] = fn end,
+        RequestItemButtonsRefresh = function() refreshed = refreshed + 1 end,
+    } }
+    local B = GP.BagMarks
+    B.registered = false
+    check(B.Register() and #widgets == 2 and #upgrades == 1, "registered: the arrow, the coin, the upgrade search")
+    check(widgets[1].pos.corner == "top_right" and widgets[1].pos.priority < widgets[2].pos.priority,
+        "the arrow comes first in the top right corner")
+    local btn = CreateFrame("Button", nil, UIParent)
+    check(widgets[1].onInit(btn) and widgets[2].onInit(btn), "each makes its frame")
+    local function ask(w, id) return widgets[w].onUpdate(nil, { itemLink = H.Link(id) }) end
+    GP.Score.ReadEquipped()
+    check(ask(1, 210) == true and ask(2, 210) == false, "an upgrade: the arrow, no coin")
+    check(ask(1, 205) == false and ask(2, 205) == true, "mail on a warlock: the coin, no arrow")
+    check(widgets[1].onUpdate(nil, {}) == false, "an empty slot: nothing")
+    check(upgrades[1](H.Link(210)) == true and upgrades[1](H.Link(205)) == false, "the upgrade search finds upgrades")
+    GP.Fire("ScoresChanged", GP.Score.results)
+    for _ = 1, 3 do H.Tick(0.1) end
+    check(refreshed > 0, "a new scoring repaints the bags")
+    check(not B.Register(), "registered once")
+    Baganator = nil
+end
+
+-- A level-up that opens new upgrades: one chat line once they're counted.
+do
+    local N = GP.Notes
+    local before = N.BestNow()
+    local id = next(before)
+    if id then
+        local fake = {}
+        for k in pairs(before) do if k ~= id then fake[k] = true end end
+        check(N.NewUpgrades(fake) == 1 and N.NewUpgrades(before) == 0, "counts the Best now upgrades that weren't there before")
+    end
+    local lines = #H.printed
+    H.Fire("PLAYER_LEVEL_UP", 24)
+    GP.Fire("ScoresChanged", GP.Score.results)
+    for _ = 1, N.SETTLE + 2 do H.Tick(1) end
+    local said = table.concat(H.printed, "\n", lines + 1)
+    check(not said:find("new upgrade"), "nothing new: nothing said (" .. said .. ")")
+    -- Before the level, nothing listed; after it, today's list: they're new.
+    local n = 0
+    for _ in pairs(N.BestNow()) do n = n + 1 end
+    GP.Fire("ScoresChanged", { byID = {} })
+    lines = #H.printed
+    H.Fire("PLAYER_LEVEL_UP", 25)
+    GP.Fire("ScoresChanged", GP.Score.results)
+    H.Tick(1)
+    GP.Fire("ScoresChanged", GP.Score.results)   -- a second scoring: still one line
+    for _ = 1, N.SETTLE + 2 do H.Tick(1) end
+    said = table.concat(H.printed, "\n", lines + 1)
+    local want = n == 1 and "level 25, 1 new upgrade to get. Open the Route (/gp)."
+        or string.format("level 25, %d new upgrades to get. Open the Route (/gp).", n)
+    local _, count = said:gsub("new upgrade", "")
+    if n > 0 then
+        check(said:find(want, 1, true) and count == 1, "a level-up with new upgrades: one line (" .. said .. ")")
+    else
+        check(count == 0, "nothing listed (no database): no line")
+    end
+    GP.player.level = 23
+    GP.Fire("LevelChanged", 23)
+    for _ = 1, 3 do H.Tick(1) end
+end
+
+-- The game blocking something GearPath did: what, and what was open.
+do
+    local n = #H.printed
+    H.Fire("ADDON_ACTION_FORBIDDEN", "SomeOtherAddon", "UseAction")
+    check(#GP.blocked == 0, "another addon's block isn't ours")
+    H.Fire("ADDON_ACTION_FORBIDDEN", "GearPath", "UseAction")
+    H.Fire("ADDON_ACTION_BLOCKED", "GearPath", "CastSpell")
+    check(#GP.blocked == 2 and GP.blocked[1]:find("^UseAction %("), "recorded: " .. tostring(GP.blocked[1]))
+    local said = table.concat(H.printed, "\n", n + 1)
+    local _, lines = said:gsub("the game blocked", "")
+    check(lines == 1 and said:find("UseAction", 1, true), "one chat line: " .. said)
+    check(GP.Sources.ReportLine():find("blocked UseAction", 1, true), "and it's in /gp report")
+    GP.blocked = {}
+end
+
+-- Scarlet Monastery's wings (0.8.0): the game calls them all "Scarlet
+-- Monastery"; the map says which, and the panel lists only that wing.
+do
+    local W, Loot = GP.Waypoint, GP.Loot
+    local inInst, instInfo, best = IsInInstance, GetInstanceInfo, C_Map.GetBestMapForUnit
+    IsInInstance = function() return true, "party" end
+    GetInstanceInfo = function() return "Scarlet Monastery" end
+    C_Map.GetBestMapForUnit = function() return 303 end
+    check(W.Here().instance == "Scarlet Monastery: Library", "in the Library: " .. tostring(W.Here().instance))
+    C_Map.GetBestMapForUnit = function() return nil end
+    check(W.Here().instance == "Scarlet Monastery", "the map not known yet: the monastery")
+    GetInstanceInfo = function() return "Shadowfang Keep" end
+    C_Map.GetBestMapForUnit = function() return 303 end
+    check(W.Here().instance == "Shadowfang Keep", "another dungeon is left alone")
+    IsInInstance, GetInstanceInfo, C_Map.GetBestMapForUnit = inInst, instInfo, best
+    check(W.PlaceName("Scarlet Monastery: Library") == "Scarlet Monastery (Library)" and W.PlaceName("The Deadmines") == "The Deadmines",
+        "named Scarlet Monastery (Library) on screen")
+    if Loot then
+        local lib = "Scarlet Monastery: Library"
+        check(Loot.InPlace({ dungeon = lib, kind = "drop" }, lib), "a Library drop is in the Library")
+        check(not Loot.InPlace({ dungeon = "Scarlet Monastery: Armory", kind = "drop" }, lib), "an Armory drop isn't")
+        check(not Loot.InPlace({ dungeon = "Scarlet Monastery", kind = "drop", bossName = "Herod" }, lib),
+            "Herod's drop filed under the whole monastery: the Armory's")
+        check(Loot.InPlace({ dungeon = "Scarlet Monastery", kind = "drop", bossName = "Arcanist Doan" }, lib),
+            "Doan's: the Library's")
+        check(Loot.InPlace({ dungeon = "Scarlet Monastery", kind = "quest" }, lib), "a monastery quest shows in any wing")
+        check(Loot.InPlace({ dungeon = "Scarlet Monastery: Armory", kind = "drop" }, "Scarlet Monastery"),
+            "wing not known yet: every wing's drops")
+        -- Named more exactly once the map is known: the same checklist.
+        local saved = Loot.state
+        Loot.state = nil
+        local st = Loot.Visit("Scarlet Monastery")
+        st.got[999] = {}
+        check(Loot.Visit(lib) == st and st.place == lib, "the monastery, then its wing: the same visit")
+        check(Loot.Visit("Scarlet Monastery: Armory") ~= st, "another wing: a new one")
+        Loot.state = saved
+        local groups = { { boss = "Arcanist Doan", items = { { rec = GP.Items.Get(201), delta = 5, slot = "ChestSlot" } } } }
+        local okPaint = pcall(Loot.Paint, lib, groups, 1)
+        check(okPaint and Loot.frame.title:GetText() == "GearPath: Scarlet Monastery (Library)",
+            "the panel's title: " .. tostring(Loot.frame and Loot.frame.title:GetText()))
+        Loot.frame:Hide()
+    end
+end
+
 -- A click on a route item: the map pin, never the game's dressing room.
 do
     local row
@@ -736,6 +994,73 @@ if not H.noDB then
     SlashCmdList.GEARPATH("loot")
     check(f:IsShown(), "/gp loot brings it back")
     f.hide:Click("LeftButton")
+
+    -- 0.8.0: the checklist, quest rewards and the upgrade toast.
+    SlashCmdList.GEARPATH("loot")
+    do
+        local groups = Loot.Build("The Deadmines")
+        local quest, testson
+        for _, g in ipairs(groups) do
+            if g.quest then quest = g end
+            if g.boss == "Miner Testson" then testson = g end
+        end
+        check(quest ~= nil and quest.boss:find("^Quest: "), "the dungeon's quests with upgrade rewards have their own lines (" .. tostring(quest and quest.boss) .. ")")
+        check(groups[#groups].quest ~= nil, "quests come after the bosses")
+        local function rowFor(text)
+            for _, r in ipairs(f.lines) do if r:IsShown() and (r.text:GetText() or ""):find(text, 1, true) then return r end end
+        end
+        if quest then
+            local qr = rowFor(quest.boss)
+            check(qr and qr.pin == quest.quest, "a quest's line carries its giver for the map pin")
+            H.waypoint = nil
+            qr:Click("LeftButton")
+            check(H.waypoint ~= nil, "a click on it puts the map pin there")
+        end
+        check(testson and testson.npc == 9200, "a boss line knows the boss (" .. tostring(testson and testson.npc) .. ")")
+        -- The boss dies: done, dimmed.
+        -- (GearPath never registers for the combat log: Forever blocks it.)
+        check(#H.protectedTried == 0, "GearPath registers no event the game blocks (" .. table.concat(H.protectedTried, ", ") .. ")")
+        local ue, ud, ug, un = UnitExists, UnitIsDead, UnitGUID, UnitName
+        UnitExists = function(u) return u == "target" end
+        UnitIsDead = function(u) return u == "target" end
+        UnitGUID = function(u) if u == "target" then return "Creature-0-0-0-0-9200-0000" end return ug(u) end
+        UnitName = function(u) if u == "target" then return "Miner Testson" end return un(u) end
+        H.Fire("UNIT_HEALTH", "target")
+        UnitExists, UnitIsDead, UnitGUID, UnitName = ue, ud, ug, un
+        for _ = 1, 3 do H.Tick(0.1) end
+        local head = rowFor("Miner Testson")
+        check(head and head.gain:GetText():find("done") and head:GetAlpha() < 1, "a dead boss: done, dimmed")
+        local item = rowFor("Testson's Vestments")
+        check(item and item:GetAlpha() < 1, "and its items dimmed")
+        -- You loot it: checked, and it stays on the list after it stops being an upgrade.
+        local before = H.toastShown
+        H.Fire("CHAT_MSG_LOOT", "You receive loot: |cff0070dd|Hitem:232::::::::20:::::|h[Testson's Vestments]|h|r.")
+        for _ = 1, 3 do H.Tick(0.1) end
+        check(Loot.state.got[232] ~= nil, "looting it ticks it off")
+        item = rowFor("Testson's Vestments")
+        check(item and item.text:GetText():find("ReadyCheck"), "with a check mark")
+        local T = GP.Toast
+        check(T.frame and T.frame:IsShown() and T.frame.text:GetText():find("^Testson's Vestments: ") and T.frame.text:GetText():find("%(Chest%)"),
+            "a toast: Upgrade! name: gain (slot) (" .. tostring(T.frame and T.frame.text:GetText()) .. ")")
+        for _ = 1, T.SHOW_FOR + 1 do H.Tick(1) end
+        check(not T.frame:IsShown(), "it goes after " .. T.SHOW_FOR .. " seconds")
+        check(Loot.FromChat("Rimo Thepally receives loot: |cff0070dd|Hitem:232::::::::20:::::|h[x]|h|r.") == nil, "someone else's loot isn't yours")
+        GP.SetSetting("upgradeToast", false)
+        check(not T.Looted(232), "Upgrade toast off: no toast")
+        GP.SetSetting("upgradeToast", nil)
+        -- A wipe and the run back: the checklist stays.
+        IsInInstance, GetInstanceInfo = inInst, instInfo
+        Loot.Refresh()
+        IsInInstance = function() return true, "party" end
+        GetInstanceInfo = function() return "The Deadmines" end
+        Loot.Refresh()
+        check(Loot.state.got[232] and Loot.state.deadIDs[9200], "out and back in (the run back after a wipe): still ticked off")
+        -- Another dungeon starts over.
+        Loot.Visit("Ragefire Chasm")
+        check(next(Loot.state.got) == nil, "another dungeon: a fresh checklist")
+        Loot.state = nil
+        Loot.place = nil
+    end
     -- Out and back in: a new visit, it shows again.
     IsInInstance, GetInstanceInfo = inInst, instInfo
     Loot.Refresh()
@@ -1377,6 +1702,95 @@ do
     GP.char.weights = nil
     GP.Fire("WeightsChanged")
     UI.Show("plan")
+
+    -- 0.8.0: custom weights you can find (Koulta, Nov 13: "make sure players
+    -- know it exists easily").
+    local function sub() return UI.frame.sub and UI.frame.sub:GetText() or "" end
+    UI.UpdateSub()
+    check(not sub():find("your weights") and sub():find("Affliction"), "the header names the spec")
+    local wbText = UI.weightsButton and (UI.weightsButton.text and UI.weightsButton.text:GetText() or UI.weightsButton:GetText()) or ""
+    check(wbText:find("PublicNote") and wbText:find("Stat weights"),
+        "a Stat weights button, with a pencil, in the header")
+    GP.char.weights = { hit = 20 }
+    GP.Fire("WeightsChanged")
+    UI.UpdateSub()
+    check(sub():find("%(your weights%)"), "your own weights: \"(your weights)\" in the header (" .. sub():gsub("|T.-|t", "") .. ")")
+    -- The button sits after the spec, placed by width: the header line is
+    -- never anchored to it (that circle left the window blank, Nov 13).
+    do
+        local sb = UI.frame.sub or UI.frame.subText
+        local circular = false
+        for _, pt in ipairs(sb._points or {}) do
+            if pt[2] == UI.weightsButton then circular = true end
+        end
+        local p1 = UI.weightsButton._points and UI.weightsButton._points[1]
+        check(not circular and p1 and p1[1] == "LEFT" and p1[2] == sb and p1[4] > 0,
+            "the button follows the spec in the line, anchored one way only")
+        check(sub():find("Warlock[^|]-%s%s%s%s+|"), "the line leaves room for it before the | (" .. sub():gsub("|T.-|t", "") .. ")")
+    end
+    -- One click: Settings opens scrolled to the weights, even the first time.
+    UI.Show("plan")
+    S.sf:SetVerticalScroll(0)
+    UI.weightsButton:Click("LeftButton")
+    for _ = 1, 3 do H.Tick(0.1) end
+    check(UI.current == "settings" and S.sf:GetVerticalScroll() > 0, "the button: Settings, at the weights (" .. tostring(S.sf:GetVerticalScroll()) .. ")")
+    UI.Show("doll")
+    local SF = UI.Stats and UI.Stats.frame
+    if SF and SF.weights then
+        check(SF.weights.text:GetText():find("Stat weights"), "the Character tab says where to change what counts")
+        UI.Show("doll")
+        SF.weights:Click("LeftButton")
+        check(UI.current == "settings", "and its link opens Settings")
+    end
+    -- Settings: each weight shows its default, and yours is marked.
+    UI.Show("settings")
+    for _, fn in ipairs(S.refreshers) do fn() end
+    local hitCell
+    for _, c in ipairs(S.weightCells) do if c.key == "hit" then hitCell = c end end
+    check(hitCell and hitCell.default:GetText():find("default") and hitCell.default:GetText():find("yours"), "a changed weight: its default beside it, marked yours")
+    S.resetSpec:Click("LeftButton")
+    check(GP.char.weights == nil and not hitCell.default:GetText():find("yours"), "Reset this spec: back to the defaults")
+    -- A custom set.
+    local before = #C.Specs()
+    check(C.NewCustom("") == nil and C.NewCustom(string.rep("x", 30)) == nil and C.NewCustom("Affliction") == nil, "a set needs a fresh, short name")
+    GP.char.weights = { hit = 18 }
+    local key = C.NewCustom("Leveling")
+    check(key and C.Spec().key == key and C.Spec().custom and C.Weights().hit == 18, "New custom set: a copy of the weights in use, in use now")
+    check(#C.Specs() == before + 1 and C.SpecName() == "Leveling", "it's listed with your specs under its own name")
+    check(C.NewCustom("Leveling") == nil, "names don't repeat")
+    UI.UpdateSub()
+    check(sub():find("Leveling") and sub():find("%(your weights%)"), "the header shows the set")
+    GameTooltip._lines = {}
+    GP.Tooltip.Add(GameTooltip, 203)
+    local tip = table.concat(GameTooltip._lines, "\n")
+    check(tip == "" or tip:find("GearPath %(Leveling%)"), "tooltips say whose weights: GearPath (Leveling)")
+    GP.char.weights = { hit = 25 }
+    C.SetSpec("affliction")
+    check(C.Weights().hit == 18, "switching back to the spec: its own weights, as you left them")
+    C.SetSpec(key)
+    check(C.Weights().hit == 25, "and back to the set: its weights")
+    C.SetSpec("affliction"); GP.char.weights = nil; C.SetSpec(key)
+    C.ResetSpec()
+    check(C.Spec().key == key and C.Weights().hit == C.DefaultWeights().hit, "Reset on a set: the spec it came from, still a set")
+    for _, fn in ipairs(S.refreshers) do fn() end
+    check(S.deleteSet:IsShown(), "Delete this set shows for a set")
+    S.deleteSet:Click("LeftButton")
+    check(C.Spec().key == "affliction" and #C.Specs() == before and not S.deleteSet:IsShown(), "Delete: gone, back to the spec it came from")
+    -- The name box.
+    S.NewCustomBox()
+    box.input:SetText("Dungeons"); box.action:Click()
+    check(C.Spec().name == "Dungeons", "the name box makes a set")
+    C.DeleteCustom(C.Spec().key)
+    GP.char.weights = nil
+    GP.Fire("WeightsChanged")
+    -- Said once.
+    local n0 = #H.printed
+    GP.db.tips = nil
+    GP.Fire("Login"); GP.Fire("Login")
+    local said = 0
+    for i = n0 + 1, #H.printed do if H.printed[i]:find("set your own stat weights") then said = said + 1 end end
+    check(said == 1, "players are told once where weights are (" .. said .. ")")
+    UI.Show("plan")
 end
 
 -- A controller: the window takes the pad's buttons while it's open.
@@ -1691,6 +2105,11 @@ if look == "ellesmere" then
     local a = GP.Ellesmere.arrows and GP.Ellesmere.arrows[btn]
     check(a and a:IsShown(), "Bagged Gloves get the upgrade arrow in EllesmereUI's bags")
     check(a and a:GetPoint(1) == "TOPRIGHT", "in the top right corner, off EllesmereUI's item level (top left)")
+    -- Gear to sell: a coin, no arrow; an upgrade: the arrow, no coin.
+    local sellBtn = H.EUIPaintSlot(0, 5, H.Link(205))
+    check(GP.Sell.coins[sellBtn] and GP.Sell.coins[sellBtn]:IsShown() and not (GP.Ellesmere.arrows[sellBtn] and GP.Ellesmere.arrows[sellBtn]:IsShown()),
+        "mail on a warlock gets the coin in EllesmereUI's bags")
+    check(not (GP.Sell.coins[btn] and GP.Sell.coins[btn]:IsShown()), "the upgrade gets no coin")
     local empty = H.EUIPaintSlot(0, 9, nil)
     check(not (GP.Ellesmere.arrows[empty] and GP.Ellesmere.arrows[empty]:IsShown()), "an empty bag slot gets none")
     -- Skinning turned off for GearPath: the next session falls back to the game's look.

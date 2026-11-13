@@ -416,12 +416,13 @@ end
 
 -- Builds the record once the client has the item.
 local function build(id, link)
-    local name, itemLink, quality, ilvl, reqLevel, _, _, _, equipLoc, icon, _, classID, subClassID = GetItemInfo(link or id)
+    local name, itemLink, quality, ilvl, reqLevel, _, _, _, equipLoc, icon, sellPrice, classID, subClassID = GetItemInfo(link or id)
     if not name then return nil end
     link = link or itemLink
     local rec = {
         id = id, name = name, link = link, quality = quality, ilvl = ilvl, reqLevel = reqLevel or 0,
         equipLoc = equipLoc, icon = icon, classID = classID, subClassID = subClassID,
+        sellPrice = type(sellPrice) == "number" and sellPrice or nil,
     }
     local tip = tooltipFor(link)
     rec.stats, rec.classes, rec.unique, rec.needs, rec.rule, rec.rep = Items.ReadStats(link, tip)

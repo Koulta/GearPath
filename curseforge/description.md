@@ -6,10 +6,12 @@
 
 ## Why GearPath
 
-- **A route, not just a list.** Every upgrade you can get right now, grouped by zone and dungeon, with a map pin on the exact spot.
+- **A route, not just a list.** Every upgrade you can get right now, grouped by zone and dungeon (or by slot), with a map pin on the exact spot.
+- **Your weights, your way.** Click your spec at the top of the window to change what each stat is worth to you, or make your own custom sets and switch between them like specs.
 - **Never out of date.** It reads QuestieDB while you play, so when the database updates, GearPath does too.
 - **Learns as you play.** Quest rewards, loot and vendor gear you come across are remembered and shared with every other GearPath player, so new Forever gear shows up even before the database has it.
-- **Dungeon loot.** Walk into a dungeon and a small panel shows what drops there for you, by boss, and how much better each is.
+- **Dungeon loot and checklist.** Walk into a dungeon and a small panel shows what drops there for you, by boss, with the dungeon's quests too. Bosses you kill and gear you loot get ticked off. Scarlet Monastery is split by wing.
+- **Help at the roll.** A line under the item on the Need/Greed window says whether it's an upgrade for you, or for your other spec.
 - **Rare watch.** An icon and a sound the moment a rare that drops an upgrade for you comes into view.
 - **Weights you can trust.** Every class and spec, tanks and healers included, ordered by Forever's class guides and checked against simulator numbers.
 - **Looks like it belongs.** Matches the game's own UI, DaylightUI or EllesmereUI.
@@ -20,7 +22,7 @@
 
 - **Character tab:** your slots around a model. A green arrow means an upgrade you can get now; gold means one worth chasing. Click an item to try it on and see how your stats would change.
 - **Near you:** upgrades in the zone you're in, closest first, with the distance to each.
-- **Route:** the best upgrade for every slot, grouped by zone and dungeon. Click one and the map pin goes to the dungeon entrance, quest giver or vendor.
+- **Route:** the best upgrade for every slot, grouped by zone and dungeon, or by slot. Tick **This zone only** for what you can get where you are. Click one and the map pin goes to the dungeon entrance, quest giver or vendor.
 - **Browse:** every piece of gear for your class near your level. Search, filter and sort it.
 
 ### While you play
@@ -29,14 +31,15 @@
 - **Quest reward pick:** shows which reward to take, or the one that sells for most if none is an upgrade.
 - **Rare watch:** in dungeons and out in the world, an alert when a rare with an upgrade for you is close.
 - **Put it on:** wear an upgrade from your bags in one click (it warns you first if it binds).
-- **Upgrade notes:** a chat line when a vendor sells an upgrade, or a level-up lets you wear something you're carrying.
+- **Upgrade notes:** a note when you loot an upgrade, and a chat line when a vendor sells one or a level-up puts new upgrades on your Route.
+- **Safe to sell:** a small coin on bag gear that isn't an upgrade for any of your specs.
 
 ### Built for your class
 
 - **Every spec:** pick yours, and GearPath weighs gear for it, including tanks, healers and Forever's melee Survival hunters. Weapon speed and type follow the spec too.
 - **Crafted gear:** the gear your professions can make joins your lists, with the trainer or vendor that has the recipe. From your profession window and trainers, or every recipe at once with ProfessionDB.
 - **Weapon training:** found a great staff but never learned Staves? GearPath says so and puts the weapon master on your route.
-- **Your weights:** change any stat weight, and share yours with a short string other players of your class can paste.
+- **Your weights:** click your spec at the top of the window to change any stat weight (each shows its default), make up to 8 custom sets, and share yours with a short string other players of your class can paste.
 
 ### Fits your setup
 
@@ -58,7 +61,7 @@ Healer gear is left out for classes that don't heal.
 - **QuestieDB** (required): quests, drops, vendors and where they are.
 - **Questie** (optional): works happily alongside GearPath.
 - **Dungeon Journal** (optional): boss loot, dungeon quests and entrances, including Forever's new dungeons.
-- **DaylightUI** or **EllesmereUI** (optional): GearPath matches their look. EllesmereUI's bags also get upgrade arrows.
+- **DaylightUI** or **EllesmereUI** (optional): GearPath matches their look. EllesmereUI's and DaylightUI's bags (and Baganator) also get upgrade arrows and safe-to-sell coins.
 - **TomTom** (optional): an arrow for map pins.
 - **ProfessionDB** (optional): every piece of gear your professions can make, and where to learn each recipe.
 
