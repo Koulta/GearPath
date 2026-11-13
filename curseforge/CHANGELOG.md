@@ -1,5 +1,10 @@
 # GearPath changelog
 
+## 0.7.17
+
+### Changed
+- **The dungeon loot panel stays with you for the whole run.** It used to close for good on your first pull (or after 20 seconds). Now it steps aside while you fight and comes back when the fight ends, until you click **Hide**. `/gp loot` brings a hidden one back.
+
 ## 0.7.16
 
 A full review of the addon against the databases installed on November 9 (QuestieDB 1.0.13, DungeonJournal 1.7.4, ProfessionDB 1.9.1), Blizzard's hotfix notes to November 6 and the class tuning announced for November 10. No stat weights changed: Enhancement already puts Strength first, as Blizzard says it will be.

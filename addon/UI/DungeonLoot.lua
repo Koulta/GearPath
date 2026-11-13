@@ -7,9 +7,9 @@
 -- asked for it. Bosses in the journal's order where DungeonJournal is
 -- installed, else the biggest upgrade first; trash and "any boss" last.
 --
--- It never opens in combat: a pull closes it, and it closes itself after a
--- while unless your mouse is on it. /gp loot brings it back. Drag to move,
--- drag the corner to resize.
+-- It stays up between fights until you click Hide: it steps aside while
+-- you fight and comes back after. /gp loot brings a hidden one back. Drag
+-- to move, drag the corner to resize.
 -- Off with "Dungeon loot" in Settings > Extras.
 
 local _, GP = ...
@@ -21,7 +21,6 @@ local L = GP.L
 
 Loot.WIDTH = 300
 Loot.MAX_ROWS = 14        -- item lines at most (then "and N more")
-Loot.CLOSE_AFTER = 20     -- seconds on screen before it closes itself
 Loot.ROW_H = 18
 
 local function on() return GP.Setting("dungeonLoot") ~= false end
@@ -375,8 +374,11 @@ end
 -- When
 -- ---------------------------------------------------------------------
 
--- Into a dungeon: once per visit (leaving and coming back is a new one).
--- Until the gear list is ready, it waits for it.
+-- In a dungeon the panel stays up between fights until you click Hide
+-- (Koulta, Nov 9: it showed at the door "then never again"): it steps aside
+-- while you fight and comes back when the fight ends. Hide closes it for
+-- the visit; leaving and coming back is a new visit. Until the gear list
+-- is ready, it waits for it.
 function Loot.Refresh()
     local here = GP.Waypoint.Here()
     local instance = here.instance
@@ -384,16 +386,16 @@ function Loot.Refresh()
         Loot.place, Loot.shownFor, Loot.closed = instance, nil, nil
         if not instance and Loot.frame then Loot.frame:Hide() end
     end
-    if not instance or not on() then return end
-    if Loot.shownFor == instance or Loot.closed then
-        -- Already shown this visit: keep it current if it's up.
-        if Loot.frame and Loot.frame:IsShown() then Loot.Show(false, true) end
+    if not instance or not on() or Loot.closed then return end
+    if not GP.Score.results.all or #GP.Score.results.all == 0 then return end
+    if inCombat() then
+        if Loot.frame then Loot.frame:Hide() end
         return
     end
-    if not GP.Score.results.all or #GP.Score.results.all == 0 then return end
-    if inCombat() then return end
+    -- The chat line for "nothing here" only the first time.
+    local first = Loot.shownFor ~= instance
     Loot.shownFor = instance
-    Loot.Show(false, false)
+    Loot.Show(false, not first)
 end
 
 local function soon() GP.Soon("dungeonloot", Loot.Refresh) end
@@ -407,32 +409,16 @@ GP.On("SettingChanged", function(key)
     end
 end)
 
--- A pull closes it for the visit.
+-- It steps aside for a fight and comes back after it (also when you zoned
+-- in with a mob still on you, as in the cave before Wailing Caverns).
 GP.RegisterEvent("PLAYER_REGEN_DISABLED", function()
     Loot.fighting = true
-    if Loot.frame and Loot.frame:IsShown() then Loot.Close() end
+    if Loot.frame then Loot.frame:Hide() end
 end)
--- The fight's over: if the panel hasn't opened this visit (you zoned in with
--- a mob still on you, as in the cave before Wailing Caverns: Koulta, Nov 9),
--- it opens now. One a pull closed stays closed.
 GP.RegisterEvent("PLAYER_REGEN_ENABLED", function()
     Loot.fighting = false
     soon()
 end)
-
--- And by itself after a while, unless your mouse is on it.
-function Loot.Tick()
-    local f = Loot.frame
-    if not (f and f:IsShown() and Loot.openedAt) then return end
-    if f.IsMouseOver and f:IsMouseOver() then
-        Loot.openedAt = GetTime()
-        return
-    end
-    if GetTime() - Loot.openedAt >= Loot.CLOSE_AFTER then Loot.Close() end
-end
-if C_Timer and C_Timer.NewTicker then
-    C_Timer.NewTicker(1, function() GP.SafeCall(Loot.Tick) end)
-end
 
 -- /gp loot: the panel again, back to its first spot and size.
 GP.RegisterCommand("loot", "show this dungeon's upgrades for you again", function()

@@ -222,7 +222,7 @@ UI.RegisterPage("settings", {
             "When a quest offers a choice, shows the best upgrade for you (or the best seller) beside the quest window, and in chat as you turn it in.",
             toggle(c, "questPick"))
         y = row(c, y, "Dungeon loot",
-            "When you enter a dungeon or raid, a panel with its drops that are upgrades for you, by boss. Closes when you pull; /gp loot brings it back.",
+            "In a dungeon or raid, a panel with its drops that are upgrades for you, by boss. It steps aside while you fight; Hide closes it, /gp loot brings it back.",
             toggle(c, "dungeonLoot"))
         y = row(c, y, "Rare watch",
             "In a dungeon, an icon for each rare that drops an upgrade for you, lit with a sound when it's near. Hidden in combat; /gp rare brings it back.",

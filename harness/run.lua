@@ -710,23 +710,32 @@ if not H.noDB then
         for _ = 1, 3 do H.Tick(0.1) end
         check(f:IsShown(), "the fight ends: the panel opens")
     end
-    -- A pull closes it for the visit; /gp loot brings it back.
+    -- It steps aside for a fight and comes back after it, all visit long
+    -- (Koulta in Shadowfang Keep, Nov 9: "it did initially then never again").
+    for round = 1, 3 do
+        H.combat = true
+        H.Fire("PLAYER_REGEN_DISABLED")
+        check(not f:IsShown(), "pull " .. round .. ": it steps aside")
+        H.combat = false
+        H.Fire("PLAYER_REGEN_ENABLED")
+        for _ = 1, 3 do H.Tick(0.1) end
+        check(f:IsShown(), "fight " .. round .. " over: it's back")
+    end
+    -- It doesn't close by itself.
+    for _ = 1, 120 do H.Tick(1) end
+    check(f:IsShown(), "still there two minutes later")
+    -- Hide closes it for the visit, fights or not; /gp loot brings it back.
+    f.hide:Click("LeftButton")
+    check(not f:IsShown(), "Hide closes it")
     H.Fire("PLAYER_REGEN_DISABLED")
-    check(not f:IsShown(), "a pull closes it")
     H.Fire("PLAYER_REGEN_ENABLED")
-    Loot.Refresh()
-    check(not f:IsShown(), "and it stays closed this visit")
+    for _ = 1, 3 do H.Tick(0.1) end
+    GP.Fire("ScoresChanged", GP.Score.results)
+    for _ = 1, 3 do H.Tick(0.1) end
+    check(not f:IsShown(), "and it stays hidden this visit")
     SlashCmdList.GEARPATH("loot")
     check(f:IsShown(), "/gp loot brings it back")
-    -- It closes itself after a while (not with your mouse on it), even as
-    -- the gear list changes under it.
-    f.IsMouseOver = function() return true end
-    for _ = 1, Loot.CLOSE_AFTER + 2 do H.Tick(1) end
-    check(f:IsShown(), "stays while your mouse is on it")
-    f.IsMouseOver = nil
-    for _ = 1, 5 do H.Tick(1) GP.Fire("ScoresChanged", GP.Score.results) end
-    for _ = 1, Loot.CLOSE_AFTER + 2 do H.Tick(1) end
-    check(not f:IsShown(), "closes itself after " .. Loot.CLOSE_AFTER .. " seconds")
+    f.hide:Click("LeftButton")
     -- Out and back in: a new visit, it shows again.
     IsInInstance, GetInstanceInfo = inInst, instInfo
     Loot.Refresh()
