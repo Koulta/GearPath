@@ -150,8 +150,8 @@ local dpsPattern, dpsTemplate
 local function dpsLinePattern()
     local t = type(DPS_TEMPLATE) == "string" and DPS_TEMPLATE or "(%s damage per second)"
     if t ~= dpsTemplate then
-        local escaped = t:lower():gsub("([%(%)%.%-%+%*%?%[%]%^%$])", "%%%1")
-        dpsPattern, dpsTemplate = escaped:gsub("%%s", "([%%d%%.,]+)"), t
+        dpsPattern = GP.FormatPattern(t:lower(), "([%d%.,]+)", nil, "%(([%d%.,]+) damage per second%)")
+        dpsTemplate = t
     end
     return dpsPattern
 end
@@ -180,8 +180,7 @@ local classesPattern
 local function classesLinePattern()
     if classesPattern == nil then
         local s = type(ITEM_CLASSES_ALLOWED) == "string" and ITEM_CLASSES_ALLOWED or "Classes: %s"
-        local escaped = s:gsub("([%(%)%.%-%+%*%?%[%]%^%$])", "%%%1")
-        classesPattern = "^" .. escaped:gsub("%%s", "(.+)") .. "$"
+        classesPattern = "^" .. GP.FormatPattern(s, nil, nil, "Classes: (.+)") .. "$"
     end
     return classesPattern
 end
@@ -191,11 +190,10 @@ end
 -- don't meet. "Requires Level" is left out (the level is handled apart).
 -- Built from the game's own templates, so the word "Requires" can sit
 -- anywhere in the line (Korean puts it last).
-local function escape(t) return (t:gsub("([%(%)%.%-%+%*%?%[%]%^%$])", "%%%1")) end
 local REQ_TEMPLATE = type(ITEM_REQ_SKILL) == "string" and ITEM_REQ_SKILL or "Requires %s"
 local LEVEL_TEMPLATE = type(ITEM_MIN_LEVEL) == "string" and ITEM_MIN_LEVEL or "Requires Level %d"
-local REQ_PATTERN = "^" .. escape(REQ_TEMPLATE):gsub("%%s", "(.+)") .. "$"
-local LEVEL_PATTERN = "^" .. escape(LEVEL_TEMPLATE):gsub("%%d", "%%d+") .. "$"
+local REQ_PATTERN = "^" .. GP.FormatPattern(REQ_TEMPLATE, nil, nil, "Requires (.+)") .. "$"
+local LEVEL_PATTERN = "^" .. GP.FormatPattern(LEVEL_TEMPLATE, nil, nil, "Requires Level %d+") .. "$"
 
 local function isRed(line)
     local c = line and line.leftColor
@@ -223,7 +221,7 @@ end
 -- A reputation requirement: { faction, standing (1-8), text } or nil.
 -- From the game's template ("Requires %s - %s") and its standing names.
 local REP_TEMPLATE = type(ITEM_REQ_REPUTATION) == "string" and ITEM_REQ_REPUTATION or "Requires %s - %s"
-local REP_PATTERN = "^" .. escape(REP_TEMPLATE):gsub("%%s", "(.+)") .. "$"
+local REP_PATTERN = "^" .. GP.FormatPattern(REP_TEMPLATE, nil, nil, "Requires (.+) %- (.+)") .. "$"
 local standings
 local function standingOf(word)
     if not standings then

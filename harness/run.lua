@@ -431,6 +431,26 @@ do
     for _ = 1, 3 do H.Tick(1) end
 end
 
+-- The game's format strings as patterns, in any language (OrtusX, Nov 14:
+-- a Russian client's "%1$s - %2$s" stopped every item loading).
+do
+    local F = GP.FormatPattern
+    local function m(t, line) local p = F(t); if not p then return nil end; return line:match("^" .. p .. "$") end
+    local a, b = m("Требуется: %1$s - %2$s", "Требуется: Громового Утеса - Почтение")
+    check(a == "Громового Утеса" and b == "Почтение", "numbered slots (%1$s) read: " .. tostring(a) .. " / " .. tostring(b))
+    check(m("Requires Level %d", "Requires Level 25") == "Requires Level 25", "%d as a number")
+    check(m("(%s damage per second)", "(17.5 damage per second)") == "17.5", "brackets and dots matched as written")
+    check(m("Вы получаете добычу: %sx%d.", "Вы получаете добычу: [Камень]x5.") == "[Камень]", "a loot line with a count")
+    check(m("100%% %s", "100% abc") == "abc", "a literal %")
+    check(F(nil, nil, nil, "x") == "x", "no template: the fallback")
+    local ok = true
+    for _, t in ipairs({ "%1$s %2$d %3$s", "%", "%%", "(%s", "[%s]", "%2$s - %1$s" }) do
+        local p = F(t)
+        if not p or not pcall(string.match, "abc", p) then ok = false end
+    end
+    check(ok, "every template makes a pattern that can't error")
+end
+
 -- The game blocking something GearPath did: what, and what was open.
 do
     local n = #H.printed

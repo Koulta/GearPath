@@ -32,6 +32,26 @@ function GP.IsSecret(v)
 end
 
 -- A plain, readable value or nil (secret values can't be compared or used).
+-- A Lua pattern from one of the game's format strings ("Requires %s - %s",
+-- "Requires Level %d"), for reading tooltip and chat lines in any language.
+-- Some languages number their slots ("%1$s", "%2$s": Russian and others put
+-- them in another order); a bare "%1" in a pattern means "the first capture"
+-- and stopped every item from loading on a Russian client (OrtusX, Nov 14:
+-- "Items.lua:245: invalid capture index"). Every %s becomes sCap (default
+-- "(.+)"), every %d dCap (default "%d+"), everything else is matched as
+-- written. A template that still can't make a pattern gives `fallback`.
+function GP.FormatPattern(template, sCap, dCap, fallback)
+    if type(template) ~= "string" then return fallback end
+    sCap, dCap = sCap or "(.+)", dCap or "%d+"
+    local t = template:gsub("%%%d+%$([sd])", "%%%1")      -- %1$s -> %s
+    t = t:gsub("%%%%", "\3")                              -- a literal %
+    t = t:gsub("%%s", "\1"):gsub("%%d", "\2")
+    t = t:gsub("([%(%)%.%-%+%*%?%[%]%^%$%%])", "%%%1")     -- the rest as written
+    t = t:gsub("\1", (sCap:gsub("%%", "%%%%"))):gsub("\2", (dCap:gsub("%%", "%%%%"))):gsub("\3", "%%%%")
+    if not pcall(string.match, "", t) then return fallback end
+    return t
+end
+
 function GP.Plain(v)
     if GP.IsSecret(v) then return nil end
     return v

@@ -340,6 +340,10 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
   (Items.TRIES) instead of dropping after 15 s; a slow server had left lists nearly empty with
   Look ahead 10. Reproduce with queries/sweep.lua: ASYNC=1 RATE=15 AHEAD=10 SOON=5 (before the
   fix: 28 Best now instead of 149). CLICKS=1 clicks the settings up as a player does.
+  0.8.2 (Nov 14, OrtusX's /gp report: ruRU, "Items.lua:245: invalid capture index", gear 1460/2):
+  Russian ITEM_REQ_REPUTATION uses numbered slots (%1$s); the old escape left "%1" in the pattern,
+  a back-reference, so every item build errored. All game format strings now go through
+  GP.FormatPattern (Core.lua), which handles %n$s/%n$d, literal %%, and falls back if invalid.
   Bag marks for DaylightUI's bags and Baganator: UI/BagMarks.lua through Baganator.API
   (DaylightUI_Bags answers it while Baganator is off; its Plugins.lua/API.md, read as text).
 

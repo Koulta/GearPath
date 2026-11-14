@@ -1,5 +1,10 @@
 # GearPath changelog
 
+## 0.8.2
+
+### Fixed
+- **GearPath found almost no gear on Russian game clients** (and possibly other languages). Russian writes some of the game's own tooltip lines with numbered placeholders, which GearPath misread, so every item failed to load and the lists stayed nearly empty (thanks OrtusX for the `/gp report`). GearPath now reads those lines correctly in any language, and a line it can't read can no longer stop items loading.
+
 ## 0.8.1
 
 ### Fixed

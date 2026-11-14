@@ -605,8 +605,8 @@ local function selfPatterns()
         "LOOT_ITEM_CREATED_SELF" }) do
         local t = rawget(_G, g)
         if type(t) == "string" then
-            local p = t:gsub("([%(%)%.%+%-%*%?%[%]%^%$])", "%%%1"):gsub("%%%%s", "(.+)"):gsub("%%%%d", "%%d+")
-            SELF_PATTERNS[#SELF_PATTERNS + 1] = "^" .. p .. "$"
+            local p = GP.FormatPattern(t)
+            if p then SELF_PATTERNS[#SELF_PATTERNS + 1] = "^" .. p .. "$" end
         end
     end
     if #SELF_PATTERNS == 0 then SELF_PATTERNS = { "^You receive loot: (.+)%.$", "^You receive item: (.+)%.$" } end
