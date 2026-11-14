@@ -522,16 +522,54 @@ end
 -- Loading many items: asked for a few at a time, picked up as they arrive
 -- ---------------------------------------------------------------------
 
-local waiting = {}        -- [itemID] = time asked
+local waiting = {}        -- [itemID] = time asked (sent to the server)
 local onArrive = {}       -- [itemID] = { callbacks }
-Items.WAIT = 15           -- s before an item that never answers is given up on
+local queued, queue = {}, {}  -- not asked yet: [itemID] = true, and their order
+local tries = {}          -- [itemID] = times asked
+local inFlight = 0
+Items.WAIT = 15           -- s before an asked item that hasn't answered is asked again
+Items.TRIES = 3           -- asks before an item is given up on (removed from the game, a typo)
+-- At most this many asked at once. The server answers item questions a few
+-- dozen a second; asking for a thousand at once left most of them waiting
+-- past the time limit, so they were dropped and the lists came out nearly
+-- empty (OrtusX, Nov 14: Look ahead 10 and Best now range 5 showed 2 items).
+Items.IN_FLIGHT = 40
+
+local function ask(id)
+    waiting[id] = GetTime()
+    inFlight = inFlight + 1
+    tries[id] = (tries[id] or 0) + 1
+    if RequestLoad then pcall(RequestLoad, id) else GetItemInfo(id) end
+end
+
+-- Asks for queued items while there's room.
+local function pump()
+    local i = 1
+    while inFlight < Items.IN_FLIGHT and i <= #queue do
+        local id = queue[i]
+        i = i + 1
+        if queued[id] then
+            queued[id] = nil
+            if onArrive[id] then ask(id) end
+        end
+    end
+    if i > 1 then
+        local rest = {}
+        for j = i, #queue do rest[#rest + 1] = queue[j] end
+        queue = rest
+    end
+end
+Items.Pump = pump
 
 local function arrived(id, success)
     local list = onArrive[id]
-    waiting[id], onArrive[id] = nil, nil
-    if not list then return end
-    local rec = success ~= false and Items.Get(id) or nil
-    for i = 1, #list do GP.SafeCall(list[i], rec, id) end
+    if waiting[id] then inFlight = math.max(inFlight - 1, 0) end
+    waiting[id], onArrive[id], queued[id], tries[id] = nil, nil, nil, nil
+    if list then
+        local rec = success ~= false and Items.Get(id) or nil
+        for i = 1, #list do GP.SafeCall(list[i], rec, id) end
+    end
+    pump()
 end
 
 GP.RegisterEvent("ITEM_DATA_LOAD_RESULT", function(_, id, success)
@@ -551,18 +589,28 @@ function Items.Want(id, fn)
     end
     onArrive[id] = onArrive[id] or {}
     table.insert(onArrive[id], fn)
-    if not waiting[id] then
-        waiting[id] = GetTime()
-        if RequestLoad then pcall(RequestLoad, id) else GetItemInfo(id) end
+    if not waiting[id] and not queued[id] then
+        queued[id] = true
+        queue[#queue + 1] = id
+        pump()
     end
 end
 
--- Gives up on items that never answer (removed from the game, typos in data).
-C_Timer.NewTicker(5, function()
+-- An item that hasn't answered in time is asked again, and after
+-- Items.TRIES asks given up on.
+C_Timer.NewTicker(1, function()
     local now = GetTime()
     for id, t in pairs(waiting) do
-        if now - t > Items.WAIT then arrived(id, false) end
+        if now - t > Items.WAIT then
+            if (tries[id] or 0) < Items.TRIES then
+                inFlight = math.max(inFlight - 1, 0)
+                ask(id)
+            else
+                arrived(id, false)
+            end
+        end
     end
+    pump()
 end)
 
 -- Loads a list of item ids, at most `perFrame` asked for each frame, and
@@ -588,7 +636,7 @@ function Items.LoadAll(key, ids, each, done)
 end
 
 function Items.Pending()
-    local n = 0
+    local n = #queue
     for _ in pairs(waiting) do n = n + 1 end
     return n
 end

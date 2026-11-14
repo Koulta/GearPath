@@ -336,6 +336,10 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
   DungeonLoot's RegisterEvent even inside pcall). Boss deaths now come from UNIT_HEALTH /
   target / mouseover / boss units, LOOT_OPENED's corpse GUIDs and ENCOUNTER_END. The harness
   fails any test run that registers an event in H.PROTECTED_EVENTS (wow.lua).
+  0.8.1 (Nov 14, OrtusX): item loading asks at most Items.IN_FLIGHT (40) at once and retries
+  (Items.TRIES) instead of dropping after 15 s; a slow server had left lists nearly empty with
+  Look ahead 10. Reproduce with queries/sweep.lua: ASYNC=1 RATE=15 AHEAD=10 SOON=5 (before the
+  fix: 28 Best now instead of 149). CLICKS=1 clicks the settings up as a player does.
   Bag marks for DaylightUI's bags and Baganator: UI/BagMarks.lua through Baganator.API
   (DaylightUI_Bags answers it while Baganator is off; its Plugins.lua/API.md, read as text).
 

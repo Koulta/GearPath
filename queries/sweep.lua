@@ -128,6 +128,30 @@ C_Item = {
     RequestLoadItemDataByID = function() end,
     GetItemQualityColor = function() return 1, 1, 1, "ffffffff" end,
 }
+-- ASYNC=1: items arrive like in the game, a while after they're asked for
+-- (and only once asked for), so overlapping scans meet half-loaded lists.
+if os.getenv("ASYNC") then
+    local cached, asked = {}, {}
+    local seed = 7
+    local function rnd(n) seed = (seed * 1103515245 + 12345) % 2147483648; return seed % n end
+    C_Item.IsItemDataCachedByID = function(id) return cached[id] == true end
+    -- RATE=n: the server answers n items a second, in order (it queues them).
+    local rate, queue, nextAt = tonumber(os.getenv("RATE") or "0"), {}, 0
+    C_Item.RequestLoadItemDataByID = function(id)
+        if cached[id] or asked[id] then return end
+        asked[id] = true
+        local delay = (1 + rnd(90)) / 60
+        if rate > 0 then
+            local now = GetTime()
+            nextAt = math.max(nextAt, now) + 1 / rate
+            delay = nextAt - now
+        end
+        C_Timer.After(delay, function()
+            cached[id], asked[id] = true, nil
+            H.Fire("GET_ITEM_INFO_RECEIVED", id, true)
+        end)
+    end
+end
 C_TooltipInfo = { GetHyperlink = function(l) return { lines = { { leftText = l:match("%[(.-)%]") or "?" } } } end }
 C_TooltipInfo.GetItemByID = function(id) return C_TooltipInfo.GetHyperlink(link(id)) end
 C_Container = { GetContainerNumSlots = function() return 0 end, GetContainerItemLink = function() return nil end }
@@ -156,6 +180,9 @@ H.Fire("ADDON_LOADED", "GearPath")
 H.Fire("PLAYER_LOGIN")
 GP.player.level = LEVEL
 if os.getenv("SPEC") then GP.Classes.SetSpec(os.getenv("SPEC")) end
+-- Settings > Look ahead / Best now range (OrtusX, Nov 14: 10 and 5 showed 2 items).
+if os.getenv("AHEAD") then GP.SetSetting("ahead", tonumber(os.getenv("AHEAD"))) end
+if os.getenv("SOON") then GP.SetSetting("soon", tonumber(os.getenv("SOON"))) end
 -- A scan now and the one login starts 4 seconds in, overlapping (as a
 -- level-up right after login would): the result must be the full list.
 GP.Sources.Scan()
@@ -163,6 +190,26 @@ local frames = 0
 repeat
     H.Tick(1 / 60); frames = frames + 1
 until (frames > 300 and GP.Sources.status == "ready" and not GP.JobRunning("scan") and not GP.JobRunning("items")) or frames > 100000
+
+-- CLICKS=1: after the list is ready, click Look ahead up to AHEAD2 and Best
+-- now range up to SOON2 one step at a time, a few frames apart, as a player
+-- does in Settings (OrtusX's report, Nov 14).
+if os.getenv("CLICKS") then
+    local function step(key, to, def)
+        local v = GP.Setting(key) or def
+        while v < to do
+            v = v + 1
+            GP.SetSetting(key, v)
+            for _ = 1, tonumber(os.getenv("GAP") or "12") do H.Tick(1 / 60) end
+        end
+    end
+    step("ahead", tonumber(os.getenv("AHEAD2") or "10"), 5)
+    step("soon", tonumber(os.getenv("SOON2") or "5"), 2)
+    frames = 0
+    repeat
+        H.Tick(1 / 60); frames = frames + 1
+    until (frames > 300 and GP.Sources.status == "ready" and not GP.JobRunning("scan") and not GP.JobRunning("items")) or frames > 100000
+end
 
 -- ---------------------------------------------------------------------
 -- The checks
@@ -179,8 +226,8 @@ local function canUse(rec)
         if rec.equipLoc == "INVTYPE_CLOAK" or rec.equipLoc == "INVTYPE_NECK" or rec.equipLoc == "INVTYPE_FINGER"
             or rec.equipLoc == "INVTYPE_TRINKET" or rec.equipLoc == "INVTYPE_HOLDABLE" then return true end
         if s == 0 then return true end
-        if s == 4 then return ref.plateAt ~= nil and LEVEL + 5 >= ref.plateAt end
-        if s == 3 and ref.mailAt then return LEVEL + 5 >= ref.mailAt end
+        if s == 4 then return ref.plateAt ~= nil and LEVEL + (GP.Setting("ahead") or 5) >= ref.plateAt end
+        if s == 3 and ref.mailAt then return LEVEL + (GP.Setting("ahead") or 5) >= ref.mailAt end
         return ref.a[s] == true
     end
     return false

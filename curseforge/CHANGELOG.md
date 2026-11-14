@@ -1,5 +1,10 @@
 # GearPath changelog
 
+## 0.8.1
+
+### Fixed
+- **Bigger Look ahead / Best now range settings left the lists nearly empty.** With more levels to look through, GearPath asked the server about hundreds of items at once; the server answers a few dozen a second, so most waited past GearPath's time limit and were dropped, and the Route could end up with only a couple of items (thanks OrtusX). GearPath now asks for at most 40 at a time and asks again for any that don't answer, so every item gets loaded, however far ahead you look.
+
 ## 0.8.0
 
 The biggest update yet: your own stat weights front and centre, a dungeon checklist, help at the Need/Greed window, a coin on gear that's safe to sell, Scarlet Monastery by wing, and more ways to look at your Route.
