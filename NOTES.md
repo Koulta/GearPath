@@ -344,6 +344,11 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
   Russian ITEM_REQ_REPUTATION uses numbered slots (%1$s); the old escape left "%1" in the pattern,
   a back-reference, so every item build errored. All game format strings now go through
   GP.FormatPattern (Core.lua), which handles %n$s/%n$d, literal %%, and falls back if invalid.
+  0.8.3 (Nov 14, OrtusX's Ruby-Adorned Blade, Rogue 24, Look ahead 10): Worth chasing buckets sort
+  by Score.ChaseValue (gain minus 5% per level until usable, floor 25%); Best now unchanged.
+  Quests with no start borrow a same-name quest's start (Sources.SameNameStart), using QuestieDB's
+  quest-name index built in its own job (BuildNameIndexAsync) so no 0.3 s hitch; the first scan
+  of a session reruns once it's ready. queries/sweep.lua: ITEM=id explains one item; HOOK=file.
   Bag marks for DaylightUI's bags and Baganator: UI/BagMarks.lua through Baganator.API
   (DaylightUI_Bags answers it while Baganator is off; its Plugins.lua/API.md, read as text).
 

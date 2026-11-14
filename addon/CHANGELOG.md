@@ -1,5 +1,13 @@
 # GearPath changelog
 
+## 0.8.3
+
+### Changed
+- **Worth chasing favours upgrades you can get soon.** When two upgrades for a slot are close, the one you can use in a level or two now beats a slightly bigger one many levels away (each level you'd wait counts 5% against it). With a big Look Ahead, the Route used to show only the far-off ones (thanks OrtusX). The numbers shown are unchanged.
+
+### Fixed
+- **Quests whose start the database doesn't know** now point to where they begin when another part of the same quest does (a quest of the same name). The Rogue quest The Eye of Bhossca now shows "starts with The Eye of Bhossca, from Dead Drop, Silverpine Forest" instead of "location not in the database yet".
+
 ## 0.8.2
 
 ### Fixed

@@ -180,6 +180,7 @@ H.Fire("ADDON_LOADED", "GearPath")
 H.Fire("PLAYER_LOGIN")
 GP.player.level = LEVEL
 if os.getenv("SPEC") then GP.Classes.SetSpec(os.getenv("SPEC")) end
+if os.getenv("HOOK") then assert(loadfile(os.getenv("HOOK")))(GP) end
 -- Settings > Look ahead / Best now range (OrtusX, Nov 14: 10 and 5 showed 2 items).
 if os.getenv("AHEAD") then GP.SetSetting("ahead", tonumber(os.getenv("AHEAD"))) end
 if os.getenv("SOON") then GP.SetSetting("soon", tonumber(os.getenv("SOON"))) end
@@ -219,6 +220,45 @@ local function bad(ev, why)
     problems[#problems + 1] = string.format("%s [%d] %s (%s): %s", ev.rec.name or "?", ev.rec.id, GP.Slots.Label(ev.slot), ev.tier or "-", why)
 end
 local res = GP.Score.results
+if _G.SNreport then print(string.format("same-name lookups %d, starts found %d, %.3fs", _G.SNreport())) end
+-- ITEM=id: everything GearPath decided about one item (a player's "why
+-- isn't X suggested?").
+if os.getenv("ITEM") then
+    local id = tonumber(os.getenv("ITEM"))
+    local entry = GP.Sources.entries and GP.Sources.entries[id]
+    print("ITEM " .. id .. ": in the scan " .. tostring(entry ~= nil))
+    if entry then
+        print("  usable " .. tostring(entry.usable) .. ", opensAt " .. tostring(entry.opensAt) .. ", effort " .. tostring(entry.effort))
+        for _, s in ipairs(entry.sources or {}) do print("  source " .. GP.UI.Describe(s, true) .. " level " .. tostring(s.level) .. " req " .. tostring(s.reqLevel)) end
+    end
+    local rec = GP.Items.Get(id)
+    if rec then print("  item: req " .. tostring(rec.reqLevel) .. " " .. tostring(rec.equipLoc) .. " class " .. tostring(rec.classID) .. "/" .. tostring(rec.subClassID)) end
+    local ev = res.byID and res.byID[id]
+    if ev then
+        print("  scored: tier " .. tostring(ev.tier) .. " delta " .. tostring(ev.delta) .. " pct " .. tostring(ev.pct) .. " slot " .. tostring(ev.slot) .. " req " .. tostring(ev.req))
+    else
+        print("  not scored (no ev)")
+        if rec then print("  Upgrade: ", GP.Score.Upgrade(rec)); print("  CanWear: ", GP.Score.CanWear(rec, LEVEL)) end
+    end
+    -- What it's up against in its slot.
+    local slot = ev and ev.slot
+    local bucket = slot and res.bySlot[GP.Slots.GROUP[slot] or slot]
+    if bucket then
+        for i = 1, math.min(3, #bucket.secondary) do
+            local e = bucket.secondary[i]
+            print(string.format("  Worth chasing #%d: %s +%.0f req %s", i, e.rec.name, e.delta, tostring(e.req)))
+        end
+    end
+    if slot then
+        local list = {}
+        for _, e in pairs(res.byID) do if e.slot == slot and e.delta then list[#list + 1] = e end end
+        table.sort(list, function(a, b) return a.delta > b.delta end)
+        for i = 1, math.min(8, #list) do
+            local e = list[i]
+            print(string.format("  #%d %s [%s] %s +%.0f req %s %s", i, e.rec.name, tostring(e.tier), slot, e.delta, tostring(e.req or e.rec.reqLevel), e.source and GP.UI.Describe(e.source, true) or "?"))
+        end
+    end
+end
 local function canUse(rec)
     if rec.classID == 2 then return ref.w[rec.subClassID] == true end
     if rec.classID == 4 then

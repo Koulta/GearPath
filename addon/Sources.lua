@@ -492,6 +492,46 @@ local function chainBefore(q)
     return chain
 end
 
+-- Another quest with the same name, open to you, that the database knows a
+-- start for (an object, a person, an item): its id, or nil.
+-- The lookup needs QuestieDB's quest-name index, a full pass over every
+-- quest (about 0.3 s at once): it's built a little each frame in a job of
+-- its own, and a scan that needed it before it was ready runs again after.
+Sources.namesReady = false
+function Sources.BuildNames()
+    if Sources.namesReady or GP.JobRunning("questNames") then return end
+    local Q = DB and DB.Quest
+    if not (Q and Q.IdsByName) then return end
+    if type(Q.BuildNameIndexAsync) ~= "function" then
+        Sources.namesReady = true    -- an older QuestieDB: built on first lookup
+        return
+    end
+    GP.RunJob("questNames", function() Q.BuildNameIndexAsync(250) end, function()
+        Sources.namesReady = true
+        if Sources.wantedNames then
+            Sources.wantedNames = false
+            GP.Soon("rescan", Sources.Scan)
+        end
+    end)
+end
+
+function Sources.SameNameStart(q, name)
+    if type(name) ~= "string" or not (DB and DB.Quest and DB.Quest.IdsByName) then return nil end
+    if not Sources.namesReady then
+        Sources.wantedNames = true
+        Sources.BuildNames()
+        return nil
+    end
+    local ok, ids = pcall(DB.Quest.IdsByName, name)
+    if not ok or type(ids) ~= "table" then return nil end
+    for _, other in ipairs(ids) do
+        if other ~= q and Sources.QuestAvailable(other) and not questDone(other) then
+            local st = questStart(other)
+            if st.giver then return other end
+        end
+    end
+end
+
 local function questSource(q)
     if not Sources.QuestAvailable(q) then return nil end
     local s = {
@@ -505,6 +545,11 @@ local function questSource(q)
     local start = questStart(q)
     s.giver, s.giverID, s.startItem = start.giver, start.giverID, start.startItem
     copyPlace(s, start)
+    -- The database doesn't say who starts it, but a quest of the same name
+    -- (open to you) has a start: a chain the database didn't link, so the
+    -- trip starts there (OrtusX, Nov 14: The Eye of Bhossca, a Rogue quest,
+    -- whose first part starts at an object and whose reward part had no start).
+    local sibling = not s.giver and Sources.SameNameStart(q, s.name)
     local zoneArea = field(DB.Quest, "zoneOrSort", q)
     if type(zoneArea) == "number" and zoneArea > 0 then
         local d = Sources.Dungeon(zoneArea)
@@ -512,6 +557,7 @@ local function questSource(q)
     end
     if not s.done then
         local chain = chainBefore(q)
+        if #chain == 0 and sibling then chain = { sibling } end
         if #chain > 0 then
             s.chain = {}
             for i, cq in ipairs(chain) do

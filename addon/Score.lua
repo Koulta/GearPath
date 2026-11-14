@@ -454,6 +454,18 @@ local function better(a, b)
     return (a.rec.ilvl or 0) > (b.rec.ilvl or 0)
 end
 
+-- Worth chasing: each level you'd still wait for an upgrade takes 5% off
+-- its gain when choosing between them, so a nearly-as-good one you can get
+-- next level beats a bigger one ten levels off (OrtusX, Nov 14: the
+-- Ruby-Adorned Blade at 25 lost to level 30-34 weapons with Look ahead 10).
+-- Only the order changes; the gains shown are the real ones.
+Score.CHASE_WAIT = 0.05
+Score.CHASE_FLOOR = 0.25
+function Score.ChaseValue(ev, level)
+    local wait = math.max(0, (ev.req or 0) - (level or (GP.player and GP.player.level) or 1))
+    return (ev.delta or 0) * math.max(Score.CHASE_FLOOR, 1 - Score.CHASE_WAIT * wait)
+end
+
 -- The level an entry waits for: the item's own, a kind that opens later
 -- (Mail at 40 for a hunter), a quest you can't pick up yet.
 local function reqOf(entry, src)
@@ -587,7 +599,12 @@ function Score.Run()
     end
     for _, bucket in pairs(res.bySlot) do
         table.sort(bucket.primary, better)
-        table.sort(bucket.secondary, better)
+        table.sort(bucket.secondary, function(a, b)
+            if (a.far == true) ~= (b.far == true) then return not a.far end
+            local va, vb = Score.ChaseValue(a, level), Score.ChaseValue(b, level)
+            if va ~= vb then return va > vb end
+            return better(a, b)
+        end)
         table.sort(bucket.locked, better)
     end
     res.plan = Score.BuildPlan(res)
