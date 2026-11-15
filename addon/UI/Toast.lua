@@ -49,9 +49,15 @@ function Toast.Text(ev)
 end
 
 -- You looted item `id`: a toast if GearPath counted it as an upgrade.
-function Toast.Looted(id)
+function Toast.Looted(id, link)
     if not on() then return false end
     local ev = GP.Score.ForItem(id)
+    -- A random suffix the lists didn't score ("... of Shadow Wrath"): the
+    -- item itself decides.
+    local S = GP.Items.SuffixOf
+    if type(link) == "string" and S(link) ~= S(ev and ev.rec and ev.rec.link) then
+        ev = GP.Tooltip and GP.Tooltip.QuickEval(GP.Items.FromLink(link)) or nil
+    end
     if not ev or ev.healerPass or not GP.Score.BigEnough(ev.delta or 0, ev.base) then return false end
     local f = frame()
     f.icon:SetTexture(ev.rec.icon or "Interface\\Icons\\INV_Misc_QuestionMark")

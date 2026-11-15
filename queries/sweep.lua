@@ -373,6 +373,9 @@ for _, ev in ipairs(res.plan.picks) do
     local max = GP.Slots.BY_KEY[g].pair and 2 or 1
     if perGroup[g] > max then bad(ev, "too many picks for " .. g) end
 end
+-- POST=file: a script run once the list is scored, given GP and the results
+-- (for one-off questions about the real data).
+if (os.getenv("POST") or "") ~= "" then assert(loadfile(os.getenv("POST")))(GP, res, H) end
 local trained = {}
 for name, n in pairs(train) do trained[#trained + 1] = name .. " " .. n end
 table.sort(trained)

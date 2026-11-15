@@ -102,7 +102,7 @@ function Slots.Label(key)
     if not s then return key end
     -- Paladins, druids and shamans put a relic there.
     if key == "RangedSlot" and GP.Classes and GP.player and GP.Classes.Data().relic then return GP.L["Relic"] end
-    if s.pair then return s.label:gsub(" %d$", "") end
+    if s.pair then return (s.label:gsub(" %d$", "")) end
     return s.label
 end
 

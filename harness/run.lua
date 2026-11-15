@@ -286,6 +286,16 @@ do
         more.onToggle()
         local alt = find("alt")
         check(alt ~= nil and alt.ev and alt.ev.tier == "secondary", "opened: the next options, one line each")
+        -- Every kind of row is drawn for real (the options came up blank in
+        -- game: a hex text passed as a colour's alpha, never drawn here).
+        for _, kindName in ipairs({ "alt", "more", "item" }) do
+            local it = kindName == "item" and { kind = "item", ev = alt.ev } or find(kindName)
+            local kind = GP.List.KINDS[kindName]
+            local row = CreateFrame("Button", nil, UIParent)
+            local ok, err = pcall(function() kind.build(row); kind.fill(row, it, UI.Plan.list) end)
+            check(ok, "a row of kind '" .. kindName .. "' draws without an error" .. (ok and "" or (": " .. tostring(err))))
+            if kindName == "alt" and ok then check((row.name:GetText() or "") ~= "", "and an option's row has its name") end
+        end
         local m2 = find("more")
         check(m2 and m2.open, "and it shows as open")
         m2.onToggle()
@@ -557,6 +567,9 @@ do
         check(Loot.InPlace({ dungeon = "Scarlet Monastery", kind = "drop", bossName = "Arcanist Doan" }, lib),
             "Doan's: the Library's")
         check(Loot.InPlace({ dungeon = "Scarlet Monastery", kind = "quest" }, lib), "a monastery quest shows in any wing")
+        check(Loot.BossWing("Scarlet Monastery", "Scorn") == "Scarlet Monastery: Graveyard", "Scorn's drops say Graveyard")
+        check(GP.UI.Describe({ kind = "drop", name = "Scorn", rank = "Elite", dungeon = "Scarlet Monastery" }):find("Scarlet Monastery: Graveyard", 1, true),
+            "a monastery boss's drop names its wing")
         check(Loot.InPlace({ dungeon = "Scarlet Monastery: Armory", kind = "drop" }, "Scarlet Monastery"),
             "wing not known yet: every wing's drops")
         -- Named more exactly once the map is known: the same checklist.
@@ -914,6 +927,18 @@ if not H.noDB then
         check(GP.db.shared.items[301] == nil, "and what was kept under that name before is cleared")
         local two = GP.db.shared.items[302] and GP.db.shared.items[302].q[302]
         check(two and two.c == 1 and two.by["Koulta Lorn"] == nil and two.by["Bob-Forever"], "another player's report of the same source stays, counted once")
+        -- No player's name is kept: a short code stands in for each.
+        GP.Share.CodeNames()
+        local named = false
+        for _, kinds in pairs(GP.db.shared.items) do for _, list in pairs(kinds) do for _, src in pairs(list) do
+            for who in pairs(type(src) == "table" and src.by or {}) do if not who:match("^#%x%x%x%x%x%x%x%x$") then named = true end end
+        end end end
+        check(not named, "reporters are kept as codes, never as names")
+        local probe = { by = { ["Old Name-Forever"] = true }, c = 1 }
+        GP.db.shared.items[987654] = { d = { [1] = probe } }
+        GP.Share.CodeNames()
+        check(probe.by["Old Name-Forever"] == nil and probe.by[GP.Share.Code("Old Name-Forever")] == true, "names saved by older versions become codes")
+        GP.db.shared.items[987654] = nil
         hear("Koulta Lorn", "GUILD", "1;Q:304:304:1431:500:500:later")
         check(not GP.db.shared.items[304], "later messages under that name are ignored too")
         hear("Bob-Forever", "GUILD", "1;Q:303:303:1431:500:500:mine;I:0000000000")
@@ -2610,6 +2635,148 @@ do
     GP.Score.ReadEquipped()
     local fresh = tip({ rec = rec, slot = "HandsSlot", delta = 8, base = 0, points = 8 })
     check(fresh:find("|| empty slot"), "nothing worn there: empty slot (" .. fresh .. ")")
+end
+
+-- 0.8.6: the deep check's fixes.
+do
+    local I, S = GP.Items, GP.Score
+    local function sfx(id, n) return (H.Link(id):gsub("item:" .. id .. ":", "item:" .. id .. "::::::" .. n .. ":")) end
+    check(select("#", GP.Slots.Label("Finger0Slot")) == 1, "a slot's label is one value")
+    -- One school's spell damage from the game's stat table, in any language.
+    H.statsFor = { [100] = { ITEM_MOD_SHADOW_DAMAGE_DONE_SHORT = 9, ITEM_MOD_PHYSICAL_DAMAGE_DONE_SHORT = 4 } }
+    local st = I.ReadStats(H.Link(100), nil)
+    check(st.spShadow == 9 and st.spPhysical == nil, "Shadow damage is read from the stat table (" .. tostring(st.spShadow) .. ")")
+    H.statsFor = nil
+    -- Level 1 is "no requirement": not a changed item.
+    do
+        local entry
+        for _, e in pairs(GP.Sources.entries) do if e.fromDB and e.rec and (e.rec.reqLevel or 0) > 1 then entry = e break end end
+        if entry then
+            local real = entry.rec.reqLevel
+            entry.rec.reqLevel = 1
+            local r = GP.Check.Item(entry)
+            local flagged = false
+            for _, w in ipairs(r.warnings) do if w.key == "changed" and w.text:find("needs level") then flagged = true end end
+            check(not flagged, "an item with no level requirement isn't called changed")
+            entry.rec.reqLevel = real
+            GP.Check.Item(entry)
+        else
+            check(extra == "nodb", "a database item for the level check")
+        end
+    end
+    -- Worn with one random suffix, another in hand: it's weighed, not skipped.
+    H.suffixStats = { [1953] = { ITEM_MOD_SPELL_POWER_SHORT = 40 }, [7] = { ITEM_MOD_STAMINA_SHORT = 1 } }
+    H.wornLink = { [1] = sfx(100, 7) }
+    S.ReadEquipped()
+    local other = I.FromLink(sfx(100, 1953))
+    local slot, delta = S.Upgrade(other)
+    check(slot == "HeadSlot" and delta and delta > 30, "the same item with another random suffix is weighed against the one worn (" .. tostring(delta) .. ")")
+    check(S.Upgrade(I.FromLink(sfx(100, 7))) == nil, "the very item you wear isn't an upgrade over itself")
+    check(S.Upgrade(I.Get(100)) == nil, "nor the plain one off the lists")
+    H.wornLink = nil
+    S.ReadEquipped()
+    -- In your bags with a suffix, already on the lists as the plain item.
+    local id
+    for i, e in pairs(GP.Sources.entries) do
+        if e.fromDB and e.rec and not e.bags and e.rec.equipLoc ~= "INVTYPE_FINGER" and S.equipped[GP.Slots.FOR_EQUIPLOC[e.rec.equipLoc][1]].id ~= i then id = i break end
+    end
+    if id then
+        local entry = GP.Sources.entries[id]
+        local plain = entry.rec
+        H.bag = { [7] = sfx(id, 1953) }
+        GP.Sources.RefreshBags()
+        for _ = 1, 20 do H.Tick(0.1) end
+        check(entry.bags and entry.rec ~= plain and (entry.rec.stats.sp or 0) >= 40, "a bagged item with a random suffix is scored as itself (" .. tostring(entry.rec.stats.sp) .. " sp)")
+        local ev = S.ForItem(id)
+        check(ev and ev.rec == entry.rec, "and that's what the lists show")
+        H.bag = nil
+        GP.Sources.RefreshBags()
+        for _ = 1, 20 do H.Tick(0.1) end
+        check(GP.Sources.entries[id] == entry and not entry.bags and (entry.rec.stats.sp or 0) < 40, "out of your bags, the list is about the plain item again")
+        -- The loot toast goes by the item looted.
+        GP.SetSetting("upgradeToast", true)
+        local shown = GP.Toast.Looted(id, sfx(id, 1953))
+        check(shown == true and GP.Toast.frame.text:GetText():find(entry.rec.name, 1, true), "looting one with a random suffix: the toast is for that item")
+        GP.Toast.frame:Hide()
+    else
+        check(extra == "nodb", "a list item for the bag test")
+    end
+    H.suffixStats = nil
+    -- Loot is filed under the corpse it came from, never under your target.
+    do
+        local items = GP.db.learned.items
+        local before = items[212] and items[212].d
+        if items[212] then items[212].d = nil end
+        H.units.target = { name = "Some Player", guid = "Player-1-0000BEEF" }
+        H.loot = { { H.Link(212), "GameObject-0-0-0-0-555-0000" } }
+        H.Fire("LOOT_OPENED")
+        check(not (items[212] and items[212].d and next(items[212].d)), "gear from a chest isn't filed as dropped by whoever you target")
+        H.loot = { { H.Link(212), "Creature-0-0-0-0-9100-0000AA" } }
+        H.Fire("LOOT_OPENED")
+        local d = items[212] and items[212].d and items[212].d[9100]
+        check(d and d.n ~= "Some Player", "gear from a corpse is filed under that mob, not under your target (" .. tostring(d and d.n) .. ")")
+        H.units.target = { name = "Marsh Lurker", guid = "Creature-0-0-0-0-9100-0000AA" }
+        H.Fire("LOOT_OPENED")
+        d = items[212] and items[212].d and items[212].d[9100]
+        check(d and d.n == "Marsh Lurker", "your target lends its name when it is the corpse")
+        H.loot, H.units.target = nil, nil
+        if items[212] then items[212].d = before end
+        GP.Sources.Learned(212)
+    end
+    -- The bag arrow: only on an upgrade you can put on now.
+    do
+        local rec = I.Get(201)
+        check(rec and rec.reqLevel > GP.player.level and S.Gain(rec) ~= nil and GP.Ellesmere.BagUpgrade(H.Link(201)) == false,
+            "an upgrade above your level gets no bag arrow yet")
+        check(GP.Ellesmere.BagUpgrade(H.Link(210)) == true or S.Gain(I.Get(210)) == nil, "one you can wear now still does")
+    end
+    -- A holiday's own mob says so.
+    check(GP.UI.Describe({ kind = "drop", name = "Scorn", rank = "Elite", dungeon = "Scarlet Monastery", holiday = GP.Sources.HOLIDAY["Scorn"] })
+        :find("Graveyard, Hallow's End only", 1, true), "Scorn's drop says Hallow's End only")
+    -- The tooltip says when an item has an effect the score leaves out.
+    do
+        local ev
+        for _, e in ipairs(S.results.all or {}) do if e.rec and e.rec.id ~= (S.equipped.HeadSlot or {}).id then ev = e break end end
+        if ev then
+            ev.rec.effect = "proc"
+            GameTooltip._lines = {}
+            GP.Tooltip.Add(GameTooltip, ev.rec.id)
+            local t = table.concat(GameTooltip._lines, "\n")
+            check(t:find("Has a Chance on hit effect GearPath doesn't count", 1, true), "a Chance on hit item's tooltip says it isn't counted")
+            ev.rec.effect = "use"
+            GameTooltip._lines = {}
+            GP.Tooltip.Add(GameTooltip, ev.rec.id)
+            check(table.concat(GameTooltip._lines, "\n"):find("Has a Use effect GearPath doesn't count", 1, true), "and a Use item's says so too")
+            ev.rec.effect = nil
+        else
+            check(extra == "nodb", "an item for the effect note")
+        end
+    end
+    -- An effect GearPath doesn't weigh: never "safe to sell".
+    do
+        local found = I.ParseTooltip({ lines = { { leftText = "x" }, { leftText = "Chance on hit: Blasts a target for 30 Fire damage." } } })
+        check(found.effect == "proc", "a Chance on hit line is noticed")
+        found = I.ParseTooltip({ lines = { { leftText = "x" }, { leftText = "Use: Heals you." }, { leftText = "Chance on hit: Zap." } } })
+        check(found.effect == "both", "a Use line and a Chance on hit line: both")
+        local rec = { id = 999001, name = "Plain Hat", equipLoc = "INVTYPE_HEAD", classID = 4, subClassID = 1, quality = 1,
+            reqLevel = 1, sellPrice = 5, stats = { sta = 1 } }
+        local was = S.SafeToSell(rec)
+        rec.effect = "use"
+        check(was == true and S.SafeToSell(rec) == false, "gear with a Use or Chance on hit effect never gets the coin (" .. tostring(was) .. ")")
+    end
+    -- Items that never answer: given up on without touching the table being walked.
+    do
+        local got = {}
+        local real = C_Item.IsItemDataCachedByID
+        C_Item.IsItemDataCachedByID = function(i) if i >= 990000 then return false end return real(i) end
+        I.IN_FLIGHT = 2
+        for i = 990001, 990006 do I.Want(i, function(rec, n) got[#got + 1] = n end) end
+        local t0 = GetTime()
+        for _ = 1, ((I.WAIT + 2) * I.TRIES + 5) * 3 do H.Tick(1) end
+        check(#got == 6 and I.Pending() == 0 and #H.errors == 0, "items the server never sends are all given up on, with no error (" .. #got .. " of 6)")
+        I.IN_FLIGHT = 40
+        C_Item.IsItemDataCachedByID = real
+    end
 end
 
 local unknown = {}

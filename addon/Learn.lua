@@ -102,6 +102,15 @@ GP.On("Loaded", function()
     db.learned.items = type(db.learned.items) == "table" and db.learned.items or {}
     db.shared = type(db.shared) == "table" and db.shared or { items = {} }
     db.shared.items = type(db.shared.items) == "table" and db.shared.items or {}
+    -- Drops filed under a name alone (before 0.8.6: whoever was targeted
+    -- while a chest was open) go; a real one is filed by its NPC's id.
+    for _, kinds in pairs(db.learned.items) do
+        if type(kinds) == "table" and type(kinds.d) == "table" then
+            for key in pairs(kinds.d) do
+                if type(key) ~= "number" then kinds.d[key] = nil end
+            end
+        end
+    end
     Learn.Prune(db.learned.items, Learn.LEARNED_MAX, nil)
     Learn.Prune(db.shared.items, Learn.SHARED_MAX, Learn.SHARED_DAYS)
 end)
@@ -177,20 +186,29 @@ GP.RegisterEvent("LOOT_OPENED", function()
     local map, x, y = here()
     local inInstance, kind = IsInInstance()
     local dungeon = inInstance and (kind == "party" or kind == "raid") and GP.Plain((GetInstanceInfo())) or nil
-    for i = 1, GetNumLootItems() do
+    -- Whose loot it is comes from the loot itself (the corpse's id), not
+    -- from your target: with a chest, a lockbox or a fishing catch open and
+    -- someone targeted, gear was filed as dropped by them, by name (one such
+    -- in Koulta's saved file, Nov 15). The target only lends its name when
+    -- it is the corpse.
+    local targetGUID = UnitGUID and GP.Plain(UnitGUID("target")) or nil
+    local db = GP.Sources.Database and GP.Sources.Database()
+    for i = 1, GP.Plain(GetNumLootItems()) or 0 do
         local link = GP.Plain(GetLootSlotLink(i))
         local id = link and isGear(link)
         if id then
-            local guid = GetLootSourceInfo and GetLootSourceInfo(i)
+            local guid = GetLootSourceInfo and GP.Plain((GetLootSourceInfo(i))) or nil
             local npc = npcIDFromGUID(guid)
-            local name = GP.Plain(UnitName("target"))
-            if npc or name then
+            if npc then
+                local name
+                if targetGUID ~= nil and targetGUID == guid then name = GP.Plain(UnitName("target")) end
+                if type(name) ~= "string" or name == "" then name = db and GP.Sources.Field(db.Npc, "name", npc) or nil end
                 local rec = store(id)
                 rec.d = rec.d or {}
-                rec.d[npc or name] = { n = name or ("NPC " .. tostring(npc)), m = map, x = x, y = y, dg = dungeon, s = now() }
+                rec.d[npc] = { n = name or ("NPC " .. tostring(npc)), m = map, x = x, y = y, dg = dungeon, s = now() }
                 GP.Sources.Learned(id)
                 -- Not from inside dungeons: their spots mean nothing on the world map.
-                if npc and not dungeon and GP.Share then GP.Share.Send("d", id, npc, map, x, y, name) end
+                if not dungeon and GP.Share then GP.Share.Send("d", id, npc, map, x, y, name) end
             end
         end
     end

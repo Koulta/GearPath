@@ -306,6 +306,14 @@ function Items.TooltipComplete(data)
     return true
 end
 
+-- "Use:" and "Chance on hit:" in the client's own words: an effect of the
+-- item's that GearPath doesn't weigh.
+local function effectLine(text)
+    local use, proc = rawget(_G, "ITEM_SPELL_TRIGGER_ONUSE"), rawget(_G, "ITEM_SPELL_TRIGGER_ONPROC")
+    if (type(use) == "string" and use ~= "" and text:sub(1, #use) == use) or text:find("^Use:") then return "use" end
+    if (type(proc) == "string" and proc ~= "" and text:sub(1, #proc) == proc) or text:find("^Chance on hit:") then return "proc" end
+end
+
 -- Reads stats out of an item's tooltip. Returns found (key -> value),
 -- the classes it's limited to (a set of localized names, or nil),
 -- whether it's unique-equipped, and a requirement you don't meet (or nil).
@@ -319,6 +327,9 @@ function Items.ParseTooltip(data)
     for i = 2, #lines do
         local left = lineText(lines[i], "leftText")
         if left then
+            -- "use", "proc", or "both".
+            local effect = effectLine(left)
+            if effect then found.effect = (found.effect and found.effect ~= effect) and "both" or effect end
             local text = left:lower()
             if text:sub(1, #equipPrefix) == equipPrefix then text = text:sub(#equipPrefix + 1) end
             text = text:gsub("^%s+", "")
@@ -384,7 +395,11 @@ function Items.ReadStats(link, tooltipData)
         for k, v in pairs(raw) do
             local key = STAT_KEYS[k]
             if not key then
-                local school = k:match("^ITEM_MOD_SPELL_DAMAGE_(%u+)_SHORT$")
+                -- One school's spell damage. Forever's table calls it
+                -- ITEM_MOD_SHADOW_DAMAGE_DONE_SHORT (seen in 54 of 1,061 real
+                -- items, Nov 15); read from the table it counts in any
+                -- language, not only where the tooltip's line is known.
+                local school = k:match("^ITEM_MOD_(%u+)_DAMAGE_DONE_SHORT$") or k:match("^ITEM_MOD_SPELL_DAMAGE_(%u+)_SHORT$")
                 if school then key = SCHOOLS[school:lower()] end
             end
             if key and type(v) == "number" and not GP.IsSecret(v) then
@@ -426,6 +441,8 @@ local function build(id, link)
     rec.stats, rec.classes, rec.unique, rec.needs, rec.rule, rec.rep = Items.ReadStats(link, tip)
     -- The weapon speed is kept apart from the stats (it isn't a bonus).
     rec.speed, rec.stats.speed = rec.stats.speed, nil
+    -- "Use:" or "Chance on hit:" (kept apart too: not a stat).
+    rec.effect, rec.stats.effect = rec.stats.effect, nil
     -- A tooltip the game hadn't finished: read again later (Items.Get),
     -- or a "Requires" line could be missed until /reload.
     if C_TooltipInfo and not Items.TooltipComplete(tip) then rec.partial = 0 end
@@ -447,6 +464,7 @@ local function reread(rec)
     end
     rec.stats, rec.classes, rec.unique, rec.needs, rec.rule, rec.rep = Items.ReadStats(rec.link, tip)
     rec.speed, rec.stats.speed = rec.stats.speed, nil
+    rec.effect, rec.stats.effect = rec.stats.effect, nil
     rec.partial = nil
 end
 
@@ -610,10 +628,19 @@ end
 
 -- An item that hasn't answered in time is asked again, and after
 -- Items.TRIES asks given up on.
-C_Timer.NewTicker(1, function()
-    local now = GetTime()
+-- (The late ones are listed first: giving up on one runs its callbacks and
+-- asks for the next in line, which adds to `waiting`, and a table can't
+-- take new keys while it's being walked.)
+function Items.Tick()
+    local now, late = GetTime(), nil
     for id, t in pairs(waiting) do
         if now - t > Items.WAIT then
+            late = late or {}
+            late[#late + 1] = id
+        end
+    end
+    for _, id in ipairs(late or {}) do
+        if waiting[id] then
             if (tries[id] or 0) < Items.TRIES then
                 inFlight = math.max(inFlight - 1, 0)
                 ask(id)
@@ -623,7 +650,8 @@ C_Timer.NewTicker(1, function()
         end
     end
     pump()
-end)
+end
+C_Timer.NewTicker(1, function() GP.SafeCall(Items.Tick) end)
 
 -- Loads a list of item ids, at most `perFrame` asked for each frame, and
 -- calls each(rec, id) for every one that arrives and done() at the end.

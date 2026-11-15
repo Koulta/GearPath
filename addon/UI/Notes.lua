@@ -124,7 +124,10 @@ local known = {}         -- Best now at the last scoring
 local waiting            -- { level, before, token } after a level-up
 GP.On("ScoresChanged", function(res)
     if waiting then
-        -- The new level brings a scan and a few scorings: counted once they settle.
+        -- The new level brings a scan and a few scorings: counted once they
+        -- settle, and never off a list that's still being read (a scoring
+        -- can land mid-scan: a weapon skill's new cap, a faction change).
+        if GP.Sources and GP.Sources.status ~= "ready" then return end
         local w = waiting
         w.token = (w.token or 0) + 1
         local token = w.token

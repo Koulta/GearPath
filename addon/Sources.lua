@@ -574,6 +574,13 @@ end
 
 local RANK = { [1] = "Elite", [2] = "Rare Elite", [3] = "Boss", [4] = "Rare" }
 
+-- Mobs that are only there during a holiday (the game doesn't tell addons,
+-- so a short list kept by hand; by the database's own English name):
+-- their drops say so, and never look like something to farm all year.
+Sources.HOLIDAY = {
+    ["Scorn"] = "Hallow's End only",     -- Scarlet Monastery: Graveyard
+}
+
 local function dropSource(npc)
     -- Your own faction's people (a Hillsbrad Farmer for an Alliance
     -- player): you can't attack them.
@@ -583,6 +590,7 @@ local function dropSource(npc)
     s.minLevel = field(DB.Npc, "minLevel", npc)
     local rank = field(DB.Npc, "rank", npc)
     s.rank = RANK[rank or 0]
+    s.holiday = s.name and Sources.HOLIDAY[s.name] or nil
     s.elite = rank == 1 or rank == 2 or rank == 3
     local area, x, y = firstSpawn(spawnSummary("npc", npc))
     copyPlace(s, place(area or field(DB.Npc, "zoneID", npc), x, y))
@@ -1024,8 +1032,15 @@ local function applyBags()
     -- Items that left your bags lose the "In your bags" source.
     for id, entry in pairs(Sources.entries) do
         if entry.bags and not bags[id] then
-            entry.bags = nil
-            if not (entry.fromDB or entry.fromCraft) then Sources.entries[id] = nil else Sources.Resolve(entry) end
+            entry.bags, entry.bagLink = nil, nil
+            if not (entry.fromDB or entry.fromCraft or entry.fromJournal) then
+                Sources.entries[id] = nil
+            else
+                -- Back to the plain item the lists are about.
+                if entry.rec then entry.rec = entry.plainRec or Items.Get(id) or entry.rec end
+                entry.plainRec = nil
+                Sources.Resolve(entry)
+            end
         end
     end
     local toLoad = {}
@@ -1035,10 +1050,21 @@ local function applyBags()
             entry = newEntry(id)
             Sources.entries[id] = entry
         end
-        if not entry.bags then
-            entry.bags = true
-            entry.bagLink = link
-            Sources.Resolve(entry)
+        if not entry.bags or entry.bagLink ~= link then
+            local had = entry.bags
+            entry.bags, entry.bagLink = true, link
+            if not had then Sources.Resolve(entry) end
+            -- The bagged item itself is what's scored (a random suffix's
+            -- stats): until 0.8.6 an item already on the lists kept the
+            -- plain one's score, so "... of Shadow Wrath" in your bags read
+            -- as no upgrade.
+            if entry.rec then
+                local own = Items.FromLink(link)
+                if own and own ~= entry.rec then
+                    entry.plainRec = entry.plainRec or entry.rec
+                    entry.rec = own
+                end
+            end
         end
         if not entry.rec then toLoad[#toLoad + 1] = id end
     end

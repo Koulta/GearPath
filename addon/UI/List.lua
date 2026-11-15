@@ -248,7 +248,10 @@ List.KINDS.alt = {
         row.icon:SetPoint("LEFT", row, "LEFT", 6 + (item.indent or 0) + 46, 0)
         row.icon.SetItem(rec.icon, rec.quality)
         row.name:SetText(rec.name or ("Item " .. tostring(rec.id)))
-        row.name:SetTextColor(GP.QualityColor(rec.quality))
+        -- (Three numbers only: QualityColor's fourth value is a hex text,
+        -- which the game refuses as the alpha: the rows came up blank.)
+        local r, g, b = GP.QualityColor(rec.quality)
+        row.name:SetTextColor(r, g, b)
         local text, role = GP.UI.GainText(ev)
         if text == "new" then text = string.format(GP.L["new (+%d)"], GP.Round(ev.delta or 0)) end
         row.gain:SetText(text)

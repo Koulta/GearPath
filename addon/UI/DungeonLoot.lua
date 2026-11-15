@@ -46,7 +46,7 @@ end
 -- Each wing's bosses (the journal's lists when it's there): a drop the
 -- database files under the whole monastery stays with its own wing.
 Loot.WING_BOSSES = {
-    ["Scarlet Monastery: Graveyard"] = { "Interrogator Vishas", "Bloodmage Thalnos", "Ironspine", "Azshir the Sleepless", "Fallen Champion" },
+    ["Scarlet Monastery: Graveyard"] = { "Interrogator Vishas", "Bloodmage Thalnos", "Ironspine", "Azshir the Sleepless", "Fallen Champion", "Scorn" },
     ["Scarlet Monastery: Library"] = { "Houndmaster Loksey", "Arcanist Doan" },
     ["Scarlet Monastery: Armory"] = { "Herod" },
     ["Scarlet Monastery: Cathedral"] = { "High Inquisitor Fairbanks", "Scarlet Commander Mograine", "High Inquisitor Whitemane" },

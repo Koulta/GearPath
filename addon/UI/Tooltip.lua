@@ -86,7 +86,8 @@ function Tooltip.Add(tt, id, link)
     -- list's score is for the plain item, without the suffix's stats, so
     -- "Durable Tunic of Shadow Wrath" read -97% (Koulta, Nov 14). Scored as
     -- the item itself; where to get it still comes from the list.
-    if ev and link and GP.Items.SuffixOf(link) then
+    local S = GP.Items.SuffixOf
+    if ev and link and S(link) ~= S(ev.rec and ev.rec.link) then
         local own = Tooltip.QuickEval(GP.Items.FromLink(link))
         if own then
             local merged = {}
@@ -110,6 +111,13 @@ function Tooltip.Add(tt, id, link)
     local color, better = Tooltip.Color(ev)
     tt:AddLine(" ")
     line(tt, title(), Tooltip.Compare(ev), color)
+    -- An effect the score leaves out (wording okayed by Koulta, Nov 15).
+    local effect = ev.rec and ev.rec.effect
+    if effect then
+        tt:AddLine(effect == "use" and "Has a Use effect GearPath doesn't count"
+            or effect == "proc" and "Has a Chance on hit effect GearPath doesn't count"
+            or "Has Use and Chance on hit effects GearPath doesn't count", DIM[1], DIM[2], DIM[3], true)
+    end
     -- Better, but not yet yours: what it takes first.
     if better and ev.needs then tt:AddLine("Needs " .. ev.needs, BAD[1], BAD[2], BAD[3], true) end
     if better then

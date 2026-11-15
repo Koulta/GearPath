@@ -1,5 +1,25 @@
 # GearPath changelog
 
+## 0.8.6
+
+### Fixed
+- **"More options" under Worth chasing came up blank.** Clicking "2 more options" on the Route made room for the extra items but drew nothing in it. They show now.
+- **Gear with a random suffix ("of Shadow Wrath", "of the Eagle"...) in your bags or just looted** was scored as the plain item without its bonus stats: a real upgrade could get no arrow, a "safe to sell" coin and no upgrade toast. Wearing one suffix and holding another of the same item got no score at all. Each is now scored as itself.
+- **A "?" on quest rewards that needed no second look.** Rewards with no level requirement were marked "Forever changed this item".
+- **Gear from a chest or lockbox could be remembered as dropped by whoever you had targeted.** Loot is now filed only under the mob it came from; old records of that kind are removed.
+- **Bag arrows on gear above your level.** The green arrow now means "put this on now".
+- **Scorn** is listed in Scarlet Monastery: Graveyard, and drops from Scarlet Monastery bosses name their wing.
+- One school's spell damage (Shadow, Fire...) is read straight from the game's item data, so it counts on every client language.
+- The level-up "new upgrades" chat line waits for the new list before counting.
+- Loading many items on a slow server can no longer trip over itself.
+
+### New
+- **Effects GearPath doesn't count.** Gear with a "Use:" or "Chance on hit:" effect says so on its tooltip ("Has a Chance on hit effect GearPath doesn't count"), and never gets the "safe to sell" coin.
+- **Holiday bosses say so.** Scorn's drops read "Hallow's End only".
+
+### Changed
+- **No player names in your saved file.** Who reported a shared gear source is kept as a short code instead of their name; names saved by earlier versions are converted at login.
+
 ## 0.8.5
 
 ### Fixed

@@ -123,6 +123,17 @@ local bestPartner = { main = 0, off = 0 }
 
 local function hitOf(r) return r and r.stats and r.stats.hit or 0 end
 
+-- Whether rec is the item in a slot (e = what's worn there). The same id
+-- with another random suffix is another item: "... of the Eagle" on, "...
+-- of Shadow Wrath" in your bags (it got no score at all, and so the coin).
+-- A plain copy off the lists (no suffix in its link) still counts as worn.
+local function worn(e, rec)
+    if not e or e.id ~= rec.id then return false end
+    local S = GP.Items.SuffixOf
+    local mine = S(rec.link)
+    return mine == nil or mine == S(e.link)
+end
+
 -- How much of an item's worth counts for its armor type (1 = your own).
 local function armorFactor(r)
     local _, f = Classes.CanUse(r.classID, r.subClassID, r.equipLoc, nil, 999)
@@ -185,7 +196,7 @@ function Score.Upgrade(rec, weights)
             -- copy of any other goes in the other slot.
             local a, b = eq(slotKey), eq(s.pair)
             if a.pending or b.pending then return nil end
-            local wornA, wornB = a.id == rec.id, b.id == rec.id
+            local wornA, wornB = worn(a, rec), worn(b, rec)
             if (wornA and wornB) or ((wornA or wornB) and rec.unique) then return nil end
             local target
             if wornA then target = s.pair
@@ -197,7 +208,7 @@ function Score.Upgrade(rec, weights)
             if not e.rec then base = 0 end
         elseif slotKey == "MainHandSlot" then
             local mh, oh = eq("MainHandSlot"), eq("SecondaryHandSlot")
-            if mh.pending or oh.pending or mh.id == rec.id or (rec.unique and oh.id == rec.id) then
+            if mh.pending or oh.pending or worn(mh, rec) or (rec.unique and oh.id == rec.id) then
                 okSlot = false
             elseif rec.equipLoc == "INVTYPE_2HWEAPON" then
                 base = mh.points + oh.points
@@ -217,7 +228,7 @@ function Score.Upgrade(rec, weights)
             end
         elseif slotKey == "SecondaryHandSlot" then
             local mh, oh = eq("MainHandSlot"), eq("SecondaryHandSlot")
-            if mh.pending or oh.pending or oh.id == rec.id or (rec.unique and mh.id == rec.id) then
+            if mh.pending or oh.pending or worn(oh, rec) or (rec.unique and mh.id == rec.id) then
                 okSlot = false
             elseif twoHanded() then
                 -- Off a two-hander: with the best main hand you can get.
@@ -232,7 +243,7 @@ function Score.Upgrade(rec, weights)
             end
         else
             local e = eq(slotKey)
-            if e.pending or e.id == rec.id then
+            if e.pending or worn(e, rec) then
                 okSlot = false
             else
                 base = e.points
@@ -415,7 +426,7 @@ function Score.SafeToSell(rec)
     if rec.sellPrice ~= nil and rec.sellPrice <= 0 then return false end
     -- Kept for what GearPath doesn't weigh: a trinket's Use: effect, a
     -- fishing pole or other tool, gear with no stats it reads.
-    if rec.equipLoc == "INVTYPE_TRINKET" then return false end
+    if rec.equipLoc == "INVTYPE_TRINKET" or rec.effect then return false end
     if rec.classID == Classes.WEAPON and (rec.subClassID == Classes.W.FISHING or rec.subClassID == Classes.W.MISC) then return false end
     if not rec.stats or next(rec.stats) == nil then return false end
     for _, e in pairs(Score.equipped) do

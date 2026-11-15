@@ -69,7 +69,7 @@ local function readTable(src)
     if type(loader) ~= "function" then return nil end
     local ok, fn = pcall(loader, src)
     if not ok or type(fn) ~= "function" then return nil end
-    if setfenv then pcall(setfenv, fn, {}) end
+    if not (setfenv and pcall(setfenv, fn, {})) then return nil end
     local ok2, t = pcall(fn)
     if ok2 and type(t) == "table" then return t end
     return nil

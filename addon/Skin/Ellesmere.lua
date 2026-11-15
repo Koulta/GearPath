@@ -172,6 +172,9 @@ function E.BagUpgrade(link)
     if not (GP.Items and GP.Score and GP.player) then return false end
     local rec = GP.Items.FromLink(link)
     if not rec or not GP.Score.CanWear(rec, GP.player.level) then return false end
+    -- Not yet, by its level: no arrow until you can put it on (it had one,
+    -- the same as gear you could wear, until 0.8.6).
+    if (rec.reqLevel or 0) > (GP.player.level or 1) then return false end
     local slot = GP.Score.Gain(rec)
     if not slot then return false end
     if GP.Training and GP.Training.Need(rec, slot) then return false end

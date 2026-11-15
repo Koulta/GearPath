@@ -87,6 +87,8 @@ C_Item = {
         -- A random suffix in the link (7th number after "item:"): its stats too.
         local suffix = type(link) == "string" and tonumber((link:match("item:%d+:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:(%-?%d+)")))
         for k, v in pairs(suffix and H.suffixStats and H.suffixStats[suffix] or {}) do out[k] = (out[k] or 0) + v end
+        -- H.statsFor ({ [id] = table }): the game's whole answer for one item.
+        if H.statsFor and H.statsFor[idOf(link)] then return H.statsFor[idOf(link)] end
         return out
     end,
     IsItemDataCachedByID = function(id) return ITEMS[id] ~= nil and not uncached[id] end,
@@ -133,7 +135,11 @@ local SLOT_IDS = { HeadSlot = 1, NeckSlot = 2, ShoulderSlot = 3, ShirtSlot = 4, 
     Trinket0Slot = 13, Trinket1Slot = 14, BackSlot = 15, MainHandSlot = 16, SecondaryHandSlot = 17,
     RangedSlot = 18, TabardSlot = 19 }
 function GetInventorySlotInfo(name) return SLOT_IDS[name], "Interface\\PaperDoll\\UI-PaperDoll-Slot-" .. name end
-function GetInventoryItemLink(_, slot) return EQUIPPED[slot] and H.Link(EQUIPPED[slot]) end
+-- H.wornLink ({ [slot] = link }): a worn item with its own link (a random suffix).
+function GetInventoryItemLink(_, slot)
+    if H.wornLink and H.wornLink[slot] then return H.wornLink[slot] end
+    return EQUIPPED[slot] and H.Link(EQUIPPED[slot])
+end
 function GetInventoryItemTexture(_, slot) return EQUIPPED[slot] and 134000 + EQUIPPED[slot] end
 function GetInventoryItemQuality(_, slot) return EQUIPPED[slot] and ITEMS[EQUIPPED[slot]][2] end
 function UnitLevel() return 23 end
@@ -162,6 +168,8 @@ C_Container = {
     GetContainerNumSlots = function(bag) return bag == 0 and 16 or 0 end,
     GetContainerItemLink = function(bag, slot)
         if bag ~= 0 then return nil end
+        -- (An id, or a whole link for an item with a random suffix.)
+        if H.bag and type(H.bag[slot]) == "string" then return H.bag[slot] end
         if H.bag and H.bag[slot] then return H.Link(H.bag[slot]) end
         if slot == 3 then return H.Link(210) end
     end,
@@ -320,8 +328,10 @@ function GetQuestItemInfo(kind, i)
     if not id then return nil end
     return ITEMS[id][1], 134000 + id, 1, ITEMS[id][2], true, id
 end
-function GetNumLootItems() return 0 end
-function GetLootSlotLink() end
+-- The loot window: H.loot = { { link, guid of what it's from }, ... }.
+function GetNumLootItems() return H.loot and #H.loot or 0 end
+function GetLootSlotLink(i) return H.loot and H.loot[i] and H.loot[i][1] end
+function GetLootSourceInfo(i) if H.loot and H.loot[i] then return H.loot[i][2], 1 end end
 -- Professions (Learn.lua's crafting): H.skills = { { name, rank } };
 -- the profession window H.trade = { line = "Tailoring", items = { ids } };
 -- a trainer H.trainer = { { itemID, profession, rank, category } }.

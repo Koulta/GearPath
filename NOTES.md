@@ -364,6 +364,38 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
   Tooltip.Add: a link with a random suffix (Items.SuffixOf, 7th field) is scored from the link
   (QuickEval) and merged into the list's evaluation, keeping the source.
   ReportLine resolves the look from the setting when the window isn't built yet.
+  0.8.6 (Nov 15, the deep check; real-item numbers from Koulta's /gp snapshot, 1,061 items):
+  - Scorn added to Loot.WING_BOSSES (Graveyard); UI.Describe names a winged dungeon's wing for a
+    boss filed under the whole dungeon (Loot.BossWing).
+  - Random suffixes: Score.Upgrade's "it's what you wear" test is worn(e, rec): same id AND same
+    suffix (a plain list copy still counts as worn). Sources.applyBags scores the bagged link's own
+    record (entry.plainRec keeps the list's; restored when it leaves your bags; bagLink follows a
+    changed link). Tooltip.Add and Toast.Looted evaluate the link itself whenever its suffix isn't
+    the one the list scored. Check doesn't call a suffix name a rename.
+  - Items.Tick: late items are listed before any is given up on (arrived() -> pump() -> ask() added
+    keys to `waiting` while pairs() walked it: undefined in Lua).
+  - Stat table: ITEM_MOD_<SCHOOL>_DAMAGE_DONE_SHORT is Forever's key for one school's spell damage
+    (54 of 1,061 items); read from the table now, so it counts in any client language.
+  - Check: required level 1 = no requirement (Forever's quest rewards; the database carries the
+    quest's level): no "changed" warning. Was 12 of a level 33 warlock's 398 upgrades.
+  - Learn LOOT_OPENED: filed only under the loot's own creature id (GetLootSourceInfo); the target
+    lends its name only when it is the corpse. Name-only drop records are removed at load.
+  - Notes: the level-up "N new upgrades" line waits for Sources.status == "ready".
+  - rec.effect (a "Use:" or "Chance on hit:" line): never Safe to sell. Bag arrows (E.BagUpgrade)
+    only for gear at or under your level. Slots.Label returns one value. ZoneData.readTable never
+    runs QuestieDB's table text unless setfenv took.
+  - UI/List.lua "alt" rows: SetTextColor got QualityColor's 4 values (the 4th a hex text) and the
+    game refused it, so 0.8.4/0.8.5's option rows drew blank. run.lua now builds and fills a real
+    row of every kind (the fake's colour check only helps for rows that get drawn).
+  - rec.effect is "use" / "proc" / "both"; Tooltip.Add adds "Has a ... effect GearPath doesn't
+    count" (wording A, Koulta, Nov 15). Sources.HOLIDAY[name] -> src.holiday ("Hallow's End only",
+    Scorn), shown by UI.Describe. Share keeps reporters as Share.Code(name) ("#" + 8 hex);
+    Share.CodeNames converts old names at login; ForgetReporter clears either form.
+  - queries/sweep.lua POST=<file>: a script run with (GP, results, H) once scored.
+  Open (not code): QuestieDB 1.1.0 has 104 gear-dropping NPCs with no spawn, zone or level (about
+  86 of them Forever's new ones): their drops read "location not in the database yet" without
+  ForeverDungeonJournal. Hit caps (5% / 4%, dual wield 24%) are still the October beta's numbers
+  (method.gg, Oct 6); no post-launch source found Nov 15.
   Bag marks for DaylightUI's bags and Baganator: UI/BagMarks.lua through Baganator.API
   (DaylightUI_Bags answers it while Baganator is off; its Plugins.lua/API.md, read as text).
 

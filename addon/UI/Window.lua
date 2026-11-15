@@ -67,6 +67,10 @@ function UI.Describe(src, long)
         t = string.format(L["Drop: %s"], src.name or "?")
         if src.rank then t = t .. " (" .. L[src.rank] .. ")" end
         where = src.dungeon or src.zone
+        -- A boss of a winged dungeon filed under the whole dungeon: its wing
+        -- ("Scorn (Elite), Scarlet Monastery: Graveyard").
+        local wing = src.dungeon and GP.Loot and GP.Loot.BossWing(src.dungeon, src.name)
+        if wing then where = wing end
     elseif src.kind == "craft" then
         -- Tailoring: you know the recipe
         -- Tailoring recipe: Victor Ward, Undercity (40.2, 30.1)
@@ -102,6 +106,8 @@ function UI.Describe(src, long)
     elseif not (src.kind == "quest" and src.startItem) then   -- an item that starts a quest says where itself
         t = t .. (long and (" (" .. L["location not in the database yet"] .. ")") or (", " .. L["location unknown"]))
     end
+    -- A holiday's own mob (Scorn): "..., Hallow's End only".
+    if src.holiday then t = t .. ", " .. L[src.holiday] end
     -- Only other players say so (the database doesn't): never passed off as fact.
     if src.shared and not src.dbKnown then t = t .. " (" .. L["reported by other players"] .. ")" end
     if long and src.kind == "quest" and not src.giver and not src.startItem and not (src.chain and src.chainStart and src.chainStart.giver) then

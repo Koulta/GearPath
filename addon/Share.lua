@@ -183,17 +183,52 @@ local function myNames()
     return c.shareNames
 end
 
+-- Who reported a source is kept as a short code made from their name
+-- ("#1f3a9c02"), never the name itself (0.8.6): enough to tell one voice
+-- from another, and no other player's name sits in your saved file.
+function Share.Code(name)
+    if type(name) ~= "string" then return nil end
+    if name:match("^#%x%x%x%x%x%x%x%x$") then return name end
+    local h = 5381
+    for i = 1, #name do h = (h * 33 + name:byte(i)) % 4294967296 end
+    return string.format("#%08x", h)
+end
+
+-- Names kept by older versions become codes (once, at login).
+function Share.CodeNames()
+    for _, kinds in pairs(store()) do
+        if type(kinds) == "table" then
+            for _, list in pairs(kinds) do
+                if type(list) == "table" then
+                    for _, s in pairs(list) do
+                        if type(s) == "table" and type(s.by) == "table" then
+                            local by = {}
+                            for who in pairs(s.by) do
+                                local code = Share.Code(who)
+                                if code then by[code] = true end
+                            end
+                            s.by = by
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 -- Drops everything kept as reported by `name` (it was you): the name comes
 -- off each source, and a source nobody else reported goes.
 function Share.ForgetReporter(name)
+    local code = Share.Code(name)
     local changed = {}
     for item, kinds in pairs(store()) do
         if type(kinds) == "table" then
             for kind, list in pairs(kinds) do
                 if type(list) == "table" then
                     for id, s in pairs(list) do
-                        if type(s) == "table" and type(s.by) == "table" and s.by[name] then
-                            s.by[name] = nil
+                        -- (Under the code, or the name itself from before 0.8.6.)
+                        if type(s) == "table" and type(s.by) == "table" and (s.by[code] or s.by[name]) then
+                            s.by[code], s.by[name] = nil, nil
                             s.c = math.max(0, (s.c or 1) - 1)
                             if next(s.by) == nil then list[id] = nil end
                             changed[item] = true
@@ -260,6 +295,7 @@ local function keep(rec, sender, trusted)
         t[rec.kind][rec.id] = s
     end
     s.s = time and time() or s.s       -- last seen (Learn.Prune drops it after a while unseen)
+    sender = Share.Code(sender)
     if s.by[sender] then return false end
     -- Eight reporters is plenty: past that a repeat can't be told from a new
     -- voice, so the count stops there instead of letting one player pump it.
@@ -316,6 +352,7 @@ GP.On("Login", function()
         pcall(C_ChatInfo.RegisterAddonMessagePrefix, Share.PREFIX)
     end
     store()
+    Share.CodeNames()
     for name in pairs(myNames()) do Share.ForgetReporter(name) end
     -- After the game's own channels (General, Trade...) have their numbers:
     -- join it when it's on, and leave it when it's off (the game rejoins

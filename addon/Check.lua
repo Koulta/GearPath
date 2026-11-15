@@ -72,14 +72,20 @@ function Check.Item(entry)
     if db and rec and entry.fromDB then
         local diffs = {}
         local dbReq = field(db.Item, "requiredLevel", id)
-        if type(dbReq) == "number" and dbReq > 0 and rec.reqLevel and rec.reqLevel > 0 and rec.reqLevel ~= dbReq then
+        -- (Level 1 is the game's "no requirement": Forever's quest rewards
+        -- often have none where the database gives the quest's level, which
+        -- isn't a changed item. 12 of a level 33 warlock's 398 upgrades wore
+        -- the "?" for this, Nov 15.)
+        if type(dbReq) == "number" and dbReq > 1 and rec.reqLevel and rec.reqLevel > 1 and rec.reqLevel ~= dbReq then
             diffs[#diffs + 1] = string.format("needs level %d, database says %d", rec.reqLevel, dbReq)
         end
         local dbIlvl = field(db.Item, "itemLevel", id)
         if type(dbIlvl) == "number" and dbIlvl > 0 and rec.ilvl and rec.ilvl > 0 and math.abs(rec.ilvl - dbIlvl) >= Check.ILVL_GAP then
             diffs[#diffs + 1] = string.format("item level %d, database says %d", rec.ilvl, dbIlvl)
         end
-        if GetLocale and GetLocale() == "enUS" then
+        -- (Not for a bagged item with a random suffix: "... of the Eagle"
+        -- is its own name, not a rename.)
+        if GetLocale and GetLocale() == "enUS" and not GP.Items.SuffixOf(rec.link) then
             local dbName = field(db.Item, "name", id)
             if type(dbName) == "string" and rec.name and dbName ~= rec.name then
                 diffs[#diffs + 1] = string.format("now called %s", rec.name)

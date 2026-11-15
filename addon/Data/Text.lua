@@ -874,6 +874,7 @@ t("Off-hand DPS", "Schildhand-DPS", "DPS main gauche", "DPS de mano izquierda", 
 t("Ranged DPS", "Distanz-DPS", "DPS à distance", "DPS a distancia", "DPS à distância", "УВС дальнего боя", "원거리 초당 공격력", "远程每秒伤害", "遠程每秒傷害")
 t("Wand DPS", "Zauberstab-DPS", "DPS de baguette", "DPS de varita", "DPS de varinha", "УВС жезла", "마법봉 초당 공격력", "魔杖每秒伤害", "魔杖每秒傷害")
 
+t("Hallow's End only", "Nur während der Schlotternächte", "Uniquement pendant la Sanssaint", "Solo durante Halloween", "Somente no Noturnália", "Только во время Тыквовина", "할로윈 축제 기간에만", "仅限万圣节期间", "僅限萬鬼節期間")
 t("Head", "Kopf", "Tête", "Cabeza", "Cabeça", "Голова", "머리", "头部", "頭部")
 t("Neck", "Hals", "Cou", "Cuello", "Pescoço", "Шея", "목", "颈部", "頸部")
 t("Shoulders", "Schultern", "Épaules", "Hombros", "Ombros", "Плечи", "어깨", "肩部", "肩部")
