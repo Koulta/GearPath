@@ -601,6 +601,13 @@ function Score.Run()
         table.sort(bucket.primary, better)
         table.sort(bucket.secondary, function(a, b)
             if (a.far == true) ~= (b.far == true) then return not a.far end
+            -- An empty slot: anything you can wear now beats waiting for a
+            -- bigger one (Koulta, Nov 15: an empty off-hand led with a level
+            -- 36 skull over gear he could wear at 32).
+            if not Score.Worn(a.slot) and not Score.Worn(b.slot) then
+                local nowA, nowB = (a.req or 0) <= level, (b.req or 0) <= level
+                if nowA ~= nowB then return nowA end
+            end
             local va, vb = Score.ChaseValue(a, level), Score.ChaseValue(b, level)
             if va ~= vb then return va > vb end
             return better(a, b)

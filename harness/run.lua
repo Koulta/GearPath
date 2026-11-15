@@ -264,6 +264,50 @@ do
     check(UI.Plan.group ~= nil, "the Route has a Group by choice")
 end
 
+-- Worth chasing options (0.8.4): "2 more options" under a pick opens the
+-- next ones for that slot; an empty slot shows "new (+N)"; an empty slot
+-- leads with gear you can wear now.
+do
+    local P = UI.Plan
+    UI.Show("plan")
+    local function find(kind)
+        for i, it in ipairs(P.list.items or {}) do if it.kind == kind then return it, i end end
+    end
+    local more = find("more")
+    if not H.noDB then
+        check(more ~= nil and (more.text:find("more option")), "a Worth chasing pick has more options: " .. tostring(more and more.text))
+        check(find("alt") == nil, "closed at first")
+        more.onToggle()
+        local alt = find("alt")
+        check(alt ~= nil and alt.ev and alt.ev.tier == "secondary", "opened: the next options, one line each")
+        local m2 = find("more")
+        check(m2 and m2.open, "and it shows as open")
+        m2.onToggle()
+        check(find("alt") == nil, "closed again")
+    end
+    -- An empty slot's line.
+    local lvl = GP.player.level
+    local emptyEv
+    for _, ev in pairs(GP.Score.results.byID or {}) do
+        if ev.delta and ev.delta > 0 and not GP.Score.Worn(ev.slot) then emptyEv = ev break end
+    end
+    if emptyEv then
+        local row = { }
+        check(string.format(GP.L["new (+%d)"], GP.Round(emptyEv.delta)):find("^new %(%+%d+%)$"), "an empty slot reads new (+N)")
+        -- Every empty slot's Worth chasing list starts with what you can wear now, if there is any.
+        local ok = true
+        for _, bucket in pairs(GP.Score.results.bySlot or {}) do
+            local list = bucket.secondary or {}
+            if list[1] and not GP.Score.Worn(list[1].slot) then
+                local anyNow = false
+                for _, ev in ipairs(list) do if not ev.far and (ev.req or 0) <= lvl then anyNow = true end end
+                if anyNow and not list[1].far and (list[1].req or 0) > lvl then ok = false end
+            end
+        end
+        check(ok, "an empty slot leads with gear you can wear now")
+    end
+end
+
 -- This zone only (0.8.0): the Route keeps what's in the zone you're in
 -- (Tirisfal here) and gear in your bags; unticked, it's the route as before.
 do
@@ -673,7 +717,14 @@ if not H.noDB then
         if row.kindName == "header" and row.item then bands[row.item.text] = row.item.tone end
         if row.kindName == "gap" then gaps = gaps + 1 end
     end
-    check(bands["Shadow Keep"] == "dungeon", "Shadow Keep gets a dungeon band on the route")
+    -- (Your shoulders are empty, so gear you can wear now leads; the
+    -- Shadow Keep mantle, a level away, is then one of the options under it.)
+    local asOption = false
+    for _, list in pairs(UI.Plan.alts or {}) do
+        for _, ev in ipairs(list) do if ev.rec.id == 217 then asOption = ev.source end end
+    end
+    check(bands["Shadow Keep"] == "dungeon" or (asOption and GP.UI.Describe(asOption):find("Shadow Keep")),
+        "Shadow Keep's mantle is on the route, as a pick or an option")
     check(gaps > 0, "groups have room between them")
 end
 

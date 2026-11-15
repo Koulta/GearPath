@@ -1,5 +1,14 @@
 # GearPath changelog
 
+## 0.8.4
+
+### New
+- **More options under Worth chasing.** Each Worth chasing pick on the Route now has a small **2 more options** under it: click it to see the next best items for that slot, one line each with their gain, level and where to get them. Click one for its map pin.
+- **Empty slots show points.** Instead of just "new", an item for a slot you have nothing in shows **new (+92)**, so you can tell which of two is better.
+
+### Changed
+- **An empty slot leads with gear you can wear now.** When you have nothing in a slot, Worth chasing picks the best item you can already wear, not a bigger one several levels away (that one is under "more options").
+
 ## 0.8.3
 
 ### Changed

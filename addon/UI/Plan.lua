@@ -55,15 +55,30 @@ end
 
 -- What's worth chasing (or needs something first): the best of each slot
 -- in the chosen content, grouped by dungeon or zone.
+Plan.MORE = 2          -- options shown under a Worth chasing pick
+Plan.open = {}         -- [slot group] = true while its options are shown
+
 local function chaseGroups(res, tier, keep)
     keep = keep or UI.ContentMatches
     local best = {}
+    Plan.alts = Plan.alts or {}
     for _, key in ipairs(Slots.ORDER) do
         local group = Slots.GROUP[key] or key
         local bucket = group == key and res.bySlot[key]
         if bucket then
+            -- The pick, and (Worth chasing) the next ones for the slot, shown
+            -- under it on request.
+            local pick, more = nil, {}
             for _, ev in ipairs(bucket[tier] or {}) do
-                if keep(ev) then best[#best + 1] = ev break end
+                if keep(ev) then
+                    if not pick then pick = ev
+                    elseif ev.rec.id ~= pick.rec.id then more[#more + 1] = ev end
+                    if #more >= Plan.MORE then break end
+                end
+            end
+            if pick then
+                best[#best + 1] = pick
+                if tier == "secondary" then Plan.alts[pick] = more end
             end
         end
     end
@@ -170,6 +185,23 @@ local function addGroup(items, g, first)
         -- By place, each line names its slot; by slot, the group already does.
         items[#items + 1] = { kind = "item", ev = ev, key = ev.rec.id, prefix = not g.bySlot and Slots.Label(ev.slot) or nil,
             indent = 14, tone = g.tone }
+        local more = Plan.alts and Plan.alts[ev]
+        if more and #more > 0 then
+            local slotKey = Slots.GROUP[ev.slot] or ev.slot or "?"
+            local open = Plan.open[slotKey] == true
+            items[#items + 1] = { kind = "more", indent = 14, open = open,
+                text = #more == 1 and L["1 more option"] or string.format(L["%d more options"], #more),
+                onToggle = function()
+                    Plan.open[slotKey] = not open or nil
+                    local def = UI.PAGES.plan
+                    if def and def.frame then GP.SafeCall(def.Fill, def.frame) end
+                end }
+            if open then
+                for _, alt in ipairs(more) do
+                    items[#items + 1] = { kind = "alt", ev = alt, key = "alt:" .. alt.rec.id, indent = 14 }
+                end
+            end
+        end
     end
 end
 
@@ -291,6 +323,7 @@ UI.RegisterPage("plan", {
         end
         addGroups(items, now)
 
+        Plan.alts = {}
         local function groups(tier, title, role, empty, always)
             local list = chaseGroups(res, tier, routeKeeps)
             local n = 0

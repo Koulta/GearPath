@@ -183,7 +183,9 @@ List.KINDS.item = {
         local r, g, b = GP.QualityColor(rec.quality)
         row.name:SetTextColor(r, g, b)
         local text, role = GP.UI.GainText(ev)
-        row.gain:SetText(text == "new" and GP.L["new"] or text)
+        -- An empty slot: "new (+92)", the points it adds, so two can be compared.
+        if text == "new" then text = string.format(GP.L["new (+%d)"], GP.Round(ev.delta or 0)) end
+        row.gain:SetText(text)
         skin.Ink(row.gain, role)
         local where = GP.UI.Describe(ev.source)
         if ev.needs then where = "|cffff5050Needs " .. ev.needs .. "|r  |  " .. where end
@@ -195,6 +197,66 @@ List.KINDS.item = {
         row.req:SetText(ev.req and ev.req > 0 and ("Req. " .. ev.req) or "")
         skin.Ink(row.req, (ev.req or 0) > level and "WARN" or "LABEL")
         row.pin:SetShown(pins and GP.Waypoint.CanSet(ev.source))
+    end,
+    enter = function(row) GP.UI.ItemTooltip(row, row.item.ev) end,
+    click = function(row, button) GP.UI.ItemClick(row.item.ev, button, row) end,
+}
+
+-- "+ 2 more options" under a Worth chasing pick: click to show or hide the
+-- next ones for that slot (item.onToggle).
+List.KINDS.more = {
+    height = 22,
+    build = function(row)
+        row.icon = row:CreateTexture(nil, "ARTWORK")
+        row.icon:SetSize(12, 12)
+        row.text = GP.Skin.current.Text(row, "small", "LABEL")
+        row.text:SetPoint("LEFT", row.icon, "RIGHT", 5, 0)
+    end,
+    fill = function(row, item)
+        row.icon:ClearAllPoints()
+        row.icon:SetPoint("LEFT", row, "LEFT", 6 + (item.indent or 0) + 46, 0)
+        row.icon:SetTexture(item.open and "Interface\\Buttons\\UI-MinusButton-Up" or "Interface\\Buttons\\UI-PlusButton-Up")
+        row.text:SetText(item.text or "")
+    end,
+    click = function(row) if row.item.onToggle then row.item.onToggle() end end,
+}
+
+-- One of those options, on a single line: name, gain, level, where.
+List.KINDS.alt = {
+    height = 22,
+    build = function(row)
+        local skin = GP.Skin.current
+        row.icon = skin.Icon(row, 18)
+        row.gain = skin.Text(row, "small", "GOOD", "RIGHT")
+        row.gain:SetPoint("RIGHT", row, "RIGHT", -10, 0)
+        row.gain:SetWidth(84)
+        row.req = skin.Text(row, "small", "LABEL", "RIGHT")
+        row.req:SetPoint("RIGHT", row.gain, "LEFT", -6, 0)
+        row.req:SetWidth(50)
+        row.name = skin.Text(row, "small", "VALUE")
+        row.name:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
+        row.name:SetWidth(190)
+        row.name:SetWordWrap(false)
+        row.where = skin.Text(row, "small", "LABEL")
+        row.where:SetPoint("LEFT", row.name, "RIGHT", 8, 0)
+        row.where:SetPoint("RIGHT", row.req, "LEFT", -6, 0)
+        row.where:SetWordWrap(false)
+    end,
+    fill = function(row, item)
+        local ev, rec = item.ev, item.ev.rec
+        row.icon:ClearAllPoints()
+        row.icon:SetPoint("LEFT", row, "LEFT", 6 + (item.indent or 0) + 46, 0)
+        row.icon.SetItem(rec.icon, rec.quality)
+        row.name:SetText(rec.name or ("Item " .. tostring(rec.id)))
+        row.name:SetTextColor(GP.QualityColor(rec.quality))
+        local text, role = GP.UI.GainText(ev)
+        if text == "new" then text = string.format(GP.L["new (+%d)"], GP.Round(ev.delta or 0)) end
+        row.gain:SetText(text)
+        GP.Skin.current.Ink(row.gain, role)
+        local level = GP.player and GP.player.level or 1
+        row.req:SetText(ev.req and ev.req > 0 and ("Req. " .. ev.req) or "")
+        GP.Skin.current.Ink(row.req, (ev.req or 0) > level and "WARN" or "LABEL")
+        row.where:SetText(GP.UI.Describe(ev.source))
     end,
     enter = function(row) GP.UI.ItemTooltip(row, row.item.ev) end,
     click = function(row, button) GP.UI.ItemClick(row.item.ev, button, row) end,

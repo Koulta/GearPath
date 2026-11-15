@@ -349,6 +349,11 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
   Quests with no start borrow a same-name quest's start (Sources.SameNameStart), using QuestieDB's
   quest-name index built in its own job (BuildNameIndexAsync) so no 0.3 s hitch; the first scan
   of a session reruns once it's ready. queries/sweep.lua: ITEM=id explains one item; HOOK=file.
+  0.8.4 (Nov 15, Koulta's empty off-hand / Raptor's Gaze): Worth chasing buckets put gear you can
+  wear now first for an empty slot (Score.Worn false); Route picks carry Plan.alts (next 2, kind
+  "more" toggles kind "alt" rows, Plan.open per slot group); empty-slot gains read "new (+N)" in
+  lists (approved wording). The sweep guesses item slots from names, so it can't judge off-hands
+  like Raptor's Gaze; check those in game.
   Bag marks for DaylightUI's bags and Baganator: UI/BagMarks.lua through Baganator.API
   (DaylightUI_Bags answers it while Baganator is off; its Plugins.lua/API.md, read as text).
 

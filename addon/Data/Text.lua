@@ -1075,3 +1075,6 @@ t("A small coin on gear in your bags that isn't an upgrade for any of your specs
 t("Nothing worth chasing in this zone.", "In dieser Zone nichts, das sich lohnt.", "Rien qui vaille la peine dans cette zone.",
     "Nada que valga la pena en esta zona.", "Nada que valha a pena nesta zona.", "В этой зоне нечего добывать.",
     "이 지역에는 노려볼 만한 것이 없습니다.", "本区域没有值得追求的。", "本區域沒有值得追求的。")
+t("new (+%d)", "neu (+%d)", "nouveau (+%d)", "nuevo (+%d)", "novo (+%d)", "новое (+%d)", "새 장비 (+%d)", "新 (+%d)", "新 (+%d)")
+t("1 more option", "1 weitere Option", "1 autre option", "1 opción más", "1 opção a mais", "ещё 1 вариант", "선택지 1개 더", "还有 1 个选择", "還有 1 個選擇")
+t("%d more options", "%d weitere Optionen", "%d autres options", "%d opciones más", "%d opções a mais", "ещё вариантов: %d", "선택지 %d개 더", "还有 %d 个选择", "還有 %d 個選擇")
