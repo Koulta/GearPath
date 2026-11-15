@@ -354,6 +354,16 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
   "more" toggles kind "alt" rows, Plan.open per slot group); empty-slot gains read "new (+N)" in
   lists (approved wording). The sweep guesses item slots from names, so it can't judge off-hands
   like Raptor's Gaze; check those in game.
+  0.8.5 (Nov 15): /gp snapshot (Sources.Snapshot) saves real item details (slot, type, levels,
+  GetItemStats, tooltip lines) into GearPathDB.snapshot; queries/sweep.lua SNAPSHOT=<saved file>
+  uses them instead of guessing slots/stats from names (unknown misc armour isn't guessed as a
+  trinket then). "/gp snapshot off" removes it; it saves after 60 s whatever is missing.
+  Learn.lua reads the modern Professions window (C_TradeSkillUI: GetAllRecipeIDs, GetRecipeInfo
+  .learned, GetRecipeOutputItemData / GetRecipeItemLink / GetRecipeSchematic; profession name from
+  GetBaseProfessionInfo); before this no crafting record was ever saved on Forever.
+  Tooltip.Add: a link with a random suffix (Items.SuffixOf, 7th field) is scored from the link
+  (QuickEval) and merged into the list's evaluation, keeping the source.
+  ReportLine resolves the look from the setting when the window isn't built yet.
   Bag marks for DaylightUI's bags and Baganator: UI/BagMarks.lua through Baganator.API
   (DaylightUI_Bags answers it while Baganator is off; its Plugins.lua/API.md, read as text).
 

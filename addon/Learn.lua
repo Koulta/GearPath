@@ -249,9 +249,84 @@ local function craftRec(id, prof)
     return c
 end
 
+-- The modern profession window (C_TradeSkillUI, what Forever's client
+-- shows): the recipes of the open profession, the gear each makes. Before
+-- 0.8.5 only the old window was read, so nothing was ever recorded here.
+local function call(t, name, ...)
+    local fn = t and t[name]
+    if type(fn) ~= "function" then return nil end
+    local ok, a, b = pcall(fn, ...)
+    if ok then return a, b end
+end
+
+-- The open profession's name, in the game's language ("Tailoring").
+function Learn.OpenProfession()
+    local T = rawget(_G, "C_TradeSkillUI")
+    local info = call(T, "GetBaseProfessionInfo") or call(T, "GetChildProfessionInfo")
+    local name = type(info) == "table" and GP.Plain(info.professionName) or nil
+    if type(name) ~= "string" or name == "" then
+        local line = call(T, "GetTradeSkillLine")
+        if type(line) == "number" and GetSkillLineDisplayName then
+            name = GP.Plain(GetSkillLineDisplayName(line))
+        elseif type(line) == "string" then
+            name = line
+        end
+    end
+    if (type(name) ~= "string" or name == "") and GetTradeSkillLine then
+        name = GP.Plain(GetTradeSkillLine())
+    end
+    if type(name) ~= "string" or name == "" or name == "UNKNOWN" then return nil end
+    -- "Tailoring (Classic)"-style names: just the profession.
+    return (name:gsub("%s*%b()", ""))
+end
+
+-- The item a recipe makes, as a link (or "item:id").
+function Learn.RecipeItem(recipeID)
+    local T = rawget(_G, "C_TradeSkillUI")
+    local link = call(T, "GetRecipeItemLink", recipeID)
+    if type(link) == "string" and link ~= "" then return link end
+    local out = call(T, "GetRecipeOutputItemData", recipeID)
+    if type(out) == "table" then
+        if type(out.hyperlink) == "string" then return out.hyperlink end
+        if type(out.itemID) == "number" then return "item:" .. out.itemID end
+    end
+    local schem = call(T, "GetRecipeSchematic", recipeID, false)
+    if type(schem) == "table" and type(schem.outputItemID) == "number" then return "item:" .. schem.outputItemID end
+    return nil
+end
+
+local function readModern()
+    local T = rawget(_G, "C_TradeSkillUI")
+    local ids = call(T, "GetAllRecipeIDs")
+    if type(ids) ~= "table" or #ids == 0 then return false end
+    local prof = Learn.OpenProfession()
+    if not prof then return false end
+    local me, changed = Learn.Me(), {}
+    for _, recipeID in ipairs(ids) do
+        local info = call(T, "GetRecipeInfo", recipeID)
+        if type(info) ~= "table" or info.learned ~= false then
+            local link = Learn.RecipeItem(recipeID)
+            local id = type(link) == "string" and isGear(link)
+            if id then
+                local c = craftRec(id, prof)
+                c.k = type(c.k) == "table" and c.k or {}
+                if not c.k[me] then
+                    c.k[me] = true
+                    changed[#changed + 1] = id
+                end
+            end
+        end
+    end
+    for _, id in ipairs(changed) do GP.Sources.Learned(id) end
+    Learn.lastCrafts = { prof = prof, recipes = #ids, gear = #changed }
+    return true
+end
+
 -- The profession window: every recipe you know.
 local function readTradeSkills()
-    if not on() or not (GetTradeSkillLine and GetNumTradeSkills and GetTradeSkillItemLink) then return end
+    if not on() then return end
+    if readModern() then return end
+    if not (GetTradeSkillLine and GetNumTradeSkills and GetTradeSkillItemLink) then return end
     local prof = GP.Plain(GetTradeSkillLine())
     if type(prof) ~= "string" or prof == "" or prof == "UNKNOWN" then return end
     local me, changed = Learn.Me(), {}
@@ -273,8 +348,11 @@ local function readTradeSkills()
     for _, id in ipairs(changed) do GP.Sources.Learned(id) end
 end
 
-GP.RegisterEvent("TRADE_SKILL_SHOW", readTradeSkills)
+GP.RegisterEvent("TRADE_SKILL_SHOW", function() GP.Soon("tradeskills", readTradeSkills) end)
 GP.RegisterEvent("TRADE_SKILL_UPDATE", function() GP.Soon("tradeskills", readTradeSkills) end)
+-- The modern window fills its list a moment after it opens.
+GP.RegisterEvent("TRADE_SKILL_LIST_UPDATE", function() GP.Soon("tradeskills", readTradeSkills) end)
+GP.RegisterEvent("TRADE_SKILL_DATA_SOURCE_CHANGED", function() GP.Soon("tradeskills", readTradeSkills) end)
 
 -- A trainer: the gear its recipes make, the skill each needs, and where
 -- the trainer stands (only for professions you have).

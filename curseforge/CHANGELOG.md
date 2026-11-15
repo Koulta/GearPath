@@ -1,5 +1,15 @@
 # GearPath changelog
 
+## 0.8.5
+
+### Fixed
+- **Crafted gear never showed up.** Forever's profession windows are the newer style, which GearPath didn't read, so recipes you know were never recorded and gear you can make yourself was missing from your lists. Open your profession window once and GearPath picks up every gear recipe you know.
+- **Random-suffix items scored far too low on tooltips.** Hovering an "of Shadow Wrath", "of the Eagle" and similar item on the auction house, in chat or in a loot window used the score of the plain item without its bonus stats, so real upgrades could show as -97%. GearPath now scores the exact item you're looking at.
+- **`/gp report` said "look ?"** if you hadn't opened the window since logging in. It now always names the look.
+
+### For testers
+- **`/gp snapshot`** saves the details of the items GearPath looked at, so they can be used for GearPath's own offline tests. You don't need it; `/gp snapshot off` removes it.
+
 ## 0.8.4
 
 ### New

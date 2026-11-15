@@ -109,6 +109,12 @@ local UI = GP.UI
 check(UI.frame ~= nil, "window built")
 check(UI.frame and UI.frame:IsShown(), "window open")
 check(GP.Skin.current.name == look, "look is " .. look .. " (got " .. tostring(GP.Skin.current and GP.Skin.current.name) .. ")")
+do
+    local cur = GP.Skin.current
+    GP.Skin.current = nil   -- the window not opened yet this session
+    check(GP.Sources.ReportLine():find("look " .. look, 1, true), "the report names the look before the window is opened")
+    GP.Skin.current = cur
+end
 check(UI.current == "doll", "opens on Character")
 for _ = 1, 3 do H.Tick(0.1) end
 
@@ -473,6 +479,21 @@ do
     GP.player.level = 23
     GP.Fire("LevelChanged", 23)
     for _ = 1, 3 do H.Tick(1) end
+end
+
+-- /gp snapshot: real item details saved for the offline tests.
+do
+    local n
+    GP.Sources.Snapshot(function(count) n = count end)
+    for _ = 1, 5 do H.Tick(0.1) end
+    local snap = GP.db.snapshot
+    local any
+    for _, r in pairs(snap and snap.items or {}) do any = r break end
+    if not H.noDB then
+        check(n and n > 0 and any and any.loc and any.c and any.lines, "the snapshot keeps each item's slot, type and tooltip lines (" .. tostring(n) .. ")")
+    end
+    SlashCmdList.GEARPATH("snapshot off")
+    check(GP.db.snapshot == nil, "/gp snapshot off removes it")
 end
 
 -- The game's format strings as patterns, in any language (OrtusX, Nov 14:
@@ -1831,6 +1852,34 @@ do
     check(C.NewCustom("Leveling") == nil, "names don't repeat")
     UI.UpdateSub()
     check(sub():find("Leveling") and sub():find("%(your weights%)"), "the header shows the set")
+    -- A random-suffix item is scored as itself, not as the plain item on the list.
+    do
+        local I = GP.Items
+        check(I.SuffixOf("|Hitem:1234::::::1953:0:30|h") == 1953 and I.SuffixOf(H.Link(203)) == nil, "the random suffix is read from a link")
+        local sid
+        for i = 200, 260 do
+            local e = GP.Score.ForItem(i)
+            if e and e.pct and e.base and e.base > 0 then sid = i break end
+        end
+        local ev = sid and GP.Score.ForItem(sid)
+        if ev then
+            H.suffixStats = { [1953] = { ITEM_MOD_SPELL_POWER_SHORT = 40, ITEM_MOD_STAMINA_SHORT = 20 } }
+            local plain = H.Link(sid)
+            local wrath = plain:gsub("item:" .. sid .. ":", "item:" .. sid .. "::::::1953:")
+            GameTooltip._lines = {}
+            GP.Tooltip.Add(GameTooltip, sid, plain)
+            local a = table.concat(GameTooltip._lines, "\n")
+            GameTooltip._lines = {}
+            GP.Tooltip.Add(GameTooltip, sid, wrath)
+            local b = table.concat(GameTooltip._lines, "\n")
+            local function num(t) return tonumber(t:match("|| ([%-%d%.]+)[x%%]")) end
+            local pa, pb = num(a), num(b)
+            check(pa and pb and pb > pa and b:find("Quest: The Lost Cultist", 1, true) ~= nil or (pa and pb and pb > pa), "the suffix's stats count on its tooltip (" .. tostring(pa) .. " plain, " .. tostring(pb) .. " with the suffix)")
+            H.suffixStats = nil
+        else
+            check(extra == "nodb", "an item with a list score for the suffix test")
+        end
+    end
     GameTooltip._lines = {}
     GP.Tooltip.Add(GameTooltip, 203)
     local tip = table.concat(GameTooltip._lines, "\n")
@@ -2228,6 +2277,29 @@ do
     GP.Sources.Resolve(e)
     check(not (e.best and e.best.kind == "craft" and e.best.known), "a recipe one character knows isn't known by another")
     GP.Learn.Me = me
+    -- The modern profession window (C_TradeSkillUI, Forever's): read too.
+    GP.db.learned.items[244].c = nil
+    local oldLine = GetTradeSkillLine
+    GetTradeSkillLine = nil
+    C_TradeSkillUI = {
+        GetAllRecipeIDs = function() return { 9001, 9002, 9003 } end,
+        GetBaseProfessionInfo = function() return { professionName = "Tailoring" } end,
+        GetRecipeInfo = function(r) return { recipeID = r, learned = r ~= 9003 } end,
+        GetRecipeOutputItemData = function(r)
+            if r == 9001 then return { itemID = 244 } end
+            if r == 9003 then return { itemID = 246 } end
+            return { itemID = 999999 }  -- not gear (cloth)
+        end,
+    }
+    H.Fire("TRADE_SKILL_SHOW")
+    for _ = 1, 10 do H.Tick(0.1) end
+    local c = GP.db.learned.items[244] and GP.db.learned.items[244].c
+    check(c and c.Tailoring and c.Tailoring.k and c.Tailoring.k[GP.Learn.Me()], "the modern profession window records a recipe you know")
+    local g = GP.db.learned.items[246] and GP.db.learned.items[246].c
+    check(not (g and g.Tailoring and g.Tailoring.k and g.Tailoring.k[GP.Learn.Me()]), "and not one you haven't learned")
+    check(GP.Learn.lastCrafts and GP.Learn.lastCrafts.prof == "Tailoring", "it reads the profession's name")
+    C_TradeSkillUI = nil
+    GetTradeSkillLine = oldLine
     GP.Sources.Resolve(e)
     -- Forever names: "Koulta Lorn" and "Koulta Summonpls" are both "Koulta"
     -- to UnitName, on the same realm. Each character is told apart anyway.

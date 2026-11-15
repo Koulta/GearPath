@@ -82,6 +82,19 @@ function Tooltip.Add(tt, id, link)
     end
     local ev = GP.Score.ForItem(id)
     local rec = ev and ev.rec or (link and GP.Items.FromLink(link)) or GP.Items.Get(id)
+    -- A random-suffix item (the auction house, a link in chat, a drop): the
+    -- list's score is for the plain item, without the suffix's stats, so
+    -- "Durable Tunic of Shadow Wrath" read -97% (Koulta, Nov 14). Scored as
+    -- the item itself; where to get it still comes from the list.
+    if ev and link and GP.Items.SuffixOf(link) then
+        local own = Tooltip.QuickEval(GP.Items.FromLink(link))
+        if own then
+            local merged = {}
+            for k, v in pairs(ev) do merged[k] = v end
+            for _, k in ipairs({ "rec", "slot", "delta", "pct", "base", "points" }) do merged[k] = own[k] end
+            ev, rec = merged, own.rec
+        end
+    end
     if not ev then
         ev = Tooltip.QuickEval(rec)
         if not ev then

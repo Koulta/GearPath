@@ -1368,7 +1368,9 @@ function Sources.ReportLine()
         "GearPath " .. tostring(GP.VERSION),
         string.format("WoW %s.%s (%s) %s", tostring(version), tostring(build), tostring(toc), tostring(GetLocale and GP.Plain(GetLocale()) or "?")),
         string.format("%s %d %s %s", tostring(p.class), p.level or 0, tostring(p.race), tostring(p.faction)),
-        "look " .. tostring(GP.Skin and GP.Skin.current and GP.Skin.current.name or "?"),
+        -- The window's look, or (not opened yet this session) the one it will use.
+        "look " .. tostring(GP.Skin and (GP.Skin.current and GP.Skin.current.name
+            or (GP.Skin.Resolve and GP.Skin.Resolve(GP.Setting("look") or "auto"))) or "?"),
         table.concat(addons, " "),
         GP.ZoneData and GP.ZoneData.ReportPart() or "zones ?",
         string.format("gear %d/%d %s", Sources.counts.candidates or 0, Sources.counts.loaded or 0, tostring(Sources.status)),
@@ -1380,6 +1382,64 @@ function Sources.ReportLine()
     if #(GP.blocked or {}) > 0 then parts[#parts + 1] = "blocked " .. table.concat(GP.blocked, ", ") end
     return table.concat(parts, " | ")
 end
+
+-- /gp snapshot: saves what the game says about every item GearPath looked
+-- at (slot, type, levels, stats, tooltip lines) into GearPath's saved file,
+-- so the offline tests can use real items instead of guessing slots from
+-- names (they once took an off-hand, Raptor's Gaze, for a trinket). For
+-- testing only; "/gp snapshot off" removes it. Nothing about you or other
+-- players is in it.
+function Sources.Snapshot(done)
+    local ids = {}
+    for id in pairs(Sources.entries or {}) do ids[#ids + 1] = id end
+    local out, left, saved = {}, #ids, false
+    local function finish()
+        if saved then return end
+        saved = true
+        local n = 0
+        for _ in pairs(out) do n = n + 1 end
+        GP.db.snapshot = { at = time and time() or 0, version = GP.VERSION, items = out }
+        if done then done(n) end
+    end
+    if left == 0 then finish() return end
+    -- Items the server never sends don't hold it up: saved after a minute
+    -- with whatever came in.
+    C_Timer.After(60, finish)
+    local function keep(id, rec)
+        if rec then
+            local info = (C_Item and C_Item.GetItemInfo) or GetItemInfo
+            local name, _, quality, ilvl, req, _, _, _, equipLoc, icon, sell, classID, subClassID = info(id)
+            local ok, statsT = pcall(C_Item and C_Item.GetItemStats or GetItemStats, rec.link or ("item:" .. id))
+            local lines = {}
+            local okT, data = pcall(C_TooltipInfo and C_TooltipInfo.GetItemByID or function() end, id)
+            for _, l in ipairs(okT and type(data) == "table" and data.lines or {}) do
+                local t = GP.Plain(l.leftText)
+                if type(t) == "string" then lines[#lines + 1] = t end
+            end
+            out[id] = { name = name, q = quality, il = ilvl, req = req, loc = equipLoc, c = classID, s = subClassID,
+                sell = sell, stats = ok and type(statsT) == "table" and statsT or nil, lines = lines }
+        end
+    end
+    for _, id in ipairs(ids) do
+        GP.Items.Want(id, function(rec)
+            pcall(keep, id, rec)     -- one odd item never stops the rest
+            left = left - 1
+            if left == 0 then finish() end
+        end)
+    end
+end
+
+GP.RegisterCommand("snapshot", "saves item details for GearPath's offline tests (\"off\" removes them)", function(arg)
+    if arg == "off" then
+        GP.db.snapshot = nil
+        GP.Print("item snapshot removed.")
+        return
+    end
+    GP.Print("saving item details for testing; this takes a moment...")
+    Sources.Snapshot(function(n)
+        GP.Print("saved details of %d items. Type /reload to write them to disk.", n)
+    end)
+end)
 
 GP.RegisterCommand("report", "one line for a bug report (version, game, character, counts), ready to copy", function()
     local line = Sources.ReportLine()

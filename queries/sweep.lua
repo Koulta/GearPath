@@ -72,7 +72,22 @@ local MISC_WORDS = {
     { "INVTYPE_NECK", { "necklace", "amulet", "pendant", "choker", "talisman", "medallion", "collar", "chain", "locket" } },
     { "INVTYPE_HOLDABLE", { "orb", "tome", "lamp", "candle", "scroll", "lantern", "branch", "torch", "skull", "book" } },
 }
+-- SNAPSHOT=<GearPath's saved file>: real items from the game (/gp snapshot
+-- in game, then /reload), used instead of guessing slots and stats.
+local SNAP = {}
+if (os.getenv("SNAPSHOT") or "") ~= "" then
+    local env = {}
+    local chunk = assert(loadfile(os.getenv("SNAPSHOT")))
+    setfenv(chunk, env)
+    chunk()
+    SNAP = env.GearPathDB and env.GearPathDB.snapshot and env.GearPathDB.snapshot.items or {}
+    local n = 0
+    for _ in pairs(SNAP) do n = n + 1 end
+    io.stderr:write("snapshot: " .. n .. " real items\n")
+end
+
 local function loc(id)
+    if SNAP[id] then return SNAP[id].loc end
     local c, s = I.class(id), I.subClass(id) or 0
     local name = I.name(id)
     if c == 2 then
@@ -85,11 +100,15 @@ local function loc(id)
     if c == 4 then
         if s == 6 then return "INVTYPE_SHIELD" end
         if s >= 7 and s <= 9 then return "INVTYPE_RELIC" end
-        if s == 0 then return byName(name, MISC_WORDS) or "INVTYPE_TRINKET" end
+        -- Misc armour is shirts, tabards and cosmetics as often as trinkets.
+        -- With a snapshot, one it doesn't know isn't guessed as a trinket
+        -- (it took a wedding outfit for one); without, the old guess stays.
+        if s == 0 then return byName(name, MISC_WORDS) or (next(SNAP) and "" or "INVTYPE_TRINKET") end
         return byName(name, ARMOR_WORDS) or "INVTYPE_CHEST"
     end
 end
 local function stats(id)
+    if SNAP[id] then return SNAP[id].stats or {} end
     local c, s = I.class(id), I.subClass(id) or 0
     local il = math.max(1, I.itemLevel(id) or 1)
     local v = math.floor(il / 4) + 1
@@ -111,6 +130,7 @@ local function stats(id)
 end
 function GetItemInfoInstant(x)
     local id = type(x) == "number" and x or tonumber(tostring(x):match("item:(%d+)"))
+    if id and SNAP[id] then return id, "", "", SNAP[id].loc or "", 134000, SNAP[id].c, SNAP[id].s end
     if not id or not I.class(id) then return nil end
     return id, "", "", loc(id) or "", 134000, I.class(id), I.subClass(id) or 0
 end
@@ -119,6 +139,10 @@ C_Item = {
     GetItemInfoInstant = GetItemInfoInstant,
     GetItemInfo = function(x)
         local id = type(x) == "number" and x or tonumber(tostring(x):match("item:(%d+)"))
+        local r = id and SNAP[id]
+        if r then
+            return r.name, link(id), r.q, r.il, r.req, "", "", 1, r.loc or "", 134000, r.sell or 100, r.c, r.s, 2
+        end
         if not id or not I.class(id) then return nil end
         return I.name(id), link(id), id % 3 + 2, I.itemLevel(id) or 1, I.requiredLevel(id) or 0, "", "", 1, loc(id) or "",
             134000, 100, I.class(id), I.subClass(id) or 0, 2
@@ -152,7 +176,19 @@ if os.getenv("ASYNC") then
         end)
     end
 end
-C_TooltipInfo = { GetHyperlink = function(l) return { lines = { { leftText = l:match("%[(.-)%]") or "?" } } } end }
+local function tipFor(id, fallback)
+    local r = id and SNAP[id]
+    if r and r.lines and #r.lines > 0 then
+        local lines = {}
+        for i, t in ipairs(r.lines) do lines[i] = { leftText = t } end
+        return { lines = lines }
+    end
+    return { lines = { { leftText = fallback or "?" } } }
+end
+C_TooltipInfo = {
+    GetHyperlink = function(l) return tipFor(tonumber(l:match("item:(%d+)")), l:match("%[(.-)%]")) end,
+    GetItemByID = function(id) return tipFor(id, I.name(id)) end,
+}
 C_TooltipInfo.GetItemByID = function(id) return C_TooltipInfo.GetHyperlink(link(id)) end
 C_Container = { GetContainerNumSlots = function() return 0 end, GetContainerItemLink = function() return nil end }
 function GetInventorySlotInfo() return 1, "" end

@@ -84,6 +84,9 @@ C_Item = {
         local it = ITEMS[idOf(link)]
         local out = {}
         for k, v in pairs(it and it[8] or {}) do out[k] = v end
+        -- A random suffix in the link (7th number after "item:"): its stats too.
+        local suffix = type(link) == "string" and tonumber((link:match("item:%d+:[^:]*:[^:]*:[^:]*:[^:]*:[^:]*:(%-?%d+)")))
+        for k, v in pairs(suffix and H.suffixStats and H.suffixStats[suffix] or {}) do out[k] = (out[k] or 0) + v end
         return out
     end,
     IsItemDataCachedByID = function(id) return ITEMS[id] ~= nil and not uncached[id] end,

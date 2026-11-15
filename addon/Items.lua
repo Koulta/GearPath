@@ -504,6 +504,20 @@ function Items.Get(id)
     return rec
 end
 
+-- The random suffix in a link ("of Shadow Wrath"), or nil: the 7th number
+-- after "item:" (item:id:enchant:gem1:gem2:gem3:gem4:suffix:...).
+function Items.SuffixOf(link)
+    if type(link) ~= "string" then return nil end
+    local body = link:match("item:([%-%d:]+)")
+    if not body then return nil end
+    local n, suffix = 0, nil
+    for field in (body .. ":"):gmatch("([^:]*):") do
+        n = n + 1
+        if n == 7 then suffix = tonumber(field) break end
+    end
+    return (suffix and suffix ~= 0) and suffix or nil
+end
+
 -- An equipped or bagged item by its link (random suffixes kept).
 function Items.FromLink(link)
     if type(link) ~= "string" then return nil end
