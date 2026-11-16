@@ -11,6 +11,7 @@ GP.Items = Items
 
 Items.cache = {}          -- [itemID] = record
 Items.linkCache = {}      -- [link] = record (equipped items keep their random suffix)
+Items.LINK_MAX = 800      -- records kept by link before the cache starts over
 
 local GetItemInfo = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 local GetItemInfoInstant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
@@ -466,7 +467,10 @@ local function reread(rec)
     rec.speed, rec.stats.speed = rec.stats.speed, nil
     rec.effect, rec.stats.effect = rec.stats.effect, nil
     rec.partial = nil
+    -- Its stats may have changed: scored again.
+    if GP.Score and GP.Score.Request then GP.Score.Request() end
 end
+Items.Reread = function(rec) if rec and rec.partial then reread(rec) end end
 
 function Items.IDFromLink(link)
     if type(link) ~= "string" then return nil end
@@ -540,11 +544,25 @@ end
 function Items.FromLink(link)
     if type(link) ~= "string" then return nil end
     local rec = Items.linkCache[link]
-    if rec then return rec end
+    if rec then
+        -- (Until 0.8.7 only Items.Get did this: worn and bagged gear read
+        -- from a half-loaded tooltip kept half its stats all session.)
+        if rec.partial then reread(rec) end
+        return rec
+    end
     local id = Items.IDFromLink(link)
     if not id then return nil end
     rec = build(id, link)
-    if rec then Items.linkCache[link] = rec end
+    if rec then
+        -- Every link ever hovered was kept (an evening at the Auction House
+        -- is thousands): past LINK_MAX the cache starts over. What's worn or
+        -- on a list holds its own record, so nothing in use is lost.
+        Items.linkCount = (Items.linkCount or 0) + 1
+        if Items.linkCount > Items.LINK_MAX then
+            Items.linkCache, Items.linkCount = {}, 1
+        end
+        Items.linkCache[link] = rec
+    end
     return rec
 end
 

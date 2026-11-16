@@ -115,6 +115,8 @@ C_TooltipInfo = {
     GetHyperlink = function(link)
         local it = ITEMS[idOf(link)]
         local lines = { { leftText = it and it[1] or "?" } }
+        -- H.halfTooltip ({ [id] = true }): the game hasn't finished it yet.
+        if H.halfTooltip and H.halfTooltip[idOf(link)] then return { lines = lines } end
         for _, l in ipairs(it and it[9] or {}) do
             if type(l) == "table" then
                 lines[#lines + 1] = { leftText = l[1], leftColor = { r = l[2], g = l[3], b = l[4] } }

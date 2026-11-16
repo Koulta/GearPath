@@ -122,7 +122,9 @@ local function weightRows(parent, y)
             default:SetText(string.format(L["default %s"], tostring(GP.Round(d, 3))) .. (mine and ("  |cff40c0ff\194\183 " .. L["yours"] .. "|r") or ""))
         end
         local function apply()
-            local v = tonumber(input:GetText())
+            -- ("0,5" too: the decimal comma of German, French, Russian...
+            -- keyboards was thrown away without a word.)
+            local v = tonumber((tostring(input:GetText() or ""):gsub(",", "."):gsub("%s", "")))
             if not v then show() return end
             local current = Classes.Weights()[k] or 0
             if v == current then return end

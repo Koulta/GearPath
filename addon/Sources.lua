@@ -844,7 +844,12 @@ local function sharedSources(id)
     for _, r in ipairs(GP.Share.SourcesFor(id, known)) do
         local s, kind = r.info, KIND_OF[r.kind]
         if kind and not (kind == "quest" and questDone(r.id)) then
-            local name = (DB and field(DB[ENTITY_OF[r.kind]], "name", r.id)) or s.n
+            -- The name another player sent is only shown from your guild or
+            -- group, or once a second player reported the same source: one
+            -- stranger on the channel can't put words of their choosing in
+            -- your window. (The database's own name is used when it has one.)
+            local said = (s.t or (s.c or 0) >= 2) and type(s.n) == "string" and s.n:sub(1, 48) or nil
+            local name = (DB and field(DB[ENTITY_OF[r.kind]], "name", r.id)) or said
             -- A reported spot counts only on a map the game itself has.
             local zone = s.m and Sources.MapName(s.m) or nil
             local mapID, x, y = nil, nil, nil
@@ -1033,7 +1038,7 @@ local function applyBags()
     for id, entry in pairs(Sources.entries) do
         if entry.bags and not bags[id] then
             entry.bags, entry.bagLink = nil, nil
-            if not (entry.fromDB or entry.fromCraft or entry.fromJournal) then
+            if not (entry.fromDB or entry.fromCraft or entry.fromJournal or entry.fromLearned) then
                 Sources.entries[id] = nil
             else
                 -- Back to the plain item the lists are about.
@@ -1145,6 +1150,42 @@ local function addCrafts(level, ahead)
     return toLoad
 end
 
+-- Gear only players have seen (Learn.lua, Share.lua) that the database
+-- doesn't list at all: it has no other way onto the lists. Until 0.8.7 such
+-- an item showed up when it was learned and was gone again at the next scan
+-- (every login, level and settings change), though "Learn as you play"
+-- promises it's remembered. Items the database does list are left to the
+-- scan and its level window.
+local function addLearned(level, ahead)
+    local toLoad = {}
+    local Item = DB and DB.Item
+    local function each(items)
+        if type(items) ~= "table" then return end
+        for id, L in pairs(items) do
+            if type(id) == "number" and type(L) == "table" and (L.q or L.d or L.v) and not Sources.entries[id]
+                and not (Item and field(Item, "class", id) ~= nil) then
+                local equipLoc, classID, subClassID = Items.Instant(id)
+                local ok, opensAt = false, nil
+                if equipLoc then ok, opensAt = usableFor(classID, subClassID, equipLoc, level, ahead) end
+                if ok then
+                    local entry = newEntry(id)
+                    entry.fromLearned = true
+                    entry.opensAt = opensAt
+                    Sources.Resolve(entry)
+                    if entry.best then
+                        Sources.entries[id] = entry
+                        Sources.counts.candidates = Sources.counts.candidates + 1
+                        toLoad[#toLoad + 1] = id
+                    end
+                end
+            end
+        end
+    end
+    each(GP.db and GP.db.learned and GP.db.learned.items)
+    each(GP.db and GP.db.shared and GP.db.shared.items)
+    return toLoad
+end
+
 -- Each scan has a number: loading left over from an earlier scan (a
 -- level-up right after login starts another) must not finish the new one
 -- or fill its list.
@@ -1194,6 +1235,7 @@ function Sources.Scan()
         GP.Fire("SourcesChanged")
         local toLoad = addJournalItems(level, ahead)
         for _, id in ipairs(addCrafts(level, ahead)) do toLoad[#toLoad + 1] = id end
+        for _, id in ipairs(addLearned(level, ahead)) do toLoad[#toLoad + 1] = id end
         for _, id in ipairs(applyBags()) do toLoad[#toLoad + 1] = id end
         loadRecords(toLoad, finished)
         return
@@ -1238,6 +1280,7 @@ function Sources.Scan()
         local toLoad = {}
         addJournalItems(level, ahead)
         addCrafts(level, ahead)
+        addLearned(level, ahead)
         for id, entry in pairs(Sources.entries) do
             if not entry.rec then toLoad[#toLoad + 1] = id end
         end

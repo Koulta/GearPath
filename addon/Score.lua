@@ -462,7 +462,9 @@ local function better(a, b)
     -- Across the sea goes after what's on your continent, however big.
     if (a.far == true) ~= (b.far == true) then return not a.far end
     if a.delta ~= b.delta then return a.delta > b.delta end
-    return (a.rec.ilvl or 0) > (b.rec.ilvl or 0)
+    if (a.rec.ilvl or 0) ~= (b.rec.ilvl or 0) then return (a.rec.ilvl or 0) > (b.rec.ilvl or 0) end
+    -- Dead level: by id, so a list keeps its order from one scoring to the next.
+    return (a.rec.id or 0) < (b.rec.id or 0)
 end
 
 -- Worth chasing: each level you'd still wait for an upgrade takes 5% off
@@ -536,6 +538,10 @@ function Score.Run()
     local weights = Classes.Weights()
     for _, entry in pairs(entries) do
         local rec = entry.rec
+        -- A tooltip the game hadn't finished when the item was first read:
+        -- read again here (it only ever was on a hover, so a list item
+        -- could keep half its stats until then).
+        if rec and rec.partial then GP.Items.Reread(rec) end
         local pe, _, pfar, psrc = effortOf(entry, level, soon)
         local phidden = rec and GP.Hide and (GP.Hide.IsItem(rec.id) or entry.hiddenAll)
         if rec and entry.usable and not phidden and not GP.Items.NeedsOf(rec) and not pfar and reqOf(entry, psrc) <= level + soon
@@ -610,25 +616,30 @@ function Score.Run()
     end
     for _, bucket in pairs(res.bySlot) do
         table.sort(bucket.primary, better)
-        table.sort(bucket.secondary, function(a, b)
-            if (a.far == true) ~= (b.far == true) then return not a.far end
-            -- An empty slot: anything you can wear now beats waiting for a
-            -- bigger one (Koulta, Nov 15: an empty off-hand led with a level
-            -- 36 skull over gear he could wear at 32).
-            if not Score.Worn(a.slot) and not Score.Worn(b.slot) then
-                local nowA, nowB = (a.req or 0) <= level, (b.req or 0) <= level
-                if nowA ~= nowB then return nowA end
-            end
-            local va, vb = Score.ChaseValue(a, level), Score.ChaseValue(b, level)
-            if va ~= vb then return va > vb end
-            return better(a, b)
-        end)
+        table.sort(bucket.secondary, function(a, b) return Score.ChaseBefore(a, b, level) end)
         table.sort(bucket.locked, better)
     end
     res.plan = Score.BuildPlan(res)
     Score.results = res
     GP.Fire("ScoresChanged", res)
     return res
+end
+
+-- Worth chasing: whether a goes before b. Across the sea last; then what
+-- fills an empty slot now (Koulta, Nov 15: an empty off-hand led with a
+-- level 36 skull over gear he could wear at 32); then the gain, less for
+-- each level still to wait.
+-- (Each item is asked by itself whether it "fills an empty slot now". Asked
+-- of the pair together it wasn't a true order where a list mixed an empty
+-- slot's items with a worn one's, and a sort is free to fail on that.)
+function Score.ChaseBefore(a, b, level)
+    if (a.far == true) ~= (b.far == true) then return not a.far end
+    local fillA = not Score.Worn(a.slot) and (a.req or 0) <= level
+    local fillB = not Score.Worn(b.slot) and (b.req or 0) <= level
+    if fillA ~= fillB then return fillA end
+    local va, vb = Score.ChaseValue(a, level), Score.ChaseValue(b, level)
+    if va ~= vb then return va > vb end
+    return better(a, b)
 end
 
 -- How long the last run took (for /gp status and /gp report).

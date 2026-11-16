@@ -170,7 +170,14 @@ for code in pairs(L.LINES) do L.READS[code] = true end
 -- article or preposition before it ("de ", "d'", "las ") and no full stop.
 function L.SchoolWord(word)
     if type(word) ~= "string" then return nil end
-    local w = word:lower():gsub("[%.。]+$", ""):gsub("^%s+", ""):gsub("%s+$", "")
+    local w = word:lower():gsub("^%s+", ""):gsub("%s+$", "")
+    -- A full stop at the end, the Western one or the ideographic one (as
+    -- whole characters: in a [] set the second's three bytes would each
+    -- count alone and could bite the end off another character).
+    local stop = "\227\128\130"
+    while w:sub(-1) == "." or w:sub(-#stop) == stop do
+        w = w:sub(-1) == "." and w:sub(1, -2) or w:sub(1, -#stop - 1)
+    end
     for _, prefix in ipairs({ "de ", "d'", "d\226\128\153", "las ", "los ", "la ", "el ", "le ", "l'" }) do
         if w:sub(1, #prefix) == prefix then w = w:sub(#prefix + 1) break end
     end

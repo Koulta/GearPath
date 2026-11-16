@@ -1,5 +1,16 @@
 # GearPath changelog
 
+## 0.8.7
+
+### Fixed
+- **Gear GearPath learned by itself could vanish from your lists.** Drops, quest rewards and vendor gear you (or a guildmate sharing sources) found that the item database doesn't list were dropped every time the lists were rebuilt: at login, on a level-up, after a settings change. They stay now.
+- **Worn or bagged gear could keep half its stats all session.** If the game hadn't finished loading an item when GearPath first read it, the unfinished reading stuck. GearPath reads it again once the item is loaded and rescores.
+- **Worth chasing could come out in a different order from one look to the next.** The ordering rule could contradict itself with three or more items; it's a strict order now, and every list sort breaks ties the same way each time.
+- **Stat weights typed with a comma ("1,25") were thrown away.** A decimal comma is read as a decimal point.
+- **"Put on" could pick the wrong copy** when your bags held the same item with two different random suffixes. It equips the one the list is showing.
+- A shared gear source shows the name its sender gave only when you trust the sender or two players agree.
+- Long sessions with lots of tooltips no longer keep every item link ever seen in memory.
+
 ## 0.8.6
 
 ### Fixed

@@ -171,7 +171,23 @@ function Object:CreateFontString(name, layer, template)
     fs._template = template
     return fs
 end
+-- The game refuses anything but text or a number here (a table, true...).
+local function textArg(name, t, level)
+    if t ~= nil and type(t) ~= "string" and type(t) ~= "number" then
+        error(string.format("Usage: %s(text) got %s", name, type(t)), (level or 2) + 1)
+    end
+end
+local function numArgs(name, ...)
+    for i = 1, select("#", ...) do
+        local v = select(i, ...)
+        if v ~= nil and type(v) ~= "number" then
+            error(string.format("Usage: %s(number...) got %s for argument %d", name, type(v), i), 3)
+        end
+    end
+end
+H.textArg, H.numArgs = textArg, numArgs
 function Object:SetText(t)
+    textArg("SetText", t)
     self._text = t
     if self._type == "EditBox" and self._scripts.OnTextChanged then self:_run("OnTextChanged", false) end
 end
@@ -221,8 +237,18 @@ function Object:SetFacing(f) self._facing = f end
 
 -- Tooltip
 function Object:SetOwner() self._lines = {} end
-function Object:AddLine(t) self._lines = self._lines or {}; table.insert(self._lines, tostring(t)) end
-function Object:AddDoubleLine(a, b) self._lines = self._lines or {}; table.insert(self._lines, tostring(a) .. " || " .. tostring(b)) end
+function Object:AddLine(t, r, g, b)
+    textArg("AddLine", t)
+    if t == nil then error("Usage: AddLine(text): nil", 2) end
+    numArgs("AddLine colour", r, g, b)
+    self._lines = self._lines or {}; table.insert(self._lines, tostring(t))
+end
+function Object:AddDoubleLine(a, b, r1, g1, b1, r2, g2, b2)
+    textArg("AddDoubleLine", a); textArg("AddDoubleLine", b)
+    if a == nil or b == nil then error("Usage: AddDoubleLine(left, right): nil", 2) end
+    numArgs("AddDoubleLine colour", r1, g1, b1, r2, g2, b2)
+    self._lines = self._lines or {}; table.insert(self._lines, tostring(a) .. " || " .. tostring(b))
+end
 
 -- ---------------------------------------------------------------------
 -- Templates

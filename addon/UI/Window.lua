@@ -302,20 +302,28 @@ end
 local function ilvl(ev) return ev.rec.ilvl or 0 end
 UI.SORT_KEYS = { "ilvl", "gain", "level", "name" }
 UI.SORT_LABELS = { ilvl = "item level", gain = "biggest gain", level = "required level", name = "name" }
+-- Dead level: by id, so a list doesn't reshuffle when it's sorted again.
+local function byId(a, b) return (a.rec.id or 0) < (b.rec.id or 0) end
 UI.SORTS = {
     ilvl = function(a, b)
         if ilvl(a) ~= ilvl(b) then return ilvl(a) > ilvl(b) end
-        return (a.delta or 0) > (b.delta or 0)
+        if (a.delta or 0) ~= (b.delta or 0) then return (a.delta or 0) > (b.delta or 0) end
+        return byId(a, b)
     end,
     gain = function(a, b)
         if (a.delta or 0) ~= (b.delta or 0) then return (a.delta or 0) > (b.delta or 0) end
-        return ilvl(a) > ilvl(b)
+        if ilvl(a) ~= ilvl(b) then return ilvl(a) > ilvl(b) end
+        return byId(a, b)
     end,
     level = function(a, b)
         if (a.req or 0) ~= (b.req or 0) then return (a.req or 0) < (b.req or 0) end
-        return ilvl(a) > ilvl(b)
+        if ilvl(a) ~= ilvl(b) then return ilvl(a) > ilvl(b) end
+        return byId(a, b)
     end,
-    name = function(a, b) return (a.rec.name or "") < (b.rec.name or "") end,
+    name = function(a, b)
+        if (a.rec.name or "") ~= (b.rec.name or "") then return (a.rec.name or "") < (b.rec.name or "") end
+        return byId(a, b)
+    end,
 }
 
 -- A sorted copy (the scorer's own lists stay in gain order for the route).
@@ -397,9 +405,13 @@ end
 
 -- Where an item sits in your bags: bag, slot, link, and whether it's
 -- bound to you already (nil if the game doesn't say). nil if it isn't there.
-function UI.FindInBags(id)
+-- want: the very link looked for (two of the same item with different
+-- random suffixes: the one you tried on is the one put on); without it, or
+-- when it isn't there any more, the first of that id.
+function UI.FindInBags(id, want)
     local C = C_Container
     if not (C and C.GetContainerNumSlots) then return nil end
+    local fb, fs, fl, fbound
     for bag = 0, (NUM_BAG_SLOTS or 4) do
         for slot = 1, (GP.Plain(C.GetContainerNumSlots(bag)) or 0) do
             local link, bound
@@ -409,10 +421,12 @@ function UI.FindInBags(id)
             end
             if not link and C.GetContainerItemLink then link = GP.Plain(C.GetContainerItemLink(bag, slot)) end
             if type(link) == "string" and GP.Items.IDFromLink(link) == id then
-                return bag, slot, link, bound
+                if not want or link == want then return bag, slot, link, bound end
+                if not fb then fb, fs, fl, fbound = bag, slot, link, bound end
             end
         end
     end
+    return fb, fs, fl, fbound
 end
 
 -- Whether putting it on binds it to you: "Binds when equipped", not bound yet.
@@ -442,7 +456,7 @@ function UI.TriedFromBags()
     for key, ev in pairs(UI.tried or {}) do
         local s = GP.Slots.BY_KEY[key]
         if s and ev.rec and wearableNow(ev.rec, key) then
-            local bag, slot, link, bound = UI.FindInBags(ev.rec.id)
+            local bag, slot, link, bound = UI.FindInBags(ev.rec.id, ev.entry and ev.entry.bagLink or ev.rec.link)
             if bag then
                 out[#out + 1] = { ev = ev, key = key, bag = bag, slot = slot, link = link, slotID = s.id,
                     binds = UI.BindsWhenWorn(ev.rec.id, bound) }

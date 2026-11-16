@@ -392,6 +392,26 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
     Scorn), shown by UI.Describe. Share keeps reporters as Share.Code(name) ("#" + 8 hex);
     Share.CodeNames converts old names at login; ForgetReporter clears either form.
   - queries/sweep.lua POST=<file>: a script run with (GP, results, H) once scored.
+  0.8.7 (Nov 16, the second deep check; every file read line by line):
+  - Sources.addLearned(level, ahead): gear in db.learned.items / db.shared.items with a q/d/v
+    source that QuestieDB doesn't list at all gets an entry (entry.fromLearned); run after
+    addCrafts in the scan's done step and in the no-database path; applyBags keeps them. Before
+    this such gear lasted only until the next scan.
+  - Items.FromLink rereads a record marked partial (only Items.Get did); reread() asks for a
+    rescore when it completes; Score.Run rereads partial worn/bag records. Items.LINK_MAX = 800:
+    the link cache starts over past it.
+  - Score.ChaseBefore(a, b, level): the Worth chasing order as one strict order (near before far,
+    empty usable slot first, then ChaseValue, then better()); the old pairwise rule could cycle.
+    better() and every UI.SORTS sorter end in an id tie-break.
+  - UI.FindInBags(id, want): the exact link first. Settings weight box: decimal comma.
+    Locales.SchoolWord strips "." and the full-width stop as whole characters.
+    sharedSources shows a sender's name for a source only if trusted or two agree (48 chars max).
+  - harness: SetText / AddLine / AddDoubleLine reject wrong argument types; H.halfTooltip[id];
+    run.lua "draw everything" (every row of every list on every page, tooltips, Describe).
+    harness/fuzz_test.lua <addon> CLASS [seed] [Alliance] (ROUNDS=n): 260 made-up items, random
+    level / gear / bags / spec / settings, checks scores, tooltips, rows, route and sort order.
+    queries/post_draw.lua + queries/sweep_all.sh <QuestieDB> [snapshot]: 126 characters on the
+    real database, every tooltip, source text and row drawn.
   Open (not code): QuestieDB 1.1.0 has 104 gear-dropping NPCs with no spawn, zone or level (about
   86 of them Forever's new ones): their drops read "location not in the database yet" without
   ForeverDungeonJournal. Hit caps (5% / 4%, dual wield 24%) are still the October beta's numbers

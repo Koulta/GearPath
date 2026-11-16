@@ -1867,6 +1867,11 @@ do
     check(hitCell and hitCell.default:GetText():find("default") and hitCell.default:GetText():find("yours"), "a changed weight: its default beside it, marked yours")
     S.resetSpec:Click("LeftButton")
     check(GP.char.weights == nil and not hitCell.default:GetText():find("yours"), "Reset this spec: back to the defaults")
+    -- A decimal comma is a number too.
+    hitCell.input:SetText("12,5")
+    hitCell.apply()
+    check(C.Weights().hit == 12.5, "a weight typed with a decimal comma is taken (" .. tostring(C.Weights().hit) .. ")")
+    S.resetSpec:Click("LeftButton")
     -- A custom set.
     local before = #C.Specs()
     check(C.NewCustom("") == nil and C.NewCustom(string.rep("x", 30)) == nil and C.NewCustom("Affliction") == nil, "a set needs a fresh, short name")
@@ -2777,6 +2782,182 @@ do
         I.IN_FLIGHT = 40
         C_Item.IsItemDataCachedByID = real
     end
+end
+
+-- 0.8.7: the second deep check.
+do
+    local I, S = GP.Items, GP.Score
+    -- Lists keep one order: nothing is left to chance on a tie.
+    local function names(list) local t = {} for i, ev in ipairs(list) do t[i] = ev.rec.id end return table.concat(t, ",") end
+    local all = S.results.all or {}
+    for _, key in ipairs(GP.UI.SORT_KEYS) do
+        local a = names(GP.UI.Sorted(all, key))
+        local rev = {}
+        for i = #all, 1, -1 do rev[#rev + 1] = all[i] end
+        check(a == names(GP.UI.Sorted(rev, key)), "sorted by " .. key .. ": the same order whatever order the items came in")
+    end
+    -- Worth chasing is a true order: no two items each before the other, and
+    -- a before b before c means a before c (a sort may fail without it).
+    do
+        local level = GP.player.level
+        local evs = {}
+        for i = 1, 60 do
+            evs[i] = { slot = (i % 3 == 0) and "Trinket0Slot" or "HeadSlot", req = level - 3 + (i * 7) % 12, delta = (i * 37) % 23,
+                far = i % 11 == 0, rec = { id = 5000 + i, ilvl = (i * 13) % 9 } }
+        end
+        check(S.Worn("HeadSlot") and not S.Worn("Trinket0Slot"), "(a worn slot and an empty one for the order test)")
+        local both, loops = 0, 0
+        for i = 1, #evs do
+            for j = 1, #evs do
+                if i ~= j then
+                    local ab, ba = S.ChaseBefore(evs[i], evs[j], level), S.ChaseBefore(evs[j], evs[i], level)
+                    if ab and ba then both = both + 1 end
+                    if ab then
+                        for k = 1, #evs do
+                            if k ~= i and k ~= j and S.ChaseBefore(evs[j], evs[k], level) and not S.ChaseBefore(evs[i], evs[k], level) then loops = loops + 1 end
+                        end
+                    end
+                end
+            end
+        end
+        check(both == 0 and loops == 0, "Worth chasing is a true order (" .. both .. " both ways, " .. loops .. " loops)")
+    end
+    -- Gear only you've seen, that the database doesn't list, stays on the
+    -- lists through a rescan (it was dropped at every login and level).
+    do
+        H.ITEMS[990500] = { "Seen Only By You Hood", 2, 30, 20, "INVTYPE_HEAD", 4, 1, { ITEM_MOD_SPELL_POWER_SHORT = 40 } }
+        GP.db.learned.items[990500] = { v = { [8123] = { n = "A Vendor You Met", m = 1420, x = 0.5, y = 0.5, s = time() } } }
+        GP.Sources.Learned(990500)
+        for _ = 1, 20 do H.Tick(0.1) end
+        check(GP.Sources.entries[990500] ~= nil, "gear you learned about joins the lists")
+        GP.Fire("RescanRequested")
+        for _ = 1, 400 do H.Tick(0.1) if GP.Sources.status == "ready" then break end end
+        for _ = 1, 20 do H.Tick(0.1) end
+        local e = GP.Sources.entries[990500]
+        check(e and e.rec and e.best and e.best.kind == "vendor", "and is still there after the database is read again")
+        local ev = S.ForItem(990500)
+        check(ev and ev.tier ~= nil, "scored as an upgrade to get (" .. tostring(ev and ev.tier) .. ")")
+        GP.db.learned.items[990500] = nil
+        H.ITEMS[990500] = nil
+        GP.Fire("RescanRequested")
+        for _ = 1, 400 do H.Tick(0.1) if GP.Sources.status == "ready" then break end end
+        for _ = 1, 20 do H.Tick(0.1) end
+        check(GP.Sources.entries[990500] == nil, "(and gone once forgotten)")
+    end
+    -- A half-loaded tooltip is read again for a link too (worn and bagged gear).
+    do
+        local link = H.Link(101):gsub("item:101:", "item:101::::::77:")
+        H.halfTooltip = { [101] = true }
+        local rec = I.FromLink(link)
+        check(rec and rec.partial ~= nil, "a half-loaded tooltip is marked to be read again")
+        H.halfTooltip = nil
+        H.Tick(1.5)
+        local again = I.FromLink(link)
+        check(again == rec and rec.partial == nil and (rec.stats.sp or 0) > 0, "and by its link it is, the next time it's asked for")
+    end
+    -- The link cache doesn't grow for ever.
+    do
+        local max = I.LINK_MAX
+        I.LINK_MAX = 5
+        for n = 1, 12 do I.FromLink((H.Link(100):gsub("item:100:", "item:100::::::" .. (900 + n) .. ":"))) end
+        local count = 0
+        for _ in pairs(I.linkCache) do count = count + 1 end
+        check(count <= 5, "the link cache starts over past its limit (" .. count .. " kept)")
+        I.LINK_MAX = max
+    end
+    -- Of two bag items with one id, the one tried on is found.
+    do
+        local a = (H.Link(210):gsub("item:210:", "item:210::::::11:"))
+        local b = (H.Link(210):gsub("item:210:", "item:210::::::22:"))
+        local keep = H.bag
+        H.bag = { [1] = a, [2] = b }
+        local _, slot, link = GP.UI.FindInBags(210, b)
+        local _, first = GP.UI.FindInBags(210)
+        check(slot == 2 and link == b and first == 1, "the bag search finds the very item asked for")
+        local _, gone = GP.UI.FindInBags(210, "item:210::::::33:")
+        check(gone == 1, "and falls back to one of that id")
+        H.bag = keep
+    end
+    -- School words keep their last character.
+    check(GP.LOCALES.SchoolWord("de Fuego.") == "fuego" and GP.LOCALES.SchoolWord("\231\129\171\231\132\176\227\128\130") == "\231\129\171\231\132\176"
+        and GP.LOCALES.SchoolWord("\209\130\208\181\209\129\209\130") == "\209\130\208\181\209\129\209\130",
+        "a school's name loses its full stop and nothing else")
+end
+
+-- Everything GearPath can draw, drawn for real: every row of every list on
+-- every page (each grouping and sort, every slot, every option opened), and
+-- every item's tooltip. The lists only build the rows in view, so a row that
+-- can't be drawn went unseen (0.8.4's blank options).
+do
+    local UI = GP.UI
+    local drawn, bad = 0, {}
+    local function drawAll(list, where)
+        if not (list and list.items) then return end
+        for _, it in ipairs(list.items) do
+            local kindName = it.kind
+            local kind = list.kinds[kindName] or list.kinds.note
+            local row = CreateFrame("Button", nil, UIParent)
+            local ok, err = pcall(function()
+                kind.build(row, list)
+                kind.fill(row, it, list)
+            end)
+            drawn = drawn + 1
+            if not ok then bad[#bad + 1] = where .. " / " .. tostring(kindName) .. ": " .. tostring(err) end
+            if ok and it.ev and row.gpTip then pcall(row.gpTip, row) end
+        end
+    end
+    local errorsBefore = #H.errors
+    -- Route: both groupings, zone only on and off, every option opened.
+    for _, group in ipairs({ false, "slot" }) do
+        GP.SetSetting("routeGroup", group or nil)
+        UI.Show("plan")
+        for _ = 1, 3 do H.Tick(0.1) end
+        if UI.Plan and UI.Plan.list then
+            for _, it in ipairs(UI.Plan.list.items) do
+                if it.kind == "more" and it.pick and UI.Plan.open then UI.Plan.open[it.pick] = true end
+            end
+            GP.SafeCall(UI.PAGES.plan.Fill, UI.PAGES.plan.frame)
+            drawAll(UI.Plan.list, "route " .. tostring(group or "place"))
+        end
+    end
+    GP.SetSetting("routeGroup", nil)
+    -- Browse: every sort.
+    for _, sort in ipairs(UI.SORT_KEYS) do
+        GP.SetSetting("browseSort", sort)
+        UI.Show("browse")
+        drawAll(UI.Browse.list, "browse " .. sort)
+    end
+    GP.SetSetting("browseSort", nil)
+    -- Character: the overview, then every slot's own list.
+    UI.Show("doll")
+    UI.SelectSlot(nil)
+    drawAll(UI.SlotPanel.list, "character")
+    for _, s in ipairs(GP.Slots.LIST) do
+        if not s.cosmetic then
+            UI.SelectSlot(s.key)
+            drawAll(UI.SlotPanel.list, "slot " .. s.key)
+        end
+    end
+    UI.SelectSlot(nil)
+    UI.Show("settings")
+    -- Every item's tooltip, with and without its own link.
+    local tips = 0
+    for _, ev in ipairs(GP.Score.results.all or {}) do
+        for pass = 1, 2 do
+            GameTooltip._lines = {}
+            local ok, err = pcall(GP.Tooltip.Add, GameTooltip, ev.rec.id, pass == 2 and ev.rec.link or nil)
+            tips = tips + 1
+            if not ok then bad[#bad + 1] = "tooltip " .. tostring(ev.rec.name) .. ": " .. tostring(err) end
+        end
+        for _, src in ipairs(ev.entry and ev.entry.allSources or {}) do
+            local ok, err = pcall(UI.Describe, src, true)
+            if not ok or type(err) ~= "string" then bad[#bad + 1] = "describe " .. tostring(ev.rec.name) .. ": " .. tostring(err) end
+        end
+    end
+    check(#bad == 0, "every row and tooltip draws (" .. drawn .. " rows, " .. tips .. " tooltips)" .. (bad[1] and (": " .. bad[1]) or ""))
+    for i = 2, math.min(#bad, 6) do print("      also: " .. bad[i]) end
+    check(extra == "nodb" or drawn > 60, "and there was plenty to draw (" .. drawn .. ")")
+    check(#H.errors == errorsBefore, "with no error on the way" .. (H.errors[errorsBefore + 1] and (": " .. tostring(H.errors[errorsBefore + 1])) or ""))
 end
 
 local unknown = {}

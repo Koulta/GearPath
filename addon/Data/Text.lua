@@ -167,8 +167,6 @@ t("Copy my weights", "Gewichte kopieren", "Copier mes poids", "Copiar mis pesos"
 t("Paste weights", "Gewichte einfügen", "Coller des poids", "Pegar pesos", "Colar pesos", "Вставить веса", "가중치 붙여넣기", "粘贴权重", "貼上權重")
 t("Rescan database", "Datenbank neu lesen", "Relire la base", "Releer la base de datos", "Reler o banco de dados",
     "Перечитать базу", "데이터베이스 재검색", "重新扫描数据库", "重新掃描資料庫")
-t("Reset stat weights", "Gewichte zurücksetzen", "Réinitialiser les poids", "Restablecer pesos", "Redefinir pesos",
-    "Сбросить веса", "가중치 초기화", "重置属性权重", "重設屬性權重")
 t("Forget learned gear", "Gelerntes vergessen", "Oublier l'appris", "Olvidar lo aprendido", "Esquecer o aprendido",
     "Забыть изученное", "학습한 장비 잊기", "忘记已学装备", "忘記已學裝備")
 t("Check everything now", "Jetzt alles prüfen", "Tout vérifier", "Comprobar todo ahora", "Verificar tudo agora",
