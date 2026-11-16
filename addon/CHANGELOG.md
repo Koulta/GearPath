@@ -1,5 +1,10 @@
 # GearPath changelog
 
+## 0.8.8
+
+### Changed
+- **"More options" on the Route only when it's grouped by slot.** Grouped by place, a slot's other options could come from a different dungeon than the one they were listed under (a Gnomeregan helm under Razorfen Downs). Each place now lists only what comes from it; set Group by to slot to see the other options for each slot.
+
 ## 0.8.7
 
 ### Fixed

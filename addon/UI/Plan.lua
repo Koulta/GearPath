@@ -185,7 +185,9 @@ local function addGroup(items, g, first)
         -- By place, each line names its slot; by slot, the group already does.
         items[#items + 1] = { kind = "item", ev = ev, key = ev.rec.id, prefix = not g.bySlot and Slots.Label(ev.slot) or nil,
             indent = 14, tone = g.tone }
-        local more = Plan.alts and Plan.alts[ev]
+        -- The slot's next-best items, only when grouped by slot: by place
+        -- they'd sit under a dungeon they don't come from (Koulta, Nov 16).
+        local more = g.bySlot and Plan.alts and Plan.alts[ev]
         if more and #more > 0 then
             local slotKey = Slots.GROUP[ev.slot] or ev.slot or "?"
             local open = Plan.open[slotKey] == true

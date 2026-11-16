@@ -412,6 +412,8 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
     level / gear / bags / spec / settings, checks scores, tooltips, rows, route and sort order.
     queries/post_draw.lua + queries/sweep_all.sh <QuestieDB> [snapshot]: 126 characters on the
     real database, every tooltip, source text and row drawn.
+  0.8.8 (Nov 16): Plan.addGroup adds the "more options" rows only for g.bySlot (Koulta: by place
+  they listed another dungeon's items under this one).
   Open (not code): QuestieDB 1.1.0 has 104 gear-dropping NPCs with no spawn, zone or level (about
   86 of them Forever's new ones): their drops read "location not in the database yet" without
   ForeverDungeonJournal. Hit caps (5% / 4%, dual wield 24%) are still the October beta's numbers

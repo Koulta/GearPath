@@ -279,6 +279,11 @@ do
     local function find(kind)
         for i, it in ipairs(P.list.items or {}) do if it.kind == kind then return it, i end end
     end
+    -- By place the options would sit under a dungeon they aren't from
+    -- (0.8.8): they show only when the Route is grouped by slot.
+    check(find("more") == nil and find("alt") == nil, "grouped by place: no options rows")
+    GP.SetSetting("routeGroup", "slot")
+    UI.Show("plan"); GP.SafeCall(UI.PAGES.plan.Fill, UI.PAGES.plan.frame)
     local more = find("more")
     if not H.noDB then
         check(more ~= nil and (more.text:find("more option")), "a Worth chasing pick has more options: " .. tostring(more and more.text))
@@ -301,6 +306,8 @@ do
         m2.onToggle()
         check(find("alt") == nil, "closed again")
     end
+    GP.SetSetting("routeGroup", nil)
+    GP.SafeCall(UI.PAGES.plan.Fill, UI.PAGES.plan.frame)
     -- An empty slot's line.
     local lvl = GP.player.level
     local emptyEv
