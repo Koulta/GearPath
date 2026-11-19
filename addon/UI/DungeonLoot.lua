@@ -9,7 +9,9 @@
 --
 -- It stays up between fights until you click Hide: it steps aside while
 -- you fight and comes back after. /gp loot brings a hidden one back. Drag
--- to move, drag the corner to resize.
+-- to move; drag any edge or corner to resize it (0.8.9: wider gives names
+-- more room, taller shows more, and the rest scrolls); Ctrl-drag the corner
+-- grip to make the text bigger or smaller; right-click an edge for normal.
 -- Off with "Dungeon loot" in Settings > Extras.
 
 local _, GP = ...
@@ -22,6 +24,20 @@ local L = GP.L
 Loot.WIDTH = 300
 Loot.MAX_ROWS = 14        -- item lines at most (then "and N more")
 Loot.ROW_H = 18
+Loot.TOP, Loot.BOTTOM = 34, 36   -- room above the list (the title) and under it (Hide)
+
+-- Size you've dragged it to (0.8.9): width and height, and the limits.
+Loot.MIN_W, Loot.MIN_H = 220, 110
+Loot.MAX_W, Loot.MAX_H = 700, 900
+Loot.EDGE, Loot.CORNER = 6, 12   -- grab areas along the edges and at the corners
+
+-- The eight places to grab: h = -1 left, 1 right; v = 1 top, -1 bottom.
+Loot.HANDLES = {
+    { point = "TOP", h = 0, v = 1 }, { point = "BOTTOM", h = 0, v = -1 },
+    { point = "LEFT", h = -1, v = 0 }, { point = "RIGHT", h = 1, v = 0 },
+    { point = "TOPLEFT", h = -1, v = 1 }, { point = "TOPRIGHT", h = 1, v = 1 },
+    { point = "BOTTOMLEFT", h = -1, v = -1 }, { point = "BOTTOMRIGHT", h = 1, v = -1 },
+}
 
 local function on() return GP.Setting("dungeonLoot") ~= false end
 
@@ -243,7 +259,7 @@ local function frame()
         f:SetUserPlaced(false)
         savePos(f)
     end)
-    f:SetWidth(Loot.WIDTH)
+    f:SetWidth(Loot.Size() or Loot.WIDTH)
     f:SetScale(Loot.Scale())
     placeAt(f)
     -- A header band across the top with an accent line under it (Koulta,
@@ -264,33 +280,72 @@ local function frame()
     f.title:SetWordWrap(false)
     f.hide = skin.Button(f, L["Hide"], 64, 20)
     f.hide:SetScript("OnClick", function() Loot.Close() end)
+    f.hide:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, 10)
+    -- The list scrolls inside the panel when you've made it shorter than
+    -- the list.
+    f.view = skin.Scroll(f)
+    f.view:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -Loot.TOP)
+    f.view:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -12, Loot.BOTTOM)
     f.lines = {}
-    -- The corner grip: drag to make the whole panel (text and all) bigger
-    -- or smaller; right-click puts it back to normal size (Koulta, Nov 8).
-    local grip = CreateFrame("Button", nil, f)
+    -- Resizing (0.8.9, Koulta: "resizable in all directions"): every edge
+    -- and corner. The corner grip shows where; Ctrl-drag it to make the
+    -- text bigger or smaller (the Nov 8 grip). Right-click any of them:
+    -- normal size again.
+    f.handles = {}
+    for _, d in ipairs(Loot.HANDLES) do
+        local h = CreateFrame("Button", nil, f)
+        h.dir = d
+        h:SetFrameLevel(f:GetFrameLevel() + 20)
+        local e, c = Loot.EDGE, Loot.CORNER
+        if d.h ~= 0 and d.v ~= 0 then
+            h:SetSize(c, c)
+            h:SetPoint(d.point, f, d.point, 0, 0)
+        elseif d.h ~= 0 then
+            h:SetWidth(e)
+            h:SetPoint("TOP" .. d.point, f, "TOP" .. d.point, 0, -c)
+            h:SetPoint("BOTTOM" .. d.point, f, "BOTTOM" .. d.point, 0, c)
+        else
+            h:SetHeight(e)
+            h:SetPoint(d.point .. "LEFT", f, d.point .. "LEFT", c, 0)
+            h:SetPoint(d.point .. "RIGHT", f, d.point .. "RIGHT", -c, 0)
+        end
+        -- A faint line in the look's accent while the mouse is on an edge.
+        if d.h == 0 or d.v == 0 then
+            local hl = h:CreateTexture(nil, "HIGHLIGHT")
+            hl:SetAllPoints(h)
+            hl:SetColorTexture(r or 1, g or 0.82, b or 0, 0.35)
+        end
+        h:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+        h:SetScript("OnMouseDown", function(self, button)
+            if button ~= "LeftButton" then return end
+            local x, y = GetCursorPosition()
+            local zoom = self.dir.point == "BOTTOMRIGHT" and IsControlKeyDown and IsControlKeyDown()
+            if zoom then Loot.StartResize(x) else Loot.StartSizing(self.dir, x, y) end
+            self:SetScript("OnUpdate", function()
+                local cx, cy = GetCursorPosition()
+                if zoom then Loot.Resize(cx) else Loot.Sizing(cx, cy) end
+            end)
+        end)
+        h:SetScript("OnMouseUp", function(self, button)
+            self:SetScript("OnUpdate", nil)
+            if button == "RightButton" then
+                Loot.ResetSize()
+            else
+                Loot.StopSizing()
+            end
+        end)
+        f.handles[d.point] = h
+    end
+    local grip = f.handles.BOTTOMRIGHT
     grip:SetSize(16, 16)
+    grip:ClearAllPoints()
     grip:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -2, 2)
-    grip:SetFrameLevel(f:GetFrameLevel() + 20)
     grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
     grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
     grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
-    grip:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-    grip:SetScript("OnMouseDown", function(_, button)
-        if button ~= "LeftButton" then return end
-        Loot.StartResize(GetCursorPosition())
-        grip:SetScript("OnUpdate", function() Loot.Resize(GetCursorPosition()) end)
-    end)
-    grip:SetScript("OnMouseUp", function(_, button)
-        grip:SetScript("OnUpdate", nil)
-        if button == "RightButton" then
-            Loot.SetScale(1)
-        elseif Loot.sizing then
-            Loot.sizing = nil
-            savePos(f)
-        end
-    end)
     f.grip = grip
     Loot.frame = f
+    Loot.ApplySize()
     return f
 end
 
@@ -305,12 +360,14 @@ function Loot.Scale()
 end
 
 -- Pins the panel by its top-left corner (where it is now on screen), so it
--- grows down and to the right from there whatever its scale.
+-- grows down and to the right from there. GetLeft/GetTop and SetPoint's
+-- offsets are both in the panel's own scale (before 0.8.9 this multiplied
+-- by it, and a zoomed panel jumped when you took hold of the grip).
 local function pinTopLeft(f)
-    local left, top, s = f:GetLeft(), f:GetTop(), f:GetScale()
+    local left, top = f:GetLeft(), f:GetTop()
     if not (left and top) then return end
     f:ClearAllPoints()
-    f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left * s, top * s)
+    f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
 end
 
 function Loot.SetScale(scale)
@@ -345,12 +402,75 @@ function Loot.Resize(x)
     Loot.SetScale(width / Loot.WIDTH)
 end
 
+-- The size you've dragged it to: width, height (nil, nil: it fits its list).
+function Loot.Size()
+    local z = GP.db.window.lootSize
+    if type(z) ~= "table" or type(z[1]) ~= "number" or type(z[2]) ~= "number" then return nil end
+    return GP.Clamp(z[1], Loot.MIN_W, Loot.MAX_W), GP.Clamp(z[2], Loot.MIN_H, Loot.MAX_H)
+end
+
+-- Takes hold of an edge or corner (d from Loot.HANDLES) with the cursor at
+-- x, y (screen pixels). The opposite edges stay where they are.
+function Loot.StartSizing(d, x, y)
+    local f = Loot.frame
+    if not (f and d) then return end
+    local left, top = f:GetLeft(), f:GetTop()
+    if not (left and top) then return end
+    local eff = f.GetEffectiveScale and f:GetEffectiveScale() or 1
+    if not eff or eff <= 0 then eff = 1 end
+    Loot.sizing = { dir = d, x = x, y = y, eff = eff, left = left, top = top,
+        w = f:GetWidth() or Loot.WIDTH, h = f:GetHeight() or Loot.MIN_H }
+end
+
+function Loot.Sizing(x, y)
+    local z, f = Loot.sizing, Loot.frame
+    if not (z and z.dir and f) then return end
+    local dx, dy = (x - z.x) / z.eff, (y - z.y) / z.eff
+    local d = z.dir
+    local w = GP.Clamp(z.w + d.h * dx, Loot.MIN_W, Loot.MAX_W)
+    local h = GP.Clamp(z.h + d.v * dy, Loot.MIN_H, Loot.MAX_H)
+    local left = d.h == -1 and (z.left + z.w - w) or z.left
+    local top = d.v == 1 and (z.top - z.h + h) or z.top
+    GP.db.window.lootSize = { w, h }
+    f:ClearAllPoints()
+    f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
+    Loot.ApplySize()
+end
+
+function Loot.StopSizing()
+    local f = Loot.frame
+    if Loot.sizing and f then savePos(f) end
+    Loot.sizing = nil
+end
+
+-- Normal again: its own width, as tall as its list, text at normal size.
+function Loot.ResetSize()
+    Loot.sizing = nil
+    GP.db.window.lootSize = nil
+    Loot.SetScale(1)
+    Loot.ApplySize()
+end
+
+-- Sizes the panel (yours, or to fit its list) and lays its lines out again.
+function Loot.ApplySize()
+    local f = Loot.frame
+    if not f then return end
+    local p = Loot.painted
+    if p then
+        Loot.Paint(p.instance, p.groups, p.n)
+    else
+        local w, h = Loot.Size()
+        f:SetWidth(w or Loot.WIDTH)
+        if h then f:SetHeight(h) end
+    end
+end
+
 local function line(i)
     local f = frame()
     local r = f.lines[i]
     if r then return r end
     local skin = GP.Skin.Pick()
-    r = CreateFrame("Button", nil, f)
+    r = CreateFrame("Button", nil, f.view.child)
     r:SetHeight(Loot.ROW_H)
     r.icon = r:CreateTexture(nil, "ARTWORK")
     r.icon:SetSize(15, 15)
@@ -400,10 +520,16 @@ Loot.DIM = 0.45
 function Loot.Paint(instance, groups, n)
     Loot.groups = groups
     local f = frame()
+    Loot.painted = { instance = instance, groups = groups, n = n }
+    local child = f.view.child
     f.title:SetText("GearPath: " .. GP.Waypoint.PlaceName(instance))
-    local y, used, shown = 34, 0, 0
+    -- At the size you gave it, everything is listed (and scrolls); fitted
+    -- to its list, the first MAX_ROWS items and "and N more".
+    local fw, fh = Loot.Size()
+    local cap = fw and math.huge or Loot.MAX_ROWS
+    local y, used, shown = 0, 0, 0
     for _, g in ipairs(groups) do
-        if shown >= Loot.MAX_ROWS then break end
+        if shown >= cap then break end
         used = used + 1
         local h = line(used)
         h.ev = nil
@@ -427,12 +553,12 @@ function Loot.Paint(instance, groups, n)
         -- A quest's line: a click puts the map pin on its giver.
         h.pin = g.quest
         h:ClearAllPoints()
-        h:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -y)
-        h:SetPoint("RIGHT", f, "RIGHT", -12, 0)
+        h:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -y)
+        h:SetPoint("RIGHT", child, "RIGHT", 0, 0)
         h:Show()
         y = y + Loot.ROW_H
         for _, ev in ipairs(g.items) do
-            if shown >= Loot.MAX_ROWS then break end
+            if shown >= cap then break end
             used = used + 1
             shown = shown + 1
             local r = line(used)
@@ -452,8 +578,8 @@ function Loot.Paint(instance, groups, n)
             local c = GP.Tooltip.Color(ev)
             if c then r.gain:SetTextColor(c[1], c[2], c[3]) end
             r:ClearAllPoints()
-            r:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -y)
-            r:SetPoint("RIGHT", f, "RIGHT", -12, 0)
+            r:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -y)
+            r:SetPoint("RIGHT", child, "RIGHT", 0, 0)
             r:Show()
             y = y + Loot.ROW_H
         end
@@ -473,8 +599,8 @@ function Loot.Paint(instance, groups, n)
         m.text:SetText(string.format(L["and %d more (see GearPath's window)"], n - shown))
         m.text:SetTextColor(0.6, 0.6, 0.6)
         m:ClearAllPoints()
-        m:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -y)
-        m:SetPoint("RIGHT", f, "RIGHT", -12, 0)
+        m:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -y)
+        m:SetPoint("RIGHT", child, "RIGHT", 0, 0)
         m:Show()
         y = y + Loot.ROW_H
     end
@@ -482,10 +608,22 @@ function Loot.Paint(instance, groups, n)
         f.lines[i].ev = nil
         f.lines[i]:Hide()
     end
-    f.hide:ClearAllPoints()
-    f.hide:SetPoint("TOPRIGHT", f, "TOPLEFT", Loot.WIDTH - 10, -(y + 6))
-    f:SetHeight(y + 36)
+    local w = fw or Loot.WIDTH
+    local h = fh or (Loot.TOP + y + Loot.BOTTOM)
+    f:SetSize(w, h)
+    -- Room on the right for the scroll bar only when it scrolls.
+    local view = h - Loot.TOP - Loot.BOTTOM
+    local scrolls = y > view + 0.5
+    local right = scrolls and math.max(12, (f.view.barRoom or 16) + 4) or 12
+    f.view:ClearAllPoints()
+    f.view:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -Loot.TOP)
+    f.view:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -right, Loot.BOTTOM)
+    child:SetSize(math.max(1, w - 12 - right), math.max(1, y))
+    local range = math.max(0, y - view)
+    if (f.view:GetVerticalScroll() or 0) > range then f.view:SetVerticalScroll(range) end
+    if f.view.UpdateBar then f.view.UpdateBar() end
     Loot.lines = used
+    Loot.scrolls = scrolls
 end
 
 function Loot.Close()
@@ -642,7 +780,7 @@ end)
 
 -- /gp loot: the panel again, back to its first spot and size.
 GP.RegisterCommand("loot", "show this dungeon's upgrades for you again", function()
-    GP.db.window.loot, GP.db.window.lootScale = nil, nil
+    GP.db.window.loot, GP.db.window.lootScale, GP.db.window.lootSize = nil, nil, nil
     if Loot.frame then
         Loot.frame:SetScale(1)
         placeAt(Loot.frame)

@@ -1078,6 +1078,68 @@ if not H.noDB then
     GP.db.window.lootScale = 1.3
     check(Loot.Scale() == 1.3, "the size is kept")
     GP.db.window.lootScale = nil
+    -- 0.8.9: resizable from every edge and corner (Koulta: "resizable in all
+    -- directions"); the opposite edges stay put; shorter than its list, it scrolls.
+    do
+        local n8 = 0
+        for _ in pairs(f.handles) do n8 = n8 + 1 end
+        check(n8 == 8, "a grab area on every edge and corner (" .. n8 .. ")")
+        local function dir(p) for _, d in ipairs(Loot.HANDLES) do if d.point == p then return d end end end
+        local function at() local _, _, _, x, y = f:GetPoint(1); return x, y end
+        local w0, h0 = f:GetWidth(), f:GetHeight()
+        Loot.StartSizing(dir("RIGHT"), 500, 500); Loot.Sizing(600, 520); Loot.StopSizing()
+        local x, y = at()
+        check(f:GetWidth() == w0 + 100 and f:GetHeight() == h0 and x == 100 and y == 800,
+            "the right edge: 100 wider, same height, left edge stays (" .. f:GetWidth() .. "x" .. f:GetHeight() .. " at " .. x .. "," .. y .. ")")
+        check(GP.db.window.lootSize and GP.db.window.lootSize[1] == w0 + 100, "the size is saved")
+        f:SetWidth(w0)
+        Loot.StartSizing(dir("LEFT"), 500, 500); Loot.Sizing(450, 500)
+        x = at()
+        check(f:GetWidth() == w0 + 50 and x == 50, "the left edge: wider to the left (" .. x .. ")")
+        f:SetWidth(w0); f:SetHeight(h0)
+        Loot.StartSizing(dir("TOP"), 500, 500); Loot.Sizing(500, 540)
+        x, y = at()
+        check(f:GetHeight() == h0 + 40 and y == 840 and x == 100, "the top edge: taller upward (" .. y .. ")")
+        f:SetWidth(w0); f:SetHeight(h0)
+        Loot.StartSizing(dir("BOTTOMLEFT"), 500, 500); Loot.Sizing(470, 470)
+        x, y = at()
+        check(f:GetWidth() == w0 + 30 and f:GetHeight() == h0 + 30 and x == 70 and y == 800, "a bottom corner: both ways, the top stays")
+        Loot.Sizing(5000, 5000)
+        check(f:GetWidth() == Loot.MIN_W and f:GetHeight() == Loot.MIN_H, "no smaller than " .. Loot.MIN_W .. "x" .. Loot.MIN_H)
+        Loot.Sizing(-5000, -5000)
+        check(f:GetWidth() == Loot.MAX_W and f:GetHeight() == Loot.MAX_H, "no bigger than " .. Loot.MAX_W .. "x" .. Loot.MAX_H)
+        Loot.Sizing(470, 5000); Loot.StopSizing()
+        check(Loot.scrolls == true and f.view.child:GetHeight() > f:GetHeight() - Loot.TOP - Loot.BOTTOM,
+            "shorter than its list: the list scrolls")
+        local listed, more = 0, false
+        for _, r in ipairs(f.lines) do
+            if r:IsShown() then
+                if r.ev then listed = listed + 1 end
+                if (r.text:GetText() or ""):find("more %(see") then more = true end
+            end
+        end
+        check(listed == n and not more, "at your size every item is listed, no \"and N more\"")
+        Loot.Show(true, true)
+        check(f:GetHeight() == Loot.MIN_H, "and it keeps your size when the list changes")
+        f.handles.LEFT:GetScript("OnMouseUp")(f.handles.LEFT, "RightButton")
+        check(GP.db.window.lootSize == nil and f:GetWidth() == Loot.WIDTH and not Loot.scrolls, "right-click an edge: normal size again")
+        -- Ctrl-drag the corner grip: the text zoom as before.
+        local ctrl = rawget(_G, "IsControlKeyDown")
+        IsControlKeyDown = function() return true end
+        f.grip:GetScript("OnMouseDown")(f.grip, "LeftButton")
+        check(Loot.sizing and Loot.sizing.dir == nil and Loot.sizing.scale, "Ctrl-drag the corner: zooms the text")
+        f.grip:GetScript("OnMouseUp")(f.grip, "LeftButton")
+        IsControlKeyDown = ctrl
+        check(Loot.sizing == nil and f.grip:GetScript("OnUpdate") == nil, "let go: done")
+        -- Taking hold of a zoomed panel doesn't move it.
+        f:SetScale(1.5)
+        Loot.StartResize(500)
+        x, y = at()
+        check(x == 100 and y == 800, "a zoomed panel stays where it is when you take hold (" .. x .. "," .. y .. ")")
+        Loot.sizing = nil
+        Loot.ResetSize()
+        GP.db.window.loot = nil
+    end
     do  -- Zoned in with a mob still on you (the cave before Wailing Caverns): it opens when the fight ends.
         IsInInstance, GetInstanceInfo = inInst, instInfo
         Loot.Refresh()

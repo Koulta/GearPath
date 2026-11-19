@@ -1,5 +1,13 @@
 # GearPath changelog
 
+## 0.8.9
+
+### Changed
+- **The dungeon loot panel resizes from every edge and corner.** Drag any side or corner: wider gives item names more room, taller shows more of the list, and when it's shorter than the list it scrolls. Ctrl-drag the corner grip to make the text bigger or smaller, as the grip did before. Right-click an edge or the grip for normal size; `/gp loot` also puts it back.
+
+### Fixed
+- Taking hold of the loot panel's grip when it was already enlarged made it jump across the screen.
+
 ## 0.8.8
 
 ### Changed

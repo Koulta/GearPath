@@ -414,6 +414,11 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
     real database, every tooltip, source text and row drawn.
   0.8.8 (Nov 16): Plan.addGroup adds the "more options" rows only for g.bySlot (Koulta: by place
   they listed another dungeon's items under this one).
+  0.8.9 (Nov 17): DungeonLoot resizes from 8 handles (Loot.HANDLES; edges 6 px, corners 12 px):
+  Loot.StartSizing/Sizing/StopSizing keep the opposite edges, clamp to MIN/MAX_W/H and save
+  GP.db.window.lootSize {w, h}; at a saved size the list has no MAX_ROWS cap and scrolls in
+  f.view (skin.Scroll). Ctrl-drag the corner grip = the old zoom (StartResize/Resize). Right-click
+  any handle: Loot.ResetSize. pinTopLeft no longer multiplies GetLeft/GetTop by the scale.
   Open (not code): QuestieDB 1.1.0 has 104 gear-dropping NPCs with no spawn, zone or level (about
   86 of them Forever's new ones): their drops read "location not in the database yet" without
   ForeverDungeonJournal. Hit caps (5% / 4%, dual wield 24%) are still the October beta's numbers
