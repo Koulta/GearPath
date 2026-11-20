@@ -729,6 +729,21 @@ local errs = #H.errors
 GP.SetSetting("ahead", 3)
 for _ = 1, 30 do H.Tick(0.1) end
 check(#H.errors == errs, "changing look-ahead rescans cleanly")
+do  -- 0.8.10: the Weapons pick under Spec.
+    local sp = GP.UI.Settings and GP.UI.Settings.stylePick
+    check(sp ~= nil and sp:IsShown() ~= false, "Settings has a Weapons pick")
+    if sp then
+        local staff = GP.Items.FromLink(H.Link(102))
+        check(staff and GP.Score.CanWear(staff), "any: a staff is wearable")
+        check(GP.Classes.SetWeaponStyle("held"), "picking one-hand and off-hand item")
+        for _ = 1, 10 do H.Tick(0.1) end
+        sp.Refresh()
+        check(#H.errors == errs and not GP.Score.CanWear(staff), "rescored cleanly; the staff is left off")
+        GP.Classes.SetWeaponStyle("any")
+        for _ = 1, 10 do H.Tick(0.1) end
+        GP.char.weaponStyle = nil
+    end
+end
 
 -- Learn: a quest window offering an item the database doesn't know.
 H.Fire("QUEST_DETAIL")
@@ -1215,16 +1230,23 @@ if not H.noDB then
         UnitExists, UnitIsDead, UnitGUID, UnitName = ue, ud, ug, un
         for _ = 1, 3 do H.Tick(0.1) end
         local head = rowFor("Miner Testson")
-        check(head and head.gain:GetText():find("done") and head:GetAlpha() < 1, "a dead boss: done, dimmed")
+        check(head and head:GetAlpha() < 1, "a dead boss: dimmed")
+        local note = rowFor("Killed, didn't drop")
+        check(note ~= nil, "with \"Killed, didn't drop: run again for another chance.\" under it")
         local item = rowFor("Testson's Vestments")
         check(item and item:GetAlpha() < 1, "and its items dimmed")
-        -- You loot it: checked, and it stays on the list after it stops being an upgrade.
+        check(Loot.Tries(232) == 1 and item.text:GetText():find("Tries: 1", 1, true),
+            "the item counts a try (" .. tostring(item and item.text:GetText()) .. ")")
+        Loot.Killed("Miner Testson", 9200)
+        check(Loot.Tries(232) == 1, "the same death seen again: still one try")
+        -- You loot it: off the list, and the boss with it (nothing else of his you want).
         local before = H.toastShown
         H.Fire("CHAT_MSG_LOOT", "You receive loot: |cff0070dd|Hitem:232::::::::20:::::|h[Testson's Vestments]|h|r.")
         for _ = 1, 3 do H.Tick(0.1) end
-        check(Loot.state.got[232] ~= nil, "looting it ticks it off")
-        item = rowFor("Testson's Vestments")
-        check(item and item.text:GetText():find("ReadyCheck"), "with a check mark")
+        check(Loot.state.got[232] ~= nil, "looting it is noted")
+        check(rowFor("Testson's Vestments") == nil and rowFor("Miner Testson") == nil,
+            "it's gone from the list, and the boss with nothing left you want")
+        check(Loot.Tries(232) == 0, "and its tries are forgotten")
         local T = GP.Toast
         check(T.frame and T.frame:IsShown() and T.frame.text:GetText():find("^Testson's Vestments: ") and T.frame.text:GetText():find("%(Chest%)"),
             "a toast: Upgrade! name: gain (slot) (" .. tostring(T.frame and T.frame.text:GetText()) .. ")")
@@ -1240,7 +1262,41 @@ if not H.noDB then
         IsInInstance = function() return true, "party" end
         GetInstanceInfo = function() return "The Deadmines" end
         Loot.Refresh()
-        check(Loot.state.got[232] and Loot.state.deadIDs[9200], "out and back in (the run back after a wipe): still ticked off")
+        check(Loot.state.got[232] and Loot.state.deadIDs[9200], "out and back in (the run back after a wipe): still noted")
+        -- 0.8.10: a new run brings the bosses back; tries add up across runs.
+        local testly
+        for _, g in ipairs(Loot.Build("The Deadmines")) do if g.boss == "Foreman Testly" then testly = g end end
+        local tid = testly and testly.items[1].rec.id
+        check(tid ~= nil, "another boss with an upgrade: " .. tostring(testly and testly.boss))
+        check(Loot.CopyOf("Creature-0-4372-36-1111-9200-00001A2B3C") == "1111" and Loot.CopyOf("Player-4372-0ABCDEF") == nil,
+            "which copy of the dungeon: from a creature's GUID")
+        if tid then
+            Loot.Saw("Creature-0-4372-36-1111-1732-00001A2B3C")
+            Loot.Killed("Foreman Testly")
+            Loot.Refresh()
+            check(Loot.BossDone(testly) and Loot.Tries(tid) == 1, "killed, didn't drop: one try")
+            Loot.Saw("Creature-0-4372-36-1111-1733-00001A2B3D")
+            check(Loot.BossDone(testly), "more of the same run: still killed")
+            Loot.Saw("Creature-0-4372-36-2222-1732-00001A2B3E")
+            check(not Loot.BossDone(testly) and not Loot.state.deadIDs[9200], "a creature from another copy: a new run, the bosses are back")
+            check(Loot.state.got[232], "what you looted stays off")
+            Loot.Refresh()
+            for _ = 1, 3 do H.Tick(0.1) end
+            local r = rowFor("Foreman Testly")
+            check(r and r:GetAlpha() == 1 and rowFor("Killed, didn't drop") == nil, "the boss is live again on the panel")
+            local ir = rowFor(testly.items[1].rec.name)
+            check(ir and ir.text:GetText():find("Tries: 1", 1, true), "its item still says Tries: 1")
+            Loot.Killed("Foreman Testly")
+            check(Loot.Tries(tid) == 2, "killed again: two tries")
+            -- Resetting the dungeon from outside.
+            check(Loot.FromReset("The Deadmines has been reset.") == "The Deadmines", "the reset message is read")
+            H.Fire("CHAT_MSG_SYSTEM", "The Deadmines has been reset.")
+            check(not Loot.BossDone(testly), "\"has been reset\": a new run")
+            Loot.Killed("Foreman Testly")
+            H.Fire("CHAT_MSG_SYSTEM", "Ragefire Chasm has been reset.")
+            check(Loot.BossDone(testly), "another dungeon's reset doesn't touch this one")
+            GP.char.lootTries = nil
+        end
         -- Another dungeon starts over.
         Loot.Visit("Ragefire Chasm")
         check(next(Loot.state.got) == nil, "another dungeon: a fresh checklist")

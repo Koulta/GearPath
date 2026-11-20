@@ -203,6 +203,61 @@ if CLASS == "WARLOCK" or CLASS == "MAGE" or CLASS == "PRIEST" then
     S.ReadEquipped()
     check(S.Upgrade(rec(211)) == "RangedSlot", "a wand goes in the ranged slot")
 end
+-- 0.8.10: your weapon style, per spec (r173ym0n28711 on CurseForge: a
+-- Protection Warrior kept being offered weapons he doesn't use).
+do
+    local specs = C.Specs(CLASS)
+    C.SetSpec(specs[1].key)
+    local list = C.Styles()
+    local has = {}
+    for _, k in ipairs(list) do has[k] = true end
+    local shields = { WARRIOR = true, PALADIN = true, SHAMAN = true }
+    check(list[1] == "any" and has.held, "styles start with any; everyone can hold an off-hand item (" .. table.concat(list, ",") .. ")")
+    check((has.shield == true) == (shields[CLASS] == true), "one-hand and shield only for shield users")
+    check((has.dual == true) == C.CanDualWield(CLASS, 60), "two one-handers only for dual wielders")
+    check(C.WeaponStyle() == "any" or specs[1].style ~= nil, "the leveling spec starts at any")
+    check(C.SetWeaponStyle("held") and C.WeaponStyle() == "held", "set to one-hand and off-hand item")
+    if C.CanUse(2, 10, "INVTYPE_2HWEAPON", CLASS, 23) then
+        check(not S.CanWear(rec(102)), "held: a staff is left off")
+    end
+    if CLASS == "WARLOCK" or CLASS == "MAGE" or CLASS == "PRIEST" then
+        check(S.CanWear(rec(211)), "a wand isn't touched by the style")
+    end
+    if CLASS == "HUNTER" then check(S.CanWear(rec(311)), "a bow isn't touched by the style") end
+    if specs[2] then
+        C.SetSpec(specs[2].key)
+        check(C.WeaponStyle() == (specs[2].style or "any"), "another spec has its own style")
+        C.SetSpec(specs[1].key)
+        check(C.WeaponStyle() == "held", "and back: still yours")
+    end
+    if has.shield and not C.SetWeaponStyle("shield") then check(false, "can't set one-hand and shield") end
+    if not has.shield then
+        GP.char.weaponStyle[specs[1].key] = "shield"
+        check(C.WeaponStyle() == "any", "a style the class can't use counts as any")
+    end
+    C.SetWeaponStyle("any")
+    for _, sp in ipairs(specs) do
+        if sp.key == "protection" then
+            C.SetSpec("protection")
+            check(C.WeaponStyle() == "shield", "Protection starts at one-hand and shield")
+            check(not S.CanWear(rec(304)) and S.CanWear(rec(305)) and S.CanWear(rec(307)),
+                "Protection: no two-hander; one-handers and shields")
+            EQ[16], EQ[17] = 305, nil
+            S.ReadEquipped()
+            check(S.Upgrade(rec(305)) ~= "SecondaryHandSlot", "Protection: a one-hander isn't offered for the off hand")
+            check(S.Upgrade(rec(307)) == "SecondaryHandSlot", "a shield is")
+            if CLASS == "WARRIOR" then check(not S.CanWear(rec(306)), "nor an off-hand dagger") end
+            check(S.Upgrade(rec(304)) == nil and GP.Tooltip.QuickEval(rec(304)) == nil, "and no gain on its tooltip")
+            C.SetWeaponStyle("two")
+            check(S.CanWear(rec(304)) and not S.CanWear(rec(307)), "set to two-hander: the greatsword, no shield")
+            C.SetWeaponStyle("any")
+            check(S.CanWear(rec(304)) and S.CanWear(rec(307)), "any: both")
+            GP.char.weaponStyle = nil
+            C.SetSpec(specs[1].key)
+        end
+    end
+    GP.char.weaponStyle = nil
+end
 EQ[16], EQ[17] = nil, nil
 
 -- From the database: what the class can use and get.

@@ -419,6 +419,18 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
   GP.db.window.lootSize {w, h}; at a saved size the list has no MAX_ROWS cap and scrolls in
   f.view (skin.Scroll). Ctrl-drag the corner grip = the old zoom (StartResize/Resize). Right-click
   any handle: Loot.ResetSize. pinTopLeft no longer multiplies GetLeft/GetTop by the scale.
+  0.8.10 (Nov 19, Koulta's Nov 15 request): the dungeon checklist goes by run. Loot.CopyOf(guid) reads
+  the zone UID (5th GUID field); Loot.Saw on target/mouseover/loot sources: another copy = Loot.NewRun
+  (dead/deadIDs cleared, got kept). CHAT_MSG_SYSTEM INSTANCE_RESET_SUCCESS for this dungeon = NewRun.
+  Build leaves out st.got items (no more check marks); a group with no items isn't listed. A dead boss
+  with items left: dimmed + "Killed, didn't drop: run again for another chance." Tries per item in
+  GP.char.lootTries (+1 when its boss newly dies, cleared on Loot.Got). L["done"] removed.
+  Weapon style (r173ym0n28711, CurseForge Nov 19): Classes.STYLES any/two/shield/held/dual, kept per spec
+  in GP.char.weaponStyle[specKey]; spec.style is the default (both Protection specs: "shield"; custom
+  sets copy their base's). Classes.Styles(class) offers only what the class can use. FitsStyle(equipLoc,
+  offHand) is checked in Score.CanWear, at the top of Score.Upgrade (so QuickEval tooltips too) and for
+  the off-hand slot (a one-hander there only for "dual"). Ranged/wands untouched. Real-DB check, Warrior
+  36: Protection no longer asks to train two-handed weapons. Settings row "Weapons" under Spec.
   Open (not code): QuestieDB 1.1.0 has 104 gear-dropping NPCs with no spawn, zone or level (about
   86 of them Forever's new ones): their drops read "location not in the database yet" without
   ForeverDungeonJournal. Hit caps (5% / 4%, dual wield 24%) are still the October beta's numbers

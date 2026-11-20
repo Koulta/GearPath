@@ -177,6 +177,8 @@ end
 function Score.Upgrade(rec, weights)
     local places = rec and Slots.FOR_EQUIPLOC[rec.equipLoc]
     if not places then return nil end
+    -- Not how you fight (Settings > Weapons): no upgrade, tooltips included.
+    if not Classes.FitsStyle(rec.equipLoc) then return nil end
     weights = weights or Classes.Weights()
     local hitIn = hitOf(rec)
     local best
@@ -185,6 +187,8 @@ function Score.Upgrade(rec, weights)
         if slotKey == "SecondaryHandSlot" and rec.equipLoc == "INVTYPE_WEAPON" and not Classes.CanDualWield() then
             okSlot = false
         end
+        -- Your weapon style (Settings): a one-hander in the off hand only for two one-handers.
+        if slotKey == "SecondaryHandSlot" and not Classes.FitsStyle(rec.equipLoc, true) then okSlot = false end
         local points = okSlot and Score.Points(rec, slotKey, weights) or 0
         local base, delta, hitOut
         local s = Slots.BY_KEY[slotKey]
@@ -376,6 +380,7 @@ function Score.CanWear(rec, level)
     if Classes.CanUse(rec.classID, rec.subClassID, rec.equipLoc, nil, level) ~= true then return false end
     if rec.classes and not rec.classes[UnitClass("player")] then return false end
     if GP.Items.NeedsOf(rec) then return false end
+    if not Classes.FitsStyle(rec.equipLoc) then return false end
     if Score.HealerGear(rec) and GP.Setting("healerGear") ~= true then return false, true end
     return true
 end
@@ -547,11 +552,12 @@ function Score.Run()
         if rec and entry.usable and not phidden and not GP.Items.NeedsOf(rec) and not pfar and reqOf(entry, psrc) <= level + soon
             and pe <= 1 and (allowHealer or not Score.HealerGear(rec, weights)) then
             local loc = rec.equipLoc
-            if loc == "INVTYPE_WEAPON" or loc == "INVTYPE_WEAPONMAINHAND" then
+            if (loc == "INVTYPE_WEAPON" or loc == "INVTYPE_WEAPONMAINHAND") and Classes.FitsStyle(loc) then
                 bestPartner.main = math.max(bestPartner.main, Score.Points(rec, "MainHandSlot", weights))
             end
-            if loc == "INVTYPE_SHIELD" or loc == "INVTYPE_HOLDABLE" or loc == "INVTYPE_WEAPONOFFHAND" or
-                (loc == "INVTYPE_WEAPON" and Classes.CanDualWield()) then
+            -- (Only partners your weapon style would put in the off hand.)
+            if (loc == "INVTYPE_SHIELD" or loc == "INVTYPE_HOLDABLE" or loc == "INVTYPE_WEAPONOFFHAND" or
+                (loc == "INVTYPE_WEAPON" and Classes.CanDualWield())) and Classes.FitsStyle(loc, true) then
                 bestPartner.off = math.max(bestPartner.off, Score.Points(rec, "SecondaryHandSlot", weights))
             end
         end

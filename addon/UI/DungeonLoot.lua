@@ -96,8 +96,9 @@ end
 -- The upgrades in the dungeon named `instance`: its drops, by boss, then
 -- (0.8.0) its quests whose rewards are upgrades, one group per quest.
 -- { { boss = name, npc = id, quest = source, items = { ev, ... } }, ... }
--- in order, and how many items. Items you've looted this visit stay on it,
--- checked (Loot.state.got), even once they're no longer upgrades.
+-- in order, and how many items. Items you've looted here are left off
+-- (0.8.10, Koulta: drop what you've got), and a boss with nothing left you
+-- want isn't listed.
 function Loot.Build(instance)
     local groups, byBoss, seen, n = {}, {}, {}, 0
     if type(instance) ~= "string" or instance == "" then return groups, 0 end
@@ -115,9 +116,11 @@ function Loot.Build(instance)
         seen[ev.rec.id] = true
         n = n + 1
     end
+    local st = Loot.state
+    local got = st and st.place == instance and st.got or {}
     for _, ev in ipairs(Score.results.all or {}) do
         local rec = ev.rec
-        local good = rec and not seen[rec.id] and not ev.healerPass and ev.tier ~= "locked" and not ev.needs
+        local good = rec and not seen[rec.id] and not got[rec.id] and not ev.healerPass and ev.tier ~= "locked" and not ev.needs
             and Score.BigEnough(ev.delta or 0, ev.base)
         if good then
             for _, src in ipairs(ev.entry and ev.entry.sources or { ev.source }) do
@@ -136,15 +139,6 @@ function Loot.Build(instance)
                         break
                     end
                 end
-            end
-        end
-    end
-    -- What you looted here this visit: back in its group, checked.
-    local st = Loot.state
-    if st and st.place == instance then
-        for id, got in pairs(st.got) do
-            if not seen[id] and got.ev and got.boss then
-                add(got.key or got.boss, function() return { boss = got.boss, npc = got.npc, quest = got.quest } end, got.ev)
             end
         end
     end
@@ -169,9 +163,11 @@ function Loot.Build(instance)
 end
 
 -- ---------------------------------------------------------------------
--- The checklist (0.8.0): bosses you've killed and items you've looted,
--- for this dungeon. Kept through a wipe and the run back (leaving and
--- coming in again); a different dungeon, or two hours later, starts over.
+-- The checklist (0.8.0; 0.8.10 by run): bosses you've killed this run, and
+-- items you've looted here (gone from the list). Kept through a wipe and the
+-- run back; a new run (another copy of the dungeon, or after "has been
+-- reset") brings the bosses back; a different dungeon, or two hours later,
+-- starts over.
 -- ---------------------------------------------------------------------
 
 Loot.KEEP = 2 * 60 * 60
@@ -194,30 +190,81 @@ function Loot.Visit(instance)
     return Loot.state
 end
 
+-- Which copy of the dungeon a creature is in: the zone UID in its GUID
+-- (Creature-0-server-map-zoneUID-npc-spawn). Each run is a new copy.
+function Loot.CopyOf(guid)
+    guid = GP.Plain(guid)
+    if type(guid) ~= "string" then return nil end
+    local kind, zone = guid:match("^(%a+)%-%d+%-%d+%-%d+%-(%d+)%-%d+")
+    if (kind == "Creature" or kind == "Vehicle") and zone and zone ~= "0" then return zone end
+end
+
+-- A new run: every boss is alive again. What you've looted stays off.
+function Loot.NewRun()
+    local st = Loot.state
+    if not st then return end
+    st.dead, st.deadIDs, st.copy = {}, {}, nil
+    if Loot.frame and Loot.frame:IsShown() then GP.Soon("dungeonloot", Loot.Refresh) end
+end
+
+-- A creature seen in here (guid): a different copy than before is a new run.
+function Loot.Saw(guid)
+    local st = Loot.state
+    local copy = Loot.CopyOf(guid)
+    if not (st and Loot.place and copy) then return end
+    if st.copy and st.copy ~= copy then Loot.NewRun() end
+    st.copy = copy
+end
+
 function Loot.BossDone(g)
     local st = Loot.state
     if not st or g.quest then return false end
     return st.dead[g.boss] == true or (g.npc ~= nil and st.deadIDs[g.npc] == true)
 end
 
--- A boss died (by the combat log, or the game's encounter end).
+-- Tries: how many times a boss died while an item of its was still on the
+-- list (and didn't come to you). Kept per character until you loot it.
+function Loot.Tries(id)
+    local t = GP.char and GP.char.lootTries
+    local n = type(t) == "table" and t[id]
+    return type(n) == "number" and n > 0 and math.floor(n) or 0
+end
+
+local function addTry(id)
+    if not GP.char then return end
+    if type(GP.char.lootTries) ~= "table" then GP.char.lootTries = {} end
+    GP.char.lootTries[id] = Loot.Tries(id) + 1
+end
+
+-- A boss died (a dead unit you can see, its corpse, or its encounter's end).
 function Loot.Killed(name, npc)
     local st = Loot.state
     if not st or not Loot.place then return end
-    if type(name) == "string" and name ~= "" then st.dead[name] = true end
-    if type(npc) == "number" then st.deadIDs[npc] = true end
+    name = type(name) == "string" and name ~= "" and name or nil
+    npc = type(npc) == "number" and npc or nil
+    if (not name or st.dead[name]) and (not npc or st.deadIDs[npc]) then return end
+    local groups = Loot.Build(Loot.place)
+    local was = {}
+    for i, g in ipairs(groups) do was[i] = Loot.BossDone(g) end
+    if name then st.dead[name] = true end
+    if npc then st.deadIDs[npc] = true end
+    for i, g in ipairs(groups) do
+        if not was[i] and Loot.BossDone(g) then
+            for _, ev in ipairs(g.items) do addTry(ev.rec.id) end
+        end
+    end
     if Loot.frame and Loot.frame:IsShown() then GP.Soon("dungeonloot", Loot.Refresh) end
 end
 
--- You looted an item: checked on the list, if it's on it.
+-- You looted an item: off the list, if it's on it, and its tries forgotten.
 function Loot.Got(id)
     local st = Loot.state
     if not (st and Loot.place and id) then return end
     for _, g in ipairs(Loot.groups or {}) do
         for _, ev in ipairs(g.items) do
             if ev.rec.id == id then
-                st.got[id] = { ev = ev, boss = g.boss, npc = g.npc, quest = g.quest,
-                    key = g.quest and ("quest:" .. tostring(g.quest.id)) or g.boss }
+                st.got[id] = true
+                if GP.char and type(GP.char.lootTries) == "table" then GP.char.lootTries[id] = nil end
                 if Loot.frame and Loot.frame:IsShown() then GP.Soon("dungeonloot", Loot.Refresh) end
                 return true
             end
@@ -514,7 +561,6 @@ local function qualityColor(q)
 end
 
 -- Fills the panel: the dungeon's name, then each boss and its items.
-Loot.CHECK = "|TInterface\\RaidFrame\\ReadyCheck-Ready:12:12|t"
 Loot.DIM = 0.45
 
 function Loot.Paint(instance, groups, n)
@@ -542,13 +588,6 @@ function Loot.Paint(instance, groups, n)
         h.text:SetText(g.boss)
         h.text:SetTextColor(1, 0.82, 0)
         local done = Loot.BossDone(g)
-        if done then
-            h.gain:SetText(Loot.CHECK .. " " .. L["done"])
-            h.gain:SetTextColor(0.6, 0.6, 0.6)
-            h.text:ClearAllPoints()
-            h.text:SetPoint("LEFT", h, "LEFT", 0, 0)
-            h.text:SetPoint("RIGHT", h.gain, "LEFT", -4, 0)
-        end
         h:SetAlpha(done and Loot.DIM or 1)
         -- A quest's line: a click puts the map pin on its giver.
         h.pin = g.quest
@@ -557,6 +596,26 @@ function Loot.Paint(instance, groups, n)
         h:SetPoint("RIGHT", child, "RIGHT", 0, 0)
         h:Show()
         y = y + Loot.ROW_H
+        -- Killed this run and what you wanted didn't come to you.
+        if done then
+            used = used + 1
+            local note = line(used)
+            note.ev, note.pin = nil, nil
+            note.icon:Hide()
+            note.slot:SetText("")
+            note.gain:SetText("")
+            note.text:ClearAllPoints()
+            note.text:SetPoint("LEFT", note, "LEFT", 14, 0)
+            note.text:SetPoint("RIGHT", note, "RIGHT", 0, 0)
+            note.text:SetText(L["Killed, didn't drop: run again for another chance."])
+            note.text:SetTextColor(0.6, 0.6, 0.6)
+            note:SetAlpha(1)
+            note:ClearAllPoints()
+            note:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -y)
+            note:SetPoint("RIGHT", child, "RIGHT", 0, 0)
+            note:Show()
+            y = y + Loot.ROW_H
+        end
         for _, ev in ipairs(g.items) do
             if shown >= cap then break end
             used = used + 1
@@ -568,10 +627,11 @@ function Loot.Paint(instance, groups, n)
             r.text:ClearAllPoints()
             r.text:SetPoint("LEFT", r.icon, "RIGHT", 5, 0)
             r.text:SetPoint("RIGHT", r.slot, "LEFT", -4, 0)
-            local got = Loot.state and Loot.state.got[ev.rec.id]
-            r.text:SetText((got and (Loot.CHECK .. " ") or "") .. (ev.rec.name or "?"))
+            local tries = Loot.Tries(ev.rec.id)
+            r.text:SetText((ev.rec.name or "?") .. (tries > 0
+                and ("  |cff8c8c8c" .. string.format(L["Tries: %d"], tries) .. "|r") or ""))
             r.text:SetTextColor(qualityColor(ev.rec.quality))
-            r:SetAlpha((got or done) and Loot.DIM or 1)
+            r:SetAlpha(done and Loot.DIM or 1)
             r.pin = nil
             r.slot:SetText(GP.Slots.Label(ev.slot) or "")
             r.gain:SetText(GP.UI.GainText(ev))
@@ -707,6 +767,7 @@ local WATCHED = { target = true, focus = true, mouseover = true,
 
 function Loot.CheckDead(unit)
     if not (Loot.place and unit and UnitExists and GP.Plain(UnitExists(unit))) then return false end
+    Loot.Saw(UnitGUID(unit))
     if GP.Plain(UnitIsDead(unit)) ~= true then return false end
     local npc = GP.NpcID(UnitGUID(unit))
     if not npc then return false end
@@ -725,9 +786,30 @@ GP.RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() Loot.CheckDead("mouseover")
 GP.RegisterEvent("LOOT_OPENED", function()
     if not (Loot.place and GetNumLootItems and GetLootSourceInfo) then return end
     for slot = 1, (GP.Plain(GetNumLootItems()) or 0) do
-        local npc = GP.NpcID(GetLootSourceInfo(slot))
+        local guid = GetLootSourceInfo(slot)
+        Loot.Saw(guid)
+        local npc = GP.NpcID(guid)
         if npc then Loot.Killed(nil, npc) end
     end
+end)
+
+-- "Deadmines has been reset.": the next time in is a new run.
+local RESET
+function Loot.FromReset(msg)
+    msg = GP.Plain(msg)
+    if type(msg) ~= "string" then return nil end
+    if RESET == nil then
+        local t = rawget(_G, "INSTANCE_RESET_SUCCESS")
+        RESET = type(t) == "string" and GP.FormatPattern(t) or "(.+) has been reset%."
+        RESET = "^" .. RESET .. "$"
+    end
+    return msg:match(RESET)
+end
+
+GP.RegisterEvent("CHAT_MSG_SYSTEM", function(_, msg)
+    local name = Loot.FromReset(msg)
+    local st = Loot.state
+    if name and st and (st.place == name or GP.Waypoint.SameDungeon(st.place, name)) then Loot.NewRun() end
 end)
 GP.RegisterEvent("ENCOUNTER_END", function(_, _, name, _, _, success)
     if GP.Plain(success) == 1 then Loot.Killed(GP.Plain(name)) end

@@ -1,5 +1,16 @@
 # GearPath changelog
 
+## 0.8.10
+
+### Changed
+- **The dungeon loot panel starts fresh each run.** A new copy of the dungeon (or "has been reset") brings every boss back, instead of keeping last run's ticks.
+- **Gear you loot drops off the list,** and a boss goes once nothing it drops is still an upgrade for you.
+- **A boss you killed without your item dropping says so:** "Killed, didn't drop: run again for another chance."
+- **Each item counts its tries** ("Tries: 2"): how many times its boss died without it coming to you. Kept per character until you get it.
+
+### Added
+- **Settings > Stat weights > Weapons: how you fight with this spec.** Any, Two-hander, One-hand and shield, One-hand and off-hand item, or Two one-handers. Weapons that don't fit are left off the lists and tooltips (and no trainer is suggested for them); ranged weapons and wands aren't affected. Kept for each spec. Protection Warriors and Paladins start at One-hand and shield, so they're no longer offered two-handers. Thanks, r173ym0n28711.
+
 ## 0.8.9
 
 ### Changed

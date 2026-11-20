@@ -10,7 +10,7 @@
 - **Your weights, your way.** Click your spec at the top of the window to change what each stat is worth to you, or make your own custom sets and switch between them like specs.
 - **Never out of date.** It reads QuestieDB while you play, so when the database updates, GearPath does too.
 - **Learns as you play.** Quest rewards, loot and vendor gear you come across are remembered and shared with every other GearPath player, so new Forever gear shows up even before the database has it.
-- **Dungeon loot and checklist.** Walk into a dungeon and a small panel shows what drops there for you, by boss, with the dungeon's quests too. Bosses you kill and gear you loot get ticked off. Scarlet Monastery is split by wing.
+- **Dungeon loot and checklist.** Walk into a dungeon and a small panel shows what drops there for you, by boss, with the dungeon's quests too. Gear you loot drops off the list; a boss you killed without your item dropping says so, each item counts its tries, and a new run starts fresh. Scarlet Monastery is split by wing.
 - **Help at the roll.** A line under the item on the Need/Greed window says whether it's an upgrade for you, or for your other spec.
 - **Rare watch.** An icon and a sound the moment a rare that drops an upgrade for you comes into view.
 - **Weights you can trust.** Every class and spec, tanks and healers included, ordered by Forever's class guides and checked against simulator numbers.

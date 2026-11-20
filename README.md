@@ -30,7 +30,7 @@ GearPath looks at your class, spec and level, finds every upgrade you can actual
 | **Browse** | Every piece of gear for your class near your level. Search, filter and sort it. |
 | **Tooltips** | Every piece of gear shows how much better or worse it is than what you wear, by your class and spec (+12%, -8%), and where to get it. Mobs and NPCs list the upgrades they drop or sell. |
 | **Quest reward pick** | Shows which reward to take, or the one that sells for the most if none is an upgrade. |
-| **Dungeon loot** | Walk into a dungeon and see what drops there for you, by boss, with the +%, and the dungeon's quests. Bosses you kill and gear you loot are ticked off; Scarlet Monastery goes by wing. |
+| **Dungeon loot** | Walk into a dungeon and see what drops there for you, by boss, with the +%, and the dungeon's quests. Gear you loot drops off the list, a boss you've killed says so (with a try count per item) until the next run; Scarlet Monastery goes by wing. |
 | **Loot roll help** | A line under the item on the Need/Greed window: an upgrade for you, for your other spec, or not. |
 | **Safe to sell** | A small coin on bag gear that isn't an upgrade for any of your specs. |
 | **Rare watch** | An icon and a sound when a rare that drops an upgrade for you comes into view. |

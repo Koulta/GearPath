@@ -214,7 +214,7 @@ Classes.SPECS = {
         { key = "arms", name = "Arms", speed = { main = { 3.3, 0.12 } },
             weights = { str = 1.0, hit = 16, crit = 15, agi = 0.75, sta = 0.5, ap = 0.5, expertise = 6, haste = 9,
                 armor = 0.02, defense = 0.3, block = 0.1, dpsMelee = 7.0, dpsOff = 0.5, dpsRanged = 0.3 } },
-        { key = "protection", name = "Protection", role = "tank",
+        { key = "protection", name = "Protection", role = "tank", style = "shield",
             weights = { sta = 1.0, defense = 1.2, armor = 0.05, str = 0.6, agi = 0.6, dodge = 12, parry = 12, block = 0.35,
                 hit = 8, crit = 4, expertise = 6, haste = 4, ap = 0.3, dpsMelee = 4.2, dpsOff = 0, dpsRanged = 0.2 } },
     },
@@ -223,7 +223,7 @@ Classes.SPECS = {
         { key = "holy", name = "Holy", role = "healer",
             weights = { heal = 1.0, int = 0.8, mp5 = 2.0, crit = 9, spi = 0.74, sta = 0.35, sp = 0.25, spHoly = 0.3,
                 haste = 6, armor = 0.005, dpsMelee = 0.1 } },
-        { key = "protection", name = "Protection", role = "tank",
+        { key = "protection", name = "Protection", role = "tank", style = "shield",
             weights = { sta = 1.0, defense = 1.2, sp = 0.7, spHoly = 0.7, armor = 0.04, block = 0.45, int = 0.45,
                 dodge = 10, parry = 10, hit = 7, str = 0.4, agi = 0.4, crit = 3, mp5 = 0.8, dpsMelee = 0.6 } },
     },
@@ -334,7 +334,7 @@ function Classes.Specs(class)
         for _, s in ipairs(list) do if s.key == set.base then base = s end end
         base = base or list[1] or {}
         out[#out + 1] = { key = k, name = set.name, custom = true, base = base.key, weights = set.weights,
-            speed = base.speed, mainType = base.mainType, role = base.role }
+            speed = base.speed, mainType = base.mainType, role = base.role, style = base.style }
     end
     return out
 end
@@ -573,6 +573,75 @@ function Classes.CanDualWield(class, level)
     local at = Classes.Data(class).dualWield
     if type(at) ~= "number" then return false end
     return (level or (GP.player and GP.player.level) or 1) >= at
+end
+
+-- ---------------------------------------------------------------------
+-- Weapon style (0.8.10, r173ym0n28711 on CurseForge, Nov 19: a Protection
+-- Warrior kept being offered weapons he doesn't use). How you fight, kept
+-- per spec; hand weapons that don't fit it are left off the lists and
+-- tooltips. Ranged weapons and wands aren't touched. Protection specs start
+-- at one-hand and shield; the rest at any.
+-- ---------------------------------------------------------------------
+
+Classes.STYLES = { "any", "two", "shield", "held", "dual" }
+
+local TWO_HANDED = { [W.AXE2H] = true, [W.MACE2H] = true, [W.SWORD2H] = true, [W.STAFF] = true, [W.POLEARM] = true }
+local HANDS = { INVTYPE_2HWEAPON = true, INVTYPE_WEAPON = true, INVTYPE_WEAPONMAINHAND = true,
+    INVTYPE_WEAPONOFFHAND = true, INVTYPE_SHIELD = true, INVTYPE_HOLDABLE = true }
+local FITS = {
+    two = { INVTYPE_2HWEAPON = true },
+    shield = { INVTYPE_WEAPON = true, INVTYPE_WEAPONMAINHAND = true, INVTYPE_SHIELD = true },
+    held = { INVTYPE_WEAPON = true, INVTYPE_WEAPONMAINHAND = true, INVTYPE_HOLDABLE = true },
+    dual = { INVTYPE_WEAPON = true, INVTYPE_WEAPONMAINHAND = true, INVTYPE_WEAPONOFFHAND = true },
+}
+
+-- The styles a class can fight in: { "any", ... }.
+function Classes.Styles(class)
+    local data = Classes.Data(class)
+    local out = { "any" }
+    for k in pairs(TWO_HANDED) do
+        if data.weapons[k] then out[#out + 1] = "two"; break end
+    end
+    if data.armor[A.SHIELD] then out[#out + 1] = "shield" end
+    out[#out + 1] = "held"
+    if type(data.dualWield) == "number" then out[#out + 1] = "dual" end
+    return out
+end
+
+local function offered(style, class)
+    for _, k in ipairs(Classes.Styles(class)) do if k == style then return true end end
+    return false
+end
+
+-- The style of a spec (default: the one in use, or the one being scored as).
+function Classes.WeaponStyle(spec)
+    spec = spec or Classes.asSpec or Classes.Spec()
+    local own = GP.char and type(GP.char.weaponStyle) == "table" and GP.char.weaponStyle[spec.key]
+    if type(own) == "string" and FITS[own] or own == "any" then
+        if offered(own) then return own end
+    end
+    local def = spec.style
+    if def and offered(def) then return def end
+    return "any"
+end
+
+function Classes.SetWeaponStyle(style)
+    if style ~= "any" and not FITS[style] then return false end
+    local c = GP.char
+    if not c then return false end
+    if type(c.weaponStyle) ~= "table" then c.weaponStyle = {} end
+    c.weaponStyle[Classes.Spec().key] = style
+    GP.Fire("WeightsChanged")
+    return true
+end
+
+-- Whether an item (its equipLoc) fits your style; offHand: in the off hand.
+function Classes.FitsStyle(equipLoc, offHand)
+    local style = Classes.WeaponStyle()
+    if style == "any" or not HANDS[equipLoc] then return true end
+    if not FITS[style][equipLoc] then return false end
+    if offHand and equipLoc == "INVTYPE_WEAPON" and style ~= "dual" then return false end
+    return true
 end
 
 -- ---------------------------------------------------------------------

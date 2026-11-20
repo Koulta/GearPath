@@ -701,7 +701,11 @@ t("When you pick up gear that's an upgrade for you, a note at the top of the scr
     "拾取对你是提升的装备时，屏幕上方会提示提升了多少。",
     "拾取對你是提升的裝備時，螢幕上方會提示提升了多少。")
 t("Upgrade!", "Verbesserung!", "Amélioration !", "¡Mejora!", "Melhoria!", "Улучшение!", "업그레이드!", "提升！", "提升！")
-t("done", "erledigt", "fait", "hecho", "feito", "готово", "완료", "完成", "完成")
+t("Killed, didn't drop: run again for another chance.", "Getötet, nicht gedroppt: noch ein Lauf für eine neue Chance.",
+    "Tué, pas tombé : refaites le donjon pour une nouvelle chance.", "Muerto, no cayó: repite la mazmorra para otra oportunidad.",
+    "Morto, não caiu: repita a masmorra para outra chance.", "Убит, не выпало: пройдите ещё раз, чтобы попытать удачу.",
+    "처치했지만 나오지 않음: 다시 돌아 한 번 더 노려 보세요.", "已击杀，未掉落：再刷一次碰碰运气。", "已擊殺，未掉落：再刷一次碰碰運氣。")
+t("Tries: %d", "Versuche: %d", "Essais : %d", "Intentos: %d", "Tentativas: %d", "Попыток: %d", "시도: %d", "尝试：%d", "嘗試：%d")
 t("Rare watch", "Seltene im Blick", "Guet des rares", "Vigía de raros", "Vigia de raros", "Слежка за редкими", "희귀 몹 감시", "稀有怪监视", "稀有怪監視")
 t("In a dungeon, an icon for each rare that drops an upgrade for you, lit with a sound when it's near. Hidden in combat; /gp rare brings it back.",
     "Im Dungeon ein Symbol für jeden seltenen Gegner mit einer Verbesserung für dich, das mit einem Ton aufleuchtet, wenn er nah ist. Im Kampf versteckt; /gp rare holt es zurück.",
@@ -917,6 +921,21 @@ t("for %d upgrades", "für Verbesserungen: %d", "pour améliorations : %d", "par
 -- Specs
 -- ---------------------------------------------------------------------
 
+t("Weapons", "Waffen", "Armes", "Armas", "Armas", "Оружие", "무기", "武器", "武器")
+t("How you fight with this spec. Weapons that don't fit (a two-hander when you use a shield, say) are left off the lists and tooltips. Ranged weapons and wands aren't affected.",
+    "Wie du mit dieser Spezialisierung kämpfst. Waffen, die nicht passen (etwa eine Zweihandwaffe, wenn du einen Schild nutzt), fehlen in den Listen und Tooltips. Fernkampfwaffen und Zauberstäbe sind nicht betroffen.",
+    "Comment vous combattez avec cette spécialisation. Les armes qui ne conviennent pas (une arme à deux mains si vous utilisez un bouclier, par exemple) sont retirées des listes et des infobulles. Les armes à distance et les baguettes ne sont pas concernées.",
+    "Cómo luchas con esta especialización. Las armas que no encajan (un arma a dos manos si usas escudo, por ejemplo) se quitan de las listas y los tooltips. Las armas a distancia y las varitas no se ven afectadas.",
+    "Como você luta com esta especialização. Armas que não combinam (uma arma de duas mãos quando você usa escudo, por exemplo) saem das listas e das dicas. Armas de longo alcance e varinhas não são afetadas.",
+    "Как вы сражаетесь в этой специализации. Неподходящее оружие (например, двуручное, если вы со щитом) убирается из списков и подсказок. Оружие дальнего боя и жезлы не затрагиваются.",
+    "이 전문화로 싸우는 방식입니다. 맞지 않는 무기(예: 방패를 쓸 때의 양손 무기)는 목록과 툴팁에서 빠집니다. 원거리 무기와 마법봉은 영향을 받지 않습니다.",
+    "此专精的战斗方式。不合适的武器（例如用盾牌时的双手武器）不会出现在列表和提示中。远程武器和魔杖不受影响。",
+    "此專精的戰鬥方式。不合適的武器（例如用盾牌時的雙手武器）不會出現在列表和提示中。遠程武器和魔杖不受影響。")
+t("Any", "Alle", "Toutes", "Cualquiera", "Qualquer", "Любое", "모두", "任意", "任意")
+t("Two-hander", "Zweihandwaffe", "Arme à deux mains", "Arma a dos manos", "Arma de duas mãos", "Двуручное", "양손 무기", "双手武器", "雙手武器")
+t("One-hand and shield", "Einhand und Schild", "Une main et bouclier", "Una mano y escudo", "Uma mão e escudo", "Одноручное и щит", "한손 무기와 방패", "单手武器和盾牌", "單手武器和盾牌")
+t("One-hand and off-hand item", "Einhand und Nebenhandgegenstand", "Une main et objet de main gauche", "Una mano y objeto de mano izquierda", "Uma mão e item de mão secundária", "Одноручное и предмет в левую руку", "한손 무기와 보조장비", "单手武器和副手物品", "單手武器和副手物品")
+t("Two one-handers", "Zwei Einhandwaffen", "Deux armes à une main", "Dos armas a una mano", "Duas armas de uma mão", "Два одноручных", "한손 무기 두 개", "两把单手武器", "兩把單手武器")
 t("Spec", "Spezialisierung", "Spécialisation", "Especialización", "Especialização", "Специализация", "전문화", "专精", "專精")
 t("Which stats count, and for melee and hunters which weapon speed. Healing specs list healer gear. Your own changes to the weights are kept for each spec. New custom set... saves the weights you use now under a name of your own.",
     "Welche Werte zählen, für Nahkämpfer und Jäger auch das Waffentempo. Heilerspezialisierungen führen Heilerausrüstung auf. Deine eigenen Gewichte bleiben je Spezialisierung erhalten. Neues eigenes Set... speichert deine jetzigen Gewichte unter einem eigenen Namen.",

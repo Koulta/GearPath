@@ -336,6 +336,18 @@ UI.RegisterPage("settings", {
         y = row(c, y, "Spec",
             "Which stats count, and for melee and hunters which weapon speed. Healing specs list healer gear. Your own changes to the weights are kept for each spec. New custom set... saves the weights you use now under a name of your own.",
             specPick)
+        -- How you fight (0.8.10): weapons that don't fit drop off the lists.
+        local styleLabels = { any = L["Any"], two = L["Two-hander"], shield = L["One-hand and shield"],
+            held = L["One-hand and off-hand item"], dual = L["Two one-handers"] }
+        local stylePick = GP.Dropdown(c, { width = 200, keys = function() return GP.Classes.Styles() end,
+            labels = styleLabels,
+            get = function() return GP.Classes.WeaponStyle() end,
+            set = function(k) GP.Classes.SetWeaponStyle(k) end })
+        onRefresh(function() stylePick.Refresh() end)
+        Settings.stylePick = stylePick
+        y = row(c, y, "Weapons",
+            "How you fight with this spec. Weapons that don't fit (a two-hander when you use a shield, say) are left off the lists and tooltips. Ranged weapons and wands aren't affected.",
+            stylePick)
         y = weightRows(c, y)
         local copyW = skin.Button(c, L["Copy my weights"], 150, 24)
         copyW:SetPoint("TOPLEFT", c, "TOPLEFT", 12, -y)
