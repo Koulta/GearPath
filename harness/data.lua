@@ -328,7 +328,7 @@ end
 function GetQuestItemInfo(kind, i)
     local id = H.choices and H.choices[i]
     if not id then return nil end
-    return ITEMS[id][1], 134000 + id, 1, ITEMS[id][2], true, id
+    return ITEMS[id][1], 134000 + id, 1, ITEMS[id][2], not (H.unusableChoice and H.unusableChoice[id]), id
 end
 -- The loot window: H.loot = { { link, guid of what it's from }, ... }.
 function GetNumLootItems() return H.loot and #H.loot or 0 end

@@ -742,6 +742,14 @@ local BOOK = "Interface\\Icons\\INV_Misc_Book_09"
 local ICON_SPELL = { sword = 201, mace = 198, dagger = 1180, sword2 = 202, axe2 = 197, mace2 = 199,
     staff = 227, shield = 9116, dual = 674, parry = 3127 }
 
+function UI.SpellIcon(id)
+    local get = (C_Spell and C_Spell.GetSpellTexture) or rawget(_G, "GetSpellTexture")
+    if not (id and get) then return QUESTION end
+    local ok, tex = pcall(get, id)
+    tex = ok and GP.Plain(tex) or nil
+    return tex or QUESTION
+end
+
 local function spellIcon(key)
     local id = ICON_SPELL[key]
     local get = (C_Spell and C_Spell.GetSpellTexture) or rawget(_G, "GetSpellTexture")

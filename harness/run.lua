@@ -509,6 +509,21 @@ do
     if not H.noDB then
         check(n and n > 0 and any and any.loc and any.c and any.lines, "the snapshot keeps each item's slot, type and tooltip lines (" .. tostring(n) .. ")")
     end
+    -- 0.8.12: what you wear and how GearPath is set up.
+    local worn, wid = 0, nil
+    for sid, w in pairs(snap and snap.worn or {}) do
+        worn = worn + 1
+        if w.link and w.link:find("^item:%d+") and w.stats and w.slot then wid = w.id end
+    end
+    local wearing = 0
+    for _, e in pairs(GP.Score.equipped) do if e.link then wearing = wearing + 1 end end
+    check(worn == wearing and worn > 0 and wid ~= nil, "it keeps each worn slot's link and stats (" .. worn .. " of " .. wearing .. ")")
+    check(wid and snap.items[wid] ~= nil, "and the worn items' details")
+    check(snap and snap.class == "WARLOCK" and snap.level == GP.player.level and snap.spec == GP.Classes.Spec().key and snap.faction,
+        "and class, level, faction and spec")
+    local text = ""
+    for _, w in pairs(snap and snap.worn or {}) do text = text .. tostring(w.link) end
+    check(not text:find("Player%-") and not text:find("|H"), "links only (no names, no colour codes)")
     SlashCmdList.GEARPATH("snapshot off")
     check(GP.db.snapshot == nil, "/gp snapshot off removes it")
 end
@@ -774,6 +789,22 @@ do  -- 0.8.11: the weapon-style button beside Stat weights.
             "menu entries: icons and the name")
         for _ = 1, 10 do H.Tick(0.1) end
         GP.char.weaponStyle = nil
+    end
+end
+do  -- 0.8.12: Weapon types under Weapons.
+    local tt = GP.UI.Settings and GP.UI.Settings.typeToggles
+    local W = GP.Classes.W
+    check(tt and tt[W.STAFF] and tt[W.DAGGER] and tt[W.WAND], "Settings: a tick for staves, daggers and wands (Warlock)")
+    if tt and tt[W.STAFF] then
+        local staff = GP.Items.FromLink(H.Link(102))
+        check(GP.Score.CanWear(staff), "staves ticked: a staff counts")
+        tt[W.STAFF]:SetChecked(false)
+        tt[W.STAFF]:GetScript("OnClick")(tt[W.STAFF])
+        for _ = 1, 10 do H.Tick(0.1) end
+        check(not GP.Score.CanWear(staff) and #H.errors == errs, "unticked: the staff is left off, rescored cleanly")
+        GP.Classes.SetUsesType(W.STAFF, true)
+        for _ = 1, 10 do H.Tick(0.1) end
+        GP.char.weaponTypesOff = nil
     end
 end
 do  -- 0.8.10: the Weapons pick under Spec.
@@ -1593,6 +1624,33 @@ if not H.noDB then
     GP.SetSetting("questPick", true)
     H.Fire("QUEST_FINISHED")
     qf:Hide()
+    -- 0.8.12: a weapon you haven't trained yet (the game marks it red) can
+    -- still be the pick, and the pick says to learn it first.
+    npc:Show()
+    local skill = GP.Training.WEAPON_SPELL[GP.Classes.W.DAGGER]
+    H.unknownSpells, H.unusableChoice = { [skill] = true }, { [211] = false }
+    GP.Training.reliable = true
+    local daggerRec = GP.Items.FromLink(H.Link(202))
+    H.choices = { 205, 202 }
+    H.unusableChoice[202] = true
+    QP.said = nil
+    before = #H.printed
+    H.Fire("QUEST_COMPLETE")
+    local p2 = QP.pick
+    local why = p2 and QP.Why(p2) or ""
+    check(daggerRec and daggerRec.classID == 2, "a dagger to test with")
+    check(p2 and p2.kind == "upgrade" and p2.rec.id == 202 and p2.need and why:find("Learn Daggers first", 1, true),
+        "an untrained weapon can be the pick, with \"Learn Daggers first\" (" .. why .. ")")
+    check(QP.card.why:GetText():find("Learn Daggers first", 1, true), "on the card too")
+    H.unknownSpells = nil
+    -- Unusable for another reason (not a missing skill): never the pick.
+    H.unusableChoice = { [202] = true }
+    QP.said = nil
+    H.Fire("QUEST_COMPLETE")
+    check(not (QP.pick and QP.pick.rec.id == 202 and QP.pick.kind == "upgrade"), "unusable for another reason: not the pick")
+    H.unusableChoice, GP.Training.reliable = nil, nil
+    H.Fire("QUEST_FINISHED")
+    npc:Hide()
     H.choices = nil
 end
 

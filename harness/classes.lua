@@ -260,6 +260,45 @@ do
 end
 EQ[16], EQ[17] = nil, nil
 
+-- 0.8.12: weapon types you use, per spec.
+do
+    local specs = C.Specs(CLASS)
+    C.SetSpec(specs[1].key)
+    local types = C.WeaponTypes()
+    local has = {}
+    for _, t in ipairs(types) do has[t] = true end
+    check(#types > 0 and not has[C.W.FISHING] and not has[C.W.MISC], "a class's weapon types (" .. #types .. "), no fishing poles")
+    check((has[C.W.DAGGER] == true) == (C.CanUse(2, C.W.DAGGER, "INVTYPE_WEAPON", CLASS, 60) == true), "daggers listed only if the class can use them")
+    for _, t in ipairs(types) do
+        if not C.UsesType(t) then check(false, "every type starts ticked") end
+    end
+    local function test(id, sub, what)
+        if not has[sub] then return end
+        local r = rec(id)
+        local before = S.CanWear(r)
+        C.SetUsesType(sub, false)
+        check(not S.CanWear(r) and S.Upgrade(r) == nil and GP.Tooltip.QuickEval(r) == nil,
+            what .. " unticked: left off, no tooltip gain")
+        if specs[2] then
+            C.SetSpec(specs[2].key)
+            check(C.UsesType(sub), "another spec keeps its own ticks")
+            C.SetSpec(specs[1].key)
+        end
+        C.SetUsesType(sub, true)
+        check(S.CanWear(r) == before, what .. " ticked again: back")
+    end
+    test(102, C.W.STAFF, "staves")
+    test(305, C.W.SWORD1H, "one-handed swords")
+    test(312, C.W.FIST, "fist weapons")
+    test(311, C.W.BOW, "bows")
+    if has[C.W.SWORD1H] then
+        C.SetUsesType(C.W.DAGGER, false)
+        check(S.CanWear(rec(305)) or not C.CanUse(2, C.W.SWORD1H, "INVTYPE_WEAPON", CLASS, 23), "unticking daggers leaves swords alone")
+        C.SetUsesType(C.W.DAGGER, true)
+    end
+    GP.char.weaponTypesOff = nil
+end
+
 -- From the database: what the class can use and get.
 local res = S.Run()
 local byID = res.byID

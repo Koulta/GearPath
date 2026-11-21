@@ -161,7 +161,8 @@ Classes.POLEARM_AT = 20
 
 -- Hit beyond the cap does nothing. Against mobs of your own level (what you
 -- fight while leveling) the beta's numbers are 5% for attacks and 4% for
--- spells. Not official yet: check them again after the November 4 launch.
+-- spells. Checked again Nov 21 (method.gg Oct 6, Wowhead Oct 30, classicwowforever.com
+-- Nov 16 on build 1.60.1.70938): unchanged since launch; bosses are 8%, 17% and 27%.
 -- Only hit from gear is counted (talents and auras aren't known here).
 Classes.HIT_CAP = { melee = 5, spell = 4 }
 
@@ -642,6 +643,61 @@ function Classes.FitsStyle(equipLoc, offHand)
     if not FITS[style][equipLoc] then return false end
     if offHand and equipLoc == "INVTYPE_WEAPON" and style ~= "dual" then return false end
     return true
+end
+
+-- Weapon types (0.8.12, the same commenter's "option for weapon type"):
+-- per spec, the kinds of weapon you don't use (only daggers, say). Kept as
+-- the ones unticked, so a type you've never touched is in.
+Classes.TYPE_ORDER = { W.DAGGER, W.SWORD1H, W.MACE1H, W.AXE1H, W.FIST, W.SWORD2H, W.MACE2H, W.AXE2H,
+    W.POLEARM, W.STAFF, W.BOW, W.GUN, W.CROSSBOW, W.THROWN, W.WAND }
+
+-- The weapon types a class can use, in that order.
+function Classes.WeaponTypes(class)
+    local data = Classes.Data(class)
+    local out = {}
+    for _, sub in ipairs(Classes.TYPE_ORDER) do
+        if data.weapons[sub] then out[#out + 1] = sub end
+    end
+    return out
+end
+
+local function typesOff(spec, make)
+    local c = GP.char
+    if not c then return nil end
+    if type(c.weaponTypesOff) ~= "table" then
+        if not make then return nil end
+        c.weaponTypesOff = {}
+    end
+    local key = spec.key
+    if type(c.weaponTypesOff[key]) ~= "table" then
+        if not make then return nil end
+        c.weaponTypesOff[key] = {}
+    end
+    return c.weaponTypesOff[key]
+end
+
+function Classes.UsesType(sub, spec)
+    local off = typesOff(spec or Classes.asSpec or Classes.Spec())
+    return not (off and off[sub] == true)
+end
+
+function Classes.SetUsesType(sub, on)
+    local off = typesOff(Classes.Spec(), true)
+    if not off or type(sub) ~= "number" then return false end
+    off[sub] = (not on) and true or nil
+    GP.Fire("WeightsChanged")
+    return true
+end
+
+-- Whether a weapon's type is one you use (anything that isn't a weapon is).
+function Classes.FitsType(rec)
+    if not rec or rec.classID ~= 2 or type(rec.subClassID) ~= "number" then return true end
+    return Classes.UsesType(rec.subClassID)
+end
+
+-- Both: how you fight (style) and what with (types).
+function Classes.Fits(rec, offHand)
+    return Classes.FitsStyle(rec.equipLoc, offHand) and Classes.FitsType(rec)
 end
 
 -- ---------------------------------------------------------------------

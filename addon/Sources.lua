@@ -1456,18 +1456,49 @@ end
 -- at (slot, type, levels, stats, tooltip lines) into GearPath's saved file,
 -- so the offline tests can use real items instead of guessing slots from
 -- names (they once took an off-hand, Raptor's Gaze, for a trinket). For
--- testing only; "/gp snapshot off" removes it. Nothing about you or other
--- players is in it.
+-- testing only; "/gp snapshot off" removes it. Nothing about other players
+-- is in it. 0.8.12: also what you're wearing (each slot's link, stats and
+-- tooltip lines) and how you've set GearPath up (class, level, faction,
+-- spec, weapon style and types), so the tests can rebuild your exact lists.
+local function wornNow()
+    local worn = {}
+    for _, s in ipairs(GP.Slots and GP.Slots.LIST or {}) do
+        local slot, sid = s.key, s.id
+        local link = sid and GP.Plain(GetInventoryItemLink("player", sid)) or nil
+        if type(link) == "string" then
+            local okS, statsT = pcall(C_Item and C_Item.GetItemStats or GetItemStats, link)
+            local lines = {}
+            local okT, data = pcall(C_TooltipInfo and C_TooltipInfo.GetHyperlink or function() end, link)
+            for _, l in ipairs(okT and type(data) == "table" and data.lines or {}) do
+                local t = GP.Plain(l.leftText)
+                if type(t) == "string" then lines[#lines + 1] = t end
+            end
+            worn[sid] = { slot = slot, id = tonumber(link:match("item:(%d+)")), link = link:match("item:[%-%d:]+"),
+                stats = okS and type(statsT) == "table" and statsT or nil, lines = lines }
+        end
+    end
+    return worn
+end
+
 function Sources.Snapshot(done)
-    local ids = {}
-    for id in pairs(Sources.entries or {}) do ids[#ids + 1] = id end
+    local ids, seen = {}, {}
+    for id in pairs(Sources.entries or {}) do ids[#ids + 1] = id; seen[id] = true end
+    -- What you're wearing, too (its plain item, for slot and type).
+    for _, w in pairs(wornNow()) do
+        if w.id and not seen[w.id] then ids[#ids + 1] = w.id; seen[w.id] = true end
+    end
     local out, left, saved = {}, #ids, false
     local function finish()
         if saved then return end
         saved = true
         local n = 0
         for _ in pairs(out) do n = n + 1 end
-        GP.db.snapshot = { at = time and time() or 0, version = GP.VERSION, items = out }
+        local C, c = GP.Classes, GP.char or {}
+        local spec = C.Spec()
+        GP.db.snapshot = { at = time and time() or 0, version = GP.VERSION, items = out,
+            worn = wornNow(), class = select(2, UnitClass("player")), level = GP.player and GP.player.level,
+            faction = UnitFactionGroup("player"), spec = spec and spec.key,
+            weaponStyle = c.weaponStyle, weaponTypesOff = c.weaponTypesOff }
         if done then done(n) end
     end
     if left == 0 then finish() return end
@@ -1506,7 +1537,7 @@ GP.RegisterCommand("snapshot", "saves item details for GearPath's offline tests 
     end
     GP.Print("saving item details for testing; this takes a moment...")
     Sources.Snapshot(function(n)
-        GP.Print("saved details of %d items. Type /reload to write them to disk.", n)
+        GP.Print("saved details of %d items, your gear and your setup. Type /reload to write them to disk.", n)
     end)
 end)
 

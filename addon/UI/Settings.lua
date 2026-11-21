@@ -348,6 +348,31 @@ UI.RegisterPage("settings", {
         y = row(c, y, "Weapons",
             "How you fight with this spec. Weapons that don't fit (a two-hander when you use a shield, say) are left off the lists and tooltips. Ranged weapons and wands aren't affected.",
             stylePick)
+        -- Which weapon types (0.8.12): a tick for each your class can use.
+        y = row(c, y, "Weapon types",
+            "Untick the kinds of weapon you don't use with this spec (everything but daggers, say). They're left off the lists and tooltips.")
+        local types = GP.Classes.WeaponTypes()
+        local COLS, COL_W, ROW_H = 3, 190, 28
+        local top = y - 12
+        Settings.typeToggles = {}
+        for i, sub in ipairs(types) do
+            local col, line = (i - 1) % COLS, math.floor((i - 1) / COLS)
+            local spell = GP.Training.WEAPON_SPELL[sub]
+            local t = GP.Skin.current.Toggle(c)
+            t:SetPoint("TOPLEFT", c, "TOPLEFT", 12 + col * COL_W, -(top + line * ROW_H))
+            local ic = c:CreateTexture(nil, "ARTWORK")
+            ic:SetSize(18, 18)
+            ic:SetPoint("LEFT", t, "RIGHT", 4, 0)
+            ic:SetTexture(GP.UI.SpellIcon(spell))
+            ic:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            local name = GP.Skin.current.Text(c, "body", "VALUE")
+            name:SetPoint("LEFT", ic, "RIGHT", 6, 0)
+            name:SetText(GP.Training.SkillName(spell))
+            t.onToggle = function(on) GP.Classes.SetUsesType(sub, on) end
+            onRefresh(function() t.SetOn(GP.Classes.UsesType(sub)) end)
+            Settings.typeToggles[sub] = t
+        end
+        y = top + math.ceil(#types / COLS) * ROW_H + 16
         y = weightRows(c, y)
         local copyW = skin.Button(c, L["Copy my weights"], 150, 24)
         copyW:SetPoint("TOPLEFT", c, "TOPLEFT", 12, -y)

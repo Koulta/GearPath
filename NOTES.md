@@ -436,6 +436,18 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
   201/198/1180/202/197/199/227/9116/674/3127), themed by class (caster two-hander = staff); the off hand
   as a corner badge (shield, or INV_Misc_Book_09 for held items). Click: skin.Menu of Classes.Styles()
   with UI.StyleLabel (inline |T icons). Refreshes on WeightsChanged.
+  0.8.12 (Nov 21): Weapon types: Classes.TYPE_ORDER / WeaponTypes(class) / UsesType(sub, spec) /
+  SetUsesType; unticked types kept per spec in GP.char.weaponTypesOff[specKey][subClassID] = true.
+  Classes.Fits(rec, offHand) = FitsStyle + FitsType, used by Score.CanWear, Score.Upgrade and the
+  two-hander partner pass. Settings: a 3-column grid of toggles (icons via UI.SpellIcon of the skill
+  spell, names via Training.SkillName). Real DB, Rogue 30 daggers+ranged only: 283 -> 132 weapons
+  listed, 0 of a wrong type, Fist Weapons no longer suggested for training.
+  Quest pick: a choice the game marks unusable is still judged when Training.Need says only a weapon
+  skill is missing; QP.Why adds ", Learn X first" (existing strings, no new wording).
+  /gp snapshot also saves worn (per slot id: link without colour/name, stats, tooltip lines), class,
+  level, faction, spec, weaponStyle, weaponTypesOff. queries/sweep.lua: SNAPSHOT=... alone sets
+  CLASS/FACTION/LEVEL/SPEC and the weapon settings, and wears the gear (GetInventoryItemLink etc.).
+  Hit caps rechecked Nov 21: same-level 5/4/24 unchanged (method.gg, Wowhead, classicwowforever.com).
   Open (not code): QuestieDB 1.1.0 has 104 gear-dropping NPCs with no spawn, zone or level (about
   86 of them Forever's new ones): their drops read "location not in the database yet" without
   ForeverDungeonJournal. Hit caps (5% / 4%, dual wield 24%) are still the October beta's numbers

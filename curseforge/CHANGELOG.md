@@ -1,5 +1,14 @@
 # GearPath changelog
 
+## 0.8.12
+
+### Added
+- **Settings > Stat weights > Weapon types:** a tick for each kind of weapon your class can use (daggers, one-handed swords, staves, bows and so on), each with its icon. Untick the ones you don't use with that spec (a Rogue who only uses daggers, say) and they're left off the lists and tooltips, and GearPath stops telling you to train them. Kept for each spec. Thanks again, r173ym0n28711.
+- **The quest reward pick can be a weapon you haven't trained yet.** The game marks those red, so GearPath used to skip them even when they were the biggest upgrade. Now it can pick one and says so: "+40% Main Hand, Learn Staves first".
+
+### Changed
+- `/gp snapshot` (for bug reports) also saves what you're wearing and your class, level, spec and weapon settings, so a report can be reproduced exactly. Still nothing about other players.
+
 ## 0.8.11
 
 ### Added

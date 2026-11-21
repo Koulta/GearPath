@@ -925,6 +925,16 @@ t("Click to change how you fight with this spec.", "Klicken, um zu ändern, wie 
     "Cliquez pour changer votre façon de combattre avec cette spécialisation.", "Haz clic para cambiar cómo luchas con esta especialización.",
     "Clique para mudar como você luta com esta especialização.", "Нажмите, чтобы изменить, как вы сражаетесь в этой специализации.",
     "클릭하여 이 전문화의 전투 방식을 바꿉니다.", "点击以更改此专精的战斗方式。", "點擊以更改此專精的戰鬥方式。")
+t("Weapon types", "Waffentypen", "Types d'armes", "Tipos de arma", "Tipos de arma", "Типы оружия", "무기 종류", "武器类型", "武器類型")
+t("Untick the kinds of weapon you don't use with this spec (everything but daggers, say). They're left off the lists and tooltips.",
+    "Entferne den Haken bei Waffenarten, die du mit dieser Spezialisierung nicht nutzt (etwa alles außer Dolchen). Sie fehlen dann in den Listen und Tooltips.",
+    "Décochez les types d'armes que vous n'utilisez pas avec cette spécialisation (tout sauf les dagues, par exemple). Ils sont retirés des listes et des infobulles.",
+    "Desmarca los tipos de arma que no usas con esta especialización (todo menos dagas, por ejemplo). Se quitan de las listas y los tooltips.",
+    "Desmarque os tipos de arma que você não usa com esta especialização (tudo menos adagas, por exemplo). Eles saem das listas e das dicas.",
+    "Снимите отметки с типов оружия, которые вы не используете в этой специализации (например, всё, кроме кинжалов). Они убираются из списков и подсказок.",
+    "이 전문화에서 쓰지 않는 무기 종류의 체크를 해제하세요(예: 단검만 남기기). 목록과 툴팁에서 빠집니다.",
+    "取消勾选此专精不用的武器类型（例如只留匕首）。它们不会出现在列表和提示中。",
+    "取消勾選此專精不用的武器類型（例如只留匕首）。它們不會出現在列表和提示中。")
 t("Weapons", "Waffen", "Armes", "Armas", "Armas", "Оружие", "무기", "武器", "武器")
 t("How you fight with this spec. Weapons that don't fit (a two-hander when you use a shield, say) are left off the lists and tooltips. Ranged weapons and wands aren't affected.",
     "Wie du mit dieser Spezialisierung kämpfst. Waffen, die nicht passen (etwa eine Zweihandwaffe, wenn du einen Schild nutzt), fehlen in den Listen und Tooltips. Fernkampfwaffen und Zauberstäbe sind nicht betroffen.",

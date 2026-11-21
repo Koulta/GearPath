@@ -39,12 +39,19 @@ local function judge(i)
     local rec = GP.Items.FromLink(link)
     if not rec then return nil, true end
     local out = { index = i, link = link, rec = rec, sell = sellPrice(link) }
-    local usable = true
+    local gameSays = true
     if GetQuestItemInfo then
         local isUsable = select(5, GetQuestItemInfo("choice", i))
-        if GP.Plain(isUsable) == false then usable = false end
+        if GP.Plain(isUsable) == false then gameSays = false end
     end
-    if usable then usable, out.healer = GP.Score.CanWear(rec) end
+    local usable
+    usable, out.healer = GP.Score.CanWear(rec)
+    -- The game marks it unusable: still a pick if it's only a weapon skill
+    -- you haven't trained yet (0.8.12), and the pick says so.
+    if usable and not gameSays then
+        out.need = GP.Training.Need(rec, (GP.Score.Upgrade(rec)))
+        if not out.need then usable = false end
+    end
     if usable then out.slot, out.delta, out.pct = GP.Score.Gain(rec) end
     return out
 end
@@ -80,7 +87,12 @@ local money = GP.Money
 
 -- The pick in a few words: "+83% Chest", or what it sells for.
 function QP.Why(pick)
-    if pick.kind == "upgrade" then return GP.UI.GainLine(pick.slot, pick.delta, pick.pct), "GOOD" end
+    if pick.kind == "upgrade" then
+        local line = GP.UI.GainLine(pick.slot, pick.delta, pick.pct)
+        -- A weapon you'd have to train first: "+40% Main Hand, Learn Staves first".
+        if pick.need then return line .. ", " .. GP.Training.Short(pick.need), "GOOD" end
+        return line, "GOOD"
+    end
     return string.format(GP.L["None are upgrades: sells for the most, %s"], money(pick.sell)), "LABEL"
 end
 

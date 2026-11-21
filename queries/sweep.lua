@@ -6,9 +6,28 @@
 -- the item's name, stats are made up from the armor type. The point is the
 -- rules (who can use what, where it goes, sources for your faction and class).
 local GPDIR = os.getenv("GPDIR")
-local CLASS = os.getenv("CLASS") or "WARLOCK"
-local FACTION = os.getenv("FACTION") or "Horde"
-local LEVEL = tonumber(os.getenv("LEVEL") or "30")
+-- SNAPSHOT=<GearPath's saved file>: real items from the game (/gp snapshot
+-- in game, then /reload), used instead of guessing slots and stats. Since
+-- 0.8.12 it also has the character's gear and setup; CLASS, FACTION, LEVEL
+-- and SPEC default to it, so SNAPSHOT=... alone rebuilds their lists.
+local SNAP, SNAPSHOT = {}, nil
+if (os.getenv("SNAPSHOT") or "") ~= "" then
+    local env = {}
+    local chunk = assert(loadfile(os.getenv("SNAPSHOT")))
+    setfenv(chunk, env)
+    chunk()
+    SNAPSHOT = env.GearPathDB and env.GearPathDB.snapshot or {}
+    SNAP = SNAPSHOT.items or {}
+    local n, w = 0, 0
+    for _ in pairs(SNAP) do n = n + 1 end
+    for _ in pairs(SNAPSHOT.worn or {}) do w = w + 1 end
+    io.stderr:write("snapshot: " .. n .. " real items, " .. w .. " worn" .. (SNAPSHOT.class and
+        (", " .. tostring(SNAPSHOT.class) .. " " .. tostring(SNAPSHOT.level) .. " " .. tostring(SNAPSHOT.spec)) or "") .. "\n")
+end
+local function env(name, fromSnap) local v = os.getenv(name); if v and v ~= "" then return v end; return fromSnap end
+local CLASS = env("CLASS", SNAPSHOT and SNAPSHOT.class) or "WARLOCK"
+local FACTION = env("FACTION", SNAPSHOT and SNAPSHOT.faction) or "Horde"
+local LEVEL = tonumber(env("LEVEL", SNAPSHOT and SNAPSHOT.level) or "30")
 local VERBOSE = os.getenv("VERBOSE")
 local DB = LibQuestieDB
 local I = DB.Item
@@ -72,18 +91,17 @@ local MISC_WORDS = {
     { "INVTYPE_NECK", { "necklace", "amulet", "pendant", "choker", "talisman", "medallion", "collar", "chain", "locket" } },
     { "INVTYPE_HOLDABLE", { "orb", "tome", "lamp", "candle", "scroll", "lantern", "branch", "torch", "skull", "book" } },
 }
--- SNAPSHOT=<GearPath's saved file>: real items from the game (/gp snapshot
--- in game, then /reload), used instead of guessing slots and stats.
-local SNAP = {}
-if (os.getenv("SNAPSHOT") or "") ~= "" then
-    local env = {}
-    local chunk = assert(loadfile(os.getenv("SNAPSHOT")))
-    setfenv(chunk, env)
-    chunk()
-    SNAP = env.GearPathDB and env.GearPathDB.snapshot and env.GearPathDB.snapshot.items or {}
-    local n = 0
-    for _ in pairs(SNAP) do n = n + 1 end
-    io.stderr:write("snapshot: " .. n .. " real items\n")
+-- What they wear, from the snapshot: by slot id, and stats by link.
+local WORN, WORN_BY_LINK = {}, {}
+for sid, w in pairs(SNAPSHOT and SNAPSHOT.worn or {}) do
+    if type(w) == "table" and w.link then
+        WORN[tonumber(sid) or sid] = w
+        WORN_BY_LINK[w.link] = w
+    end
+end
+local function wornFor(l)
+    local key = type(l) == "string" and l:match("item:[%-%d:]+")
+    return key and WORN_BY_LINK[key]
 end
 
 local function loc(id)
@@ -147,7 +165,11 @@ C_Item = {
         return I.name(id), link(id), id % 3 + 2, I.itemLevel(id) or 1, I.requiredLevel(id) or 0, "", "", 1, loc(id) or "",
             134000, 100, I.class(id), I.subClass(id) or 0, 2
     end,
-    GetItemStats = function(l) return stats(tonumber(l:match("item:(%d+)"))) end,
+    GetItemStats = function(l)
+        local w = wornFor(l)
+        if w and w.stats then return w.stats end
+        return stats(tonumber(l:match("item:(%d+)")))
+    end,
     IsItemDataCachedByID = function() return true end,
     RequestLoadItemDataByID = function() end,
     GetItemQualityColor = function() return 1, 1, 1, "ffffffff" end,
@@ -186,13 +208,34 @@ local function tipFor(id, fallback)
     return { lines = { { leftText = fallback or "?" } } }
 end
 C_TooltipInfo = {
-    GetHyperlink = function(l) return tipFor(tonumber(l:match("item:(%d+)")), l:match("%[(.-)%]")) end,
+    GetHyperlink = function(l)
+        local w = wornFor(l)
+        if w and w.lines and #w.lines > 0 then
+            local lines = {}
+            for i, t in ipairs(w.lines) do lines[i] = { leftText = t } end
+            return { lines = lines }
+        end
+        return tipFor(tonumber(l:match("item:(%d+)")), l:match("%[(.-)%]"))
+    end,
     GetItemByID = function(id) return tipFor(id, I.name(id)) end,
 }
 C_TooltipInfo.GetItemByID = function(id) return C_TooltipInfo.GetHyperlink(link(id)) end
 C_Container = { GetContainerNumSlots = function() return 0 end, GetContainerItemLink = function() return nil end }
-function GetInventorySlotInfo() return 1, "" end
-function GetInventoryItemLink() return nil end
+-- Slots by name, the game's ids; worn gear from the snapshot.
+local SLOT_ID = { HeadSlot = 1, NeckSlot = 2, ShoulderSlot = 3, ShirtSlot = 4, ChestSlot = 5, WaistSlot = 6, LegsSlot = 7,
+    FeetSlot = 8, WristSlot = 9, HandsSlot = 10, Finger0Slot = 11, Finger1Slot = 12, Trinket0Slot = 13, Trinket1Slot = 14,
+    BackSlot = 15, MainHandSlot = 16, SecondaryHandSlot = 17, RangedSlot = 18, TabardSlot = 19 }
+function GetInventorySlotInfo(name) return SLOT_ID[name] or 1, "" end
+function GetInventoryItemLink(_, sid)
+    local w = WORN[sid]
+    if not w then return nil end
+    local id = tonumber(w.link:match("item:(%d+)"))
+    return "|cff1eff00|H" .. w.link .. "|h[" .. tostring(SNAP[id] and SNAP[id].name or I.name(id) or "?") .. "]|h|r"
+end
+function GetInventoryItemID(_, sid) local w = WORN[sid]; return w and tonumber(w.link:match("item:(%d+)")) end
+function GetInventoryItemTexture(_, sid) return WORN[sid] and 134000 or nil end
+function GetInventoryItemQuality(_, sid) return WORN[sid] and 2 or nil end
+function GetInventoryItemDurability() return nil end
 C_QuestLog = { IsQuestFlaggedCompleted = function() return false end, GetLogIndexForQuestID = function() return nil end }
 local ZN = {}
 for sym, id in pairs(DB.Enum.zoneIDs or {}) do
@@ -215,7 +258,13 @@ local GP = ns
 H.Fire("ADDON_LOADED", "GearPath")
 H.Fire("PLAYER_LOGIN")
 GP.player.level = LEVEL
-if os.getenv("SPEC") then GP.Classes.SetSpec(os.getenv("SPEC")) end
+local SPEC = env("SPEC", SNAPSHOT and SNAPSHOT.spec)
+if SNAPSHOT then
+    GP.char.weaponStyle = SNAPSHOT.weaponStyle
+    GP.char.weaponTypesOff = SNAPSHOT.weaponTypesOff
+end
+if SPEC then GP.Classes.SetSpec(SPEC) end
+if next(WORN) then GP.Score.ReadEquipped() end
 if os.getenv("HOOK") then assert(loadfile(os.getenv("HOOK")))(GP) end
 -- Settings > Look ahead / Best now range (OrtusX, Nov 14: 10 and 5 showed 2 items).
 if os.getenv("AHEAD") then GP.SetSetting("ahead", tonumber(os.getenv("AHEAD"))) end
