@@ -1,5 +1,10 @@
 # GearPath changelog
 
+## 0.8.11
+
+### Added
+- **"Weapons:" and a framed icon in the main window**, beside Stat weights. The icon shows how you fight with your spec now: a greatsword or staff for Two-hander, a shield with a one-hander for One-hand and shield, a one-hander with a tome for One-hand and off-hand item, two blades for Two one-handers, crossed swords for Any. Click it to switch; each choice in the menu has its own icon. Same setting as Settings > Stat weights > Weapons.
+
 ## 0.8.10
 
 ### Changed

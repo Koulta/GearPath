@@ -921,6 +921,10 @@ t("for %d upgrades", "für Verbesserungen: %d", "pour améliorations : %d", "par
 -- Specs
 -- ---------------------------------------------------------------------
 
+t("Click to change how you fight with this spec.", "Klicken, um zu ändern, wie du mit dieser Spezialisierung kämpfst.",
+    "Cliquez pour changer votre façon de combattre avec cette spécialisation.", "Haz clic para cambiar cómo luchas con esta especialización.",
+    "Clique para mudar como você luta com esta especialização.", "Нажмите, чтобы изменить, как вы сражаетесь в этой специализации.",
+    "클릭하여 이 전문화의 전투 방식을 바꿉니다.", "点击以更改此专精的战斗方式。", "點擊以更改此專精的戰鬥方式。")
 t("Weapons", "Waffen", "Armes", "Armas", "Armas", "Оружие", "무기", "武器", "武器")
 t("How you fight with this spec. Weapons that don't fit (a two-hander when you use a shield, say) are left off the lists and tooltips. Ranged weapons and wands aren't affected.",
     "Wie du mit dieser Spezialisierung kämpfst. Waffen, die nicht passen (etwa eine Zweihandwaffe, wenn du einen Schild nutzt), fehlen in den Listen und Tooltips. Fernkampfwaffen und Zauberstäbe sind nicht betroffen.",

@@ -729,6 +729,53 @@ local errs = #H.errors
 GP.SetSetting("ahead", 3)
 for _ = 1, 30 do H.Tick(0.1) end
 check(#H.errors == errs, "changing look-ahead rescans cleanly")
+do  -- 0.8.11: the weapon-style button beside Stat weights.
+    local UI = GP.UI
+    UI.UpdateSub()
+    local sb = UI.styleButton
+    check(sb ~= nil and sb:IsShown() ~= false, "a weapon-style button in the line under the title")
+    if sb then
+        local _, rel = sb:GetPoint(1)
+        check(rel == UI.weightsButton, "right after Stat weights")
+        check(sb.style == GP.Classes.WeaponStyle() and sb.icon:GetTexture() ~= nil, "showing how you fight now (" .. tostring(sb.style) .. ")")
+        check(sb.label:GetText() == "Weapons:" and sb.box:GetWidth() == UI.STYLE_ICON and sb:GetWidth() > UI.STYLE_ICON,
+            "labelled \"Weapons:\", with a framed " .. UI.STYLE_ICON .. " px icon")
+        sb:GetScript("OnEnter")(sb)
+        check(GameTooltip:IsShown(), "its tooltip says what it is")
+        sb:GetScript("OnLeave")(sb)
+        local before = GP.Classes.WeaponStyle()
+        H.lastMenu = nil
+        sb:GetScript("OnClick")(sb)
+        local m = H.lastMenu
+        check(m ~= nil, "a click opens a menu of styles")
+        if m and m.radios then
+            check(#m.radios == #GP.Classes.Styles() and m.radios[2].text:find("|T", 1, true), "one line per style, with icons")
+            m.radios[2].setSel()
+        elseif m then
+            check(#m.keys == #GP.Classes.Styles(), "one line per style")
+            m.onPick(m.keys[2])
+        end
+        for _ = 1, 10 do H.Tick(0.1) end
+        check(GP.Classes.WeaponStyle() ~= before and sb.style == GP.Classes.WeaponStyle(),
+            "a click changes it, and the icon follows (" .. before .. " -> " .. GP.Classes.WeaponStyle() .. ")")
+        GP.Classes.SetWeaponStyle("held")
+        check(sb.style == "held" and sb.badge:IsShown() and sb.badgeBorder:IsShown(), "changed in Settings: the button follows; off-hand item shows a badge")
+        GP.Classes.SetWeaponStyle("any")
+        check(sb.style == "any" and not sb.badge:IsShown(), "any: one icon")
+        for _, cls in ipairs({ "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID" }) do
+            for _, st in ipairs(GP.Classes.STYLES) do
+                local main, badge = UI.StyleIcons(st, cls)
+                if not main or ((st == "shield" or st == "held") and not badge) then
+                    check(false, "icons for " .. cls .. " " .. st)
+                end
+            end
+        end
+        check(UI.StyleLabel("shield"):find("One-hand and shield", 1, true) and UI.StyleLabel("shield"):find("|T", 1, true),
+            "menu entries: icons and the name")
+        for _ = 1, 10 do H.Tick(0.1) end
+        GP.char.weaponStyle = nil
+    end
+end
 do  -- 0.8.10: the Weapons pick under Spec.
     local sp = GP.UI.Settings and GP.UI.Settings.stylePick
     check(sp ~= nil and sp:IsShown() ~= false, "Settings has a Weapons pick")

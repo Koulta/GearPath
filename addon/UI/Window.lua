@@ -730,6 +730,163 @@ function UI.WeightsButton()
     return btn
 end
 
+-- The weapon-style button (0.8.11, Koulta: a quick way to change it from
+-- the main window, themed after each setup). Beside Stat weights:
+-- "Weapons: [icon]" (Koulta, Nov 21: a border, bigger, and a label), the icon
+-- showing how you fight now; a click lists the styles your class can use,
+-- each with its own icon. Same setting as Settings > Stat weights > Weapons.
+local QUESTION = "Interface\\Icons\\INV_Misc_QuestionMark"
+local BOOK = "Interface\\Icons\\INV_Misc_Book_09"
+-- Weapon skill spells, for their icons: one-handed swords and maces,
+-- daggers, two-handed swords, axes and maces, staves, shield, dual wield, parry.
+local ICON_SPELL = { sword = 201, mace = 198, dagger = 1180, sword2 = 202, axe2 = 197, mace2 = 199,
+    staff = 227, shield = 9116, dual = 674, parry = 3127 }
+
+local function spellIcon(key)
+    local id = ICON_SPELL[key]
+    local get = (C_Spell and C_Spell.GetSpellTexture) or rawget(_G, "GetSpellTexture")
+    if not (id and get) then return QUESTION end
+    local ok, tex = pcall(get, id)
+    tex = ok and GP.Plain(tex) or nil
+    return tex or QUESTION
+end
+
+-- The two icons for a style (the badge can be nil), themed for your class:
+-- a Mage's two-hander is a staff, a Warrior's a greatsword.
+function UI.StyleIcons(style, class)
+    class = class or select(2, UnitClass("player"))
+    local caster = class == "PRIEST" or class == "MAGE" or class == "WARLOCK" or class == "DRUID"
+    local oneHand = (class == "PALADIN" or class == "SHAMAN" or class == "PRIEST" or class == "DRUID") and "mace"
+        or (caster or class == "ROGUE") and "dagger" or "sword"
+    if style == "two" then
+        local big = caster and "staff" or class == "SHAMAN" and "mace2" or class == "HUNTER" and "axe2" or "sword2"
+        return spellIcon(big)
+    elseif style == "shield" then
+        return spellIcon("shield"), spellIcon(oneHand)
+    elseif style == "held" then
+        return spellIcon(oneHand), BOOK
+    elseif style == "dual" then
+        return spellIcon("dual")
+    end
+    return spellIcon("parry")
+end
+
+-- "|T...|t One-hand and shield": a style's name with its icon(s), for the menu.
+function UI.StyleLabel(style)
+    local names = { any = L["Any"], two = L["Two-hander"], shield = L["One-hand and shield"],
+        held = L["One-hand and off-hand item"], dual = L["Two one-handers"] }
+    local main, badge = UI.StyleIcons(style)
+    local icons = "|T" .. tostring(main) .. ":16:16|t"
+    if badge then icons = icons .. "|T" .. tostring(badge) .. ":16:16|t" end
+    return icons .. " " .. (names[style] or tostring(style))
+end
+
+UI.STYLE_ICON = 24   -- the icon's size, border included
+
+function UI.StyleButton()
+    local f = UI.frame
+    if not f then return nil end
+    if UI.styleButton then return UI.styleButton end
+    local sub = f.sub or f.subText
+    local btn = CreateFrame("Button", nil, f)
+    btn:SetHeight(UI.STYLE_ICON)
+    btn:SetFrameLevel(f:GetFrameLevel() + 10)
+    -- "Weapons:" in the line's own font, so it reads as part of the line.
+    btn.label = btn:CreateFontString(nil, "OVERLAY")
+    if sub and sub.GetFontObject and sub:GetFontObject() then btn.label:SetFontObject(sub:GetFontObject()) end
+    if sub and sub.GetFont and btn.label.SetFont then
+        local font, size, flags = sub:GetFont()
+        if font then pcall(btn.label.SetFont, btn.label, font, size, flags) end
+    end
+    btn.label:SetPoint("LEFT", btn, "LEFT", 0, 0)
+    btn.label:SetText(L["Weapons"] .. ":")
+    btn.label:SetTextColor(0.85, 0.85, 0.85)
+    -- The icon, framed in the look's accent colour.
+    local iconBox = CreateFrame("Frame", nil, btn)
+    iconBox:SetSize(UI.STYLE_ICON, UI.STYLE_ICON)
+    iconBox:SetPoint("RIGHT", btn, "RIGHT", 0, 0)
+    btn.box = iconBox
+    btn.border = iconBox:CreateTexture(nil, "BACKGROUND")
+    btn.border:SetAllPoints(iconBox)
+    local r, g, b = 1, 0.82, 0
+    if UI.skin and UI.skin.Accent then
+        local ok, ar, ag, ab = pcall(UI.skin.Accent)
+        if ok and ar then r, g, b = ar, ag, ab end
+    end
+    btn.border:SetColorTexture(r, g, b, 0.9)
+    btn.accent = { r, g, b }
+    local inner = iconBox:CreateTexture(nil, "BORDER")
+    inner:SetPoint("TOPLEFT", iconBox, "TOPLEFT", 1, -1)
+    inner:SetPoint("BOTTOMRIGHT", iconBox, "BOTTOMRIGHT", -1, 1)
+    inner:SetColorTexture(0, 0, 0, 1)
+    btn.icon = iconBox:CreateTexture(nil, "ARTWORK")
+    btn.icon:SetPoint("TOPLEFT", iconBox, "TOPLEFT", 2, -2)
+    btn.icon:SetPoint("BOTTOMRIGHT", iconBox, "BOTTOMRIGHT", -2, 2)
+    btn.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    -- The off hand, small in the corner (a shield, a book), with its own iconBox.
+    btn.badgeBorder = iconBox:CreateTexture(nil, "OVERLAY", nil, 1)
+    btn.badgeBorder:SetSize(13, 13)
+    btn.badgeBorder:SetPoint("BOTTOMRIGHT", iconBox, "BOTTOMRIGHT", 3, -3)
+    btn.badgeBorder:SetColorTexture(0, 0, 0, 1)
+    btn.badge = iconBox:CreateTexture(nil, "OVERLAY", nil, 2)
+    btn.badge:SetSize(11, 11)
+    btn.badge:SetPoint("CENTER", btn.badgeBorder, "CENTER", 0, 0)
+    btn.badge:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    local hl = iconBox:CreateTexture(nil, "HIGHLIGHT")
+    hl:SetPoint("TOPLEFT", iconBox, "TOPLEFT", 2, -2)
+    hl:SetPoint("BOTTOMRIGHT", iconBox, "BOTTOMRIGHT", -2, 2)
+    hl:SetColorTexture(1, 1, 1, 0.2)
+    function btn.Layout()
+        local w = btn.label:GetStringWidth() or 50
+        btn:SetWidth(math.floor(w + 6 + UI.STYLE_ICON))
+    end
+    function btn.Refresh()
+        local style = GP.Classes.WeaponStyle()
+        local main, badge = UI.StyleIcons(style)
+        btn.icon:SetTexture(main)
+        if badge then
+            btn.badge:SetTexture(badge)
+            btn.badge:Show()
+            btn.badgeBorder:Show()
+        else
+            btn.badge:Hide()
+            btn.badgeBorder:Hide()
+        end
+        btn.style = style
+    end
+    btn:SetScript("OnClick", function(self)
+        GameTooltip:Hide()
+        local labels = {}
+        local keys = GP.Classes.Styles()
+        for _, k in ipairs(keys) do labels[k] = UI.StyleLabel(k) end
+        UI.skin.Menu(self.box, keys, labels, GP.Classes.WeaponStyle(), function(k)
+            GP.Classes.SetWeaponStyle(k)
+            self.Refresh()
+            if UI.Settings and UI.Settings.stylePick then UI.Settings.stylePick.Refresh() end
+        end)
+    end)
+    btn:SetScript("OnEnter", function(self)
+        self.label:SetTextColor(1, 1, 1)
+        self.border:SetColorTexture(1, 1, 1, 1)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:SetText(L["Weapons"] .. ": " .. UI.StyleLabel(GP.Classes.WeaponStyle()), 1, 1, 1)
+        GameTooltip:AddLine(L["Click to change how you fight with this spec."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    btn:SetScript("OnLeave", function(self)
+        self.label:SetTextColor(0.85, 0.85, 0.85)
+        local a = self.accent
+        self.border:SetColorTexture(a[1], a[2], a[3], 0.9)
+        GameTooltip:Hide()
+    end)
+    btn.Layout()
+    btn.Refresh()
+    UI.styleButton = btn
+    return btn
+end
+
+GP.On("WeightsChanged", function() if UI.styleButton then UI.styleButton.Refresh() end end)
+
 local function widthOf(text)
     local m = UI.measure
     if not m then return 0 end
@@ -749,18 +906,27 @@ function UI.UpdateSub()
     if GP.Classes and GP.Classes.Customised() then className = className .. " " .. L["(your weights)"] end
     local who = string.format(L["%s, level %d %s"], name, p.level or 1, className)
     local btn = UI.WeightsButton()
+    local style = btn and UI.StyleButton()
     local gap = ""
     if btn then
-        -- Room in the line for the button: spaces as wide as it, plus a margin.
+        -- Room in the line for the buttons: spaces as wide as them, plus a margin.
         -- (Measured between two letters: a line of only spaces can measure 0.)
         local space = math.max((widthOf("i          i") - widthOf("ii")) / 10, 1)
-        gap = string.rep(" ", math.ceil(((btn:GetWidth() or 100) + 16) / space))
+        if style then style.Layout() end
+        local room = (btn:GetWidth() or 100) + 16 + (style and (style:GetWidth() or 80) + 10 or 0)
+        gap = string.rep(" ", math.ceil(room / space))
     end
     UI.skin.SetTitle(UI.frame, UI.WindowTitle(), who .. gap .. "|  " .. UI.StatusText())
     if btn then
         local sub = UI.frame.sub or UI.frame.subText
         btn:ClearAllPoints()
         btn:SetPoint("LEFT", sub, "LEFT", math.floor(widthOf(who) + 8), 0)
+        if style then
+            style:ClearAllPoints()
+            style:SetPoint("LEFT", btn, "RIGHT", 10, 0)
+            style.Layout()
+            style.Refresh()
+        end
     end
     -- While the database is read the line counts down by itself.
     local S = GP.Sources

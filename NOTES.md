@@ -431,6 +431,11 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
   offHand) is checked in Score.CanWear, at the top of Score.Upgrade (so QuickEval tooltips too) and for
   the off-hand slot (a one-hander there only for "dual"). Ranged/wands untouched. Real-DB check, Warrior
   36: Protection no longer asks to train two-handed weapons. Settings row "Weapons" under Spec.
+  0.8.11 (Nov 20, Koulta): UI.StyleButton, "Weapons:" (the line's font) + a 24 px icon framed in the look's accent (white on hover), right of the Stat weights button (UpdateSub
+  leaves room for both). UI.StyleIcons(style, class): icons from weapon-skill spells (GetSpellTexture of
+  201/198/1180/202/197/199/227/9116/674/3127), themed by class (caster two-hander = staff); the off hand
+  as a corner badge (shield, or INV_Misc_Book_09 for held items). Click: skin.Menu of Classes.Styles()
+  with UI.StyleLabel (inline |T icons). Refreshes on WeightsChanged.
   Open (not code): QuestieDB 1.1.0 has 104 gear-dropping NPCs with no spawn, zone or level (about
   86 of them Forever's new ones): their drops read "location not in the database yet" without
   ForeverDungeonJournal. Hit caps (5% / 4%, dual wield 24%) are still the October beta's numbers
