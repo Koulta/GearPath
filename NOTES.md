@@ -448,6 +448,10 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
   level, faction, spec, weaponStyle, weaponTypesOff. queries/sweep.lua: SNAPSHOT=... alone sets
   CLASS/FACTION/LEVEL/SPEC and the weapon settings, and wears the gear (GetInventoryItemLink etc.).
   Hit caps rechecked Nov 21: same-level 5/4/24 unchanged (method.gg, Wowhead, classicwowforever.com).
+  0.8.13 (Nov 21, Koulta's screenshot): the dressing-room art's bottom files are 128 tall but the picture
+  stops ~72 down; PIECES 3/4 now h = 72 with th = 128 for texcoords, ART_H 328, so the cover fit fills
+  the panel (seen in game, Scourge art). Doll.MODEL_DROP = 30: the model frame sits 30 lower so the
+  feet stand on the floor; SetHitRectInsets keeps its clickable area on the panel (seen in game).
   Open (not code): QuestieDB 1.1.0 has 104 gear-dropping NPCs with no spawn, zone or level (about
   86 of them Forever's new ones): their drops read "location not in the database yet" without
   ForeverDungeonJournal. Hit caps (5% / 4%, dual wield 24%) are still the October beta's numbers

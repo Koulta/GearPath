@@ -1,5 +1,11 @@
 # GearPath changelog
 
+## 0.8.13
+
+### Fixed
+- The scene behind your character on the Character tab now reaches the bottom of its frame, instead of stopping short and leaving a dark empty band under it.
+- Your character stands on the scene's floor instead of floating above it.
+
 ## 0.8.12
 
 ### Added

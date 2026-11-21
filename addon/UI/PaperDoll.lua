@@ -16,6 +16,7 @@ UI.Doll = Doll
 Doll.SLOT = 40
 Doll.GAP = 4
 Doll.WIDTH = 360
+Doll.MODEL_DROP = 30   -- how far the model sits below the panel's middle, so it stands on the floor
 
 local buttons = {}
 
@@ -178,14 +179,19 @@ end
 -- ---------------------------------------------------------------------
 
 -- The game's dressing room art comes in four pieces: 256x256 top left,
--- 64x256 top right, 256x128 bottom left, 64x128 bottom right.
-local ART_W, ART_H = 320, 384
+-- 64x256 top right, 256x128 bottom left, 64x128 bottom right. The bottom
+-- two files are 128 tall but the picture in them stops about 72 down (the
+-- rest is empty), so only that much is used: before 0.8.13 the empty part
+-- showed as a dark band under the scene (Koulta, Nov 21). th: the file's
+-- height, for the texture coordinates.
+local ART_W, ART_H = 320, 328
 local PIECES = {
-    { n = 1, x = 0,   y = 0,   w = 256, h = 256 },
-    { n = 2, x = 256, y = 0,   w = 64,  h = 256 },
-    { n = 3, x = 0,   y = 256, w = 256, h = 128 },
-    { n = 4, x = 256, y = 256, w = 64,  h = 128 },
+    { n = 1, x = 0,   y = 0,   w = 256, h = 256, th = 256 },
+    { n = 2, x = 256, y = 0,   w = 64,  h = 256, th = 256 },
+    { n = 3, x = 0,   y = 256, w = 256, h = 72,  th = 128 },
+    { n = 4, x = 256, y = 256, w = 64,  h = 72,  th = 128 },
 }
+Doll.ART_W, Doll.ART_H, Doll.PIECES = ART_W, ART_H, PIECES
 
 -- The races that have dressing room art, and how much each is darkened so
 -- the model stands out (the game's own amounts for its character sheet, a
@@ -221,7 +227,7 @@ function Doll.LayoutArt(art, w, h)
             t:ClearAllPoints()
             t:SetPoint("TOPLEFT", art, "TOPLEFT", (x0 - cx) * scale, -(y0 - cy) * scale)
             t:SetSize((x1 - x0) * scale, (y1 - y0) * scale)
-            t:SetTexCoord((x0 - p.x) / p.w, (x1 - p.x) / p.w, (y0 - p.y) / p.h, (y1 - p.y) / p.h)
+            t:SetTexCoord((x0 - p.x) / p.w, (x1 - p.x) / p.w, (y0 - p.y) / p.th, (y1 - p.y) / p.th)
             t:Show()
         end
     end
@@ -375,8 +381,12 @@ UI.RegisterPage("doll", {
         panel:SetPoint("BOTTOMRIGHT", left, "TOPRIGHT", -(S + 10), -column)
         Doll.art = makeArt(panel)
         UI.model = makeModel(panel)
-        UI.model:SetPoint("TOPLEFT", panel, "TOPLEFT", 4, -4)
-        UI.model:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -4, 4)
+        -- Lowered so the feet stand on the scene's floor (Koulta, Nov 21);
+        -- the part below the panel can't be clicked, so it never covers
+        -- the weapon slots under it.
+        UI.model:SetPoint("TOPLEFT", panel, "TOPLEFT", 4, -4 - Doll.MODEL_DROP)
+        UI.model:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -4, 4 - Doll.MODEL_DROP)
+        if UI.model.SetHitRectInsets then UI.model:SetHitRectInsets(0, 0, -Doll.MODEL_DROP, Doll.MODEL_DROP) end
         if Doll.art then UI.model:SetFrameLevel(Doll.art:GetFrameLevel() + 1) end
 
         Doll.undo = skin.Button(panel, L["Take it off"], 130, 22)

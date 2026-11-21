@@ -1826,6 +1826,9 @@ do
     check(near(p1.x, 0) and near(p1.y, 0) and near(p4.x, p1.w) and near(p4.y, -p1.h), "and sit edge to edge")
     check(p1.tc[1] > 0 and near(p2.tc[2], 1 - p1.tc[1] * 256 / 64) and near(p1.tc[3], 0), "the sides are cut evenly, the top isn't")
     check(near((p1.w / (p1.tc[2] - p1.tc[1])) / 256, (p1.h / (p1.tc[4] - p1.tc[3])) / 256), "the picture keeps its shape")
+    -- 0.8.13: the bottom pieces only up to where their picture stops.
+    check(near(p3.tc[4], 72 / 128) and near(p4.tc[4], 72 / 128), "the bottom pieces stop where the picture does (" .. p3.tc[4] .. ")")
+    check(near((p3.w / (p3.tc[2] - p3.tc[1])) / 256, (p3.h / (p3.tc[4] - p3.tc[3])) / 128), "and keep the same shape")
 end
 
 -- The stats under the model, and what an item tried on would change.
