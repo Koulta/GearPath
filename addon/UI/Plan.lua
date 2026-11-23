@@ -124,32 +124,94 @@ end
 Plan.GROUP_KEYS = { "place", "slot" }
 function Plan.BySlot() return GP.Setting("routeGroup") == "slot" end
 
--- "This zone only": the Route keeps what you can get in the zone you're in
--- (its dungeons too, by their entrance) and gear already in your bags.
-function Plan.HereOnly() return GP.Setting("routeHere") == true end
+-- Zone (0.8.14, r173ym0n28711 on CurseForge: "an option for current zone
+-- select which zone"; it was a This zone only tick): the Route keeps what
+-- you can get in one zone (its dungeons too, by their entrance) and gear
+-- already in your bags. routeZone: nil (all), "here" (the zone you're in,
+-- following you) or a zone's map id. The old tick (routeHere) means "here".
+function Plan.ZoneSetting()
+    local z = GP.Setting("routeZone")
+    if z == "here" or type(z) == "number" then return z end
+    if GP.Setting("routeHere") == true then return "here" end
+    return nil
+end
 
-function Plan.Here(ev)
+-- The zone the Route is narrowed to now (a map id), or nil for all.
+function Plan.ZoneFilter()
+    local z = Plan.ZoneSetting()
+    if z == "here" then
+        local S = GP.Sources
+        return S.PlayerZone and S.PlayerZone() or nil, true
+    end
+    return z, false
+end
+function Plan.HereOnly() return Plan.ZoneSetting() ~= nil end
+
+-- The zone an item comes from (a map id), "bags", or nil.
+function Plan.ZoneOf(ev)
+    local src = ev and ev.source
+    if not src then return nil end
+    if src.kind == "bags" then return "bags" end
+    local S = GP.Sources
+    if src.dungeon then
+        local e = GP.Waypoint.Entrance(src.dungeon)
+        return e and S.Zone(e.mapID) or nil
+    end
+    local p = GP.Waypoint.PlaceOf(src)
+    return p and S.Zone(p.mapID) or nil
+end
+
+function Plan.InZone(ev, zone)
     local src = ev and ev.source
     if not src then return false end
     if src.kind == "bags" then return true end
-    local S = GP.Sources
-    local here = S.PlayerZone and S.PlayerZone()
-    if src.dungeon then
-        if IsInInstance and IsInInstance() and GetInstanceInfo then
-            local name = GP.Plain(GetInstanceInfo())
-            if type(name) == "string" and (src.dungeon == name or src.dungeon:match("^(.-)%s*:") == name) then return true end
-        end
-        local e = GP.Waypoint.Entrance(src.dungeon)
-        return here ~= nil and e ~= nil and S.Zone(e.mapID) == here
+    -- Inside a dungeon, its own gear counts as here.
+    if src.dungeon and zone == (GP.Sources.PlayerZone and GP.Sources.PlayerZone()) and IsInInstance and IsInInstance()
+        and GetInstanceInfo then
+        local name = GP.Plain(GetInstanceInfo())
+        if type(name) == "string" and (src.dungeon == name or src.dungeon:match("^(.-)%s*:") == name) then return true end
     end
-    local p = GP.Waypoint.PlaceOf(src)
-    return here ~= nil and p ~= nil and S.Zone(p.mapID) == here
+    return zone ~= nil and Plan.ZoneOf(ev) == zone
 end
 
--- What the Route lists: the Show filter, and This zone only when it's ticked.
+function Plan.Here(ev)
+    if ev and ev.source and ev.source.kind == "bags" then return true end
+    local S = GP.Sources
+    local here = S.PlayerZone and S.PlayerZone()
+    if ev and ev.source and ev.source.dungeon and IsInInstance and IsInInstance() then
+        return Plan.InZone(ev, here)
+    end
+    return here ~= nil and Plan.InZone(ev, here)
+end
+
+-- The zones with something on the Route, for the Zone menu, by name.
+function Plan.ZoneName(id)
+    local info = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(id)
+    return info and GP.Plain(info.name) or (GP.Sources.MapName and GP.Sources.MapName(id)) or tostring(id)
+end
+function Plan.ZoneKeys()
+    local seen, ids = {}, {}
+    for _, ev in ipairs(GP.Score.results.all or {}) do
+        if (ev.delta or 0) > 0 and UI.ContentMatches(ev) then
+            local z = Plan.ZoneOf(ev)
+            if type(z) == "number" and not seen[z] then seen[z] = true; ids[#ids + 1] = z end
+        end
+    end
+    local cur = Plan.ZoneSetting()
+    if type(cur) == "number" and not seen[cur] then ids[#ids + 1] = cur end
+    table.sort(ids, function(a, b) return Plan.ZoneName(a) < Plan.ZoneName(b) end)
+    local keys = { "all", "here" }
+    for _, id in ipairs(ids) do keys[#keys + 1] = id end
+    return keys
+end
+
+-- What the Route lists: the Show filter, and the Zone pick.
 local function routeKeeps(ev)
     if not UI.ContentMatches(ev) then return false end
-    return not Plan.HereOnly() or Plan.Here(ev)
+    if not Plan.HereOnly() then return true end
+    local zone, here = Plan.ZoneFilter()
+    if here then return Plan.Here(ev) end
+    return Plan.InZone(ev, zone)
 end
 Plan.Keeps = routeKeeps
 
@@ -222,9 +284,9 @@ local function addGroups(items, list)
     for i, g in ipairs(list) do addGroup(items, g, i == 1) end
 end
 
--- A new zone: the Route follows you while This zone only is ticked.
+-- A new zone: the Route follows you while Zone is This zone.
 GP.RegisterEvent("ZONE_CHANGED_NEW_AREA", function()
-    if not Plan.HereOnly() then return end
+    if Plan.ZoneSetting() ~= "here" then return end
     C_Timer.After(1, function()
         local def = UI.PAGES.plan
         if def and def.frame and def.frame:IsShown() then GP.SafeCall(def.Fill, def.frame) end
@@ -249,23 +311,26 @@ UI.RegisterPage("plan", {
                 local def = UI.PAGES.plan
                 if def and def.frame and def.frame:IsShown() then GP.SafeCall(def.Fill, def.frame) end
             end })
-        -- This zone only, between the two: "Group by: [place]  [ ] This zone only".
-        Plan.hereText = skin.Text(page, "small", "LABEL")
-        Plan.hereText:SetText(L["This zone only"])
-        Plan.hereText:SetPoint("RIGHT", Plan.content, "LEFT", -10, 0)
-        Plan.here = skin.Toggle(page)
-        Plan.here:SetPoint("RIGHT", Plan.hereText, "LEFT", -3, 0)
-        Plan.here.SetOn(Plan.HereOnly())
-        -- The words click it too.
-        if Plan.here.SetHitRectInsets and Plan.hereText.GetStringWidth then
-            Plan.here:SetHitRectInsets(0, -((Plan.hereText:GetStringWidth() or 0) + 3), 0, 0)
-        end
-        Plan.here.onToggle = function(on)
-            GP.SetSetting("routeHere", on and true or nil)
-            local def = UI.PAGES.plan
-            if def and def.frame and def.frame:IsShown() then GP.SafeCall(def.Fill, def.frame) end
-        end
-        Plan.group:SetPoint("RIGHT", Plan.here, "LEFT", -10, 0)
+        -- Zone, between the two: "Group by: [place]  Zone: [All zones]".
+        local zoneLabels = setmetatable({}, { __index = function(_, k)
+            if k == "all" then return L["All zones"] end
+            if k == "here" then
+                local here = GP.Sources.PlayerZone and GP.Sources.PlayerZone()
+                return string.format(L["This zone (%s)"], here and Plan.ZoneName(here) or "?")
+            end
+            return Plan.ZoneName(k)
+        end })
+        Plan.zone = GP.Dropdown(page, { width = 190, keys = Plan.ZoneKeys, labels = zoneLabels,
+            prefix = L["Zone:"] .. " ",
+            get = function() return Plan.ZoneSetting() or "all" end,
+            set = function(k)
+                GP.SetSetting("routeHere", nil)
+                GP.SetSetting("routeZone", k ~= "all" and k or nil)
+                local def = UI.PAGES.plan
+                if def and def.frame and def.frame:IsShown() then GP.SafeCall(def.Fill, def.frame) end
+            end })
+        Plan.zone:SetPoint("RIGHT", Plan.content, "LEFT", -10, 0)
+        Plan.group:SetPoint("RIGHT", Plan.zone, "LEFT", -10, 0)
         Plan.sub = skin.Text(page, "small", "LABEL")
         Plan.sub:SetPoint("TOPLEFT", Plan.title, "BOTTOMLEFT", 0, -5)
         Plan.sub:SetPoint("RIGHT", page, "RIGHT", -6, 0)
@@ -280,7 +345,7 @@ UI.RegisterPage("plan", {
         local hereOnly = Plan.HereOnly()
         local filtered = UI.ContentFiltered() or hereOnly
         Plan.content.Refresh()
-        if Plan.here then Plan.here.SetOn(hereOnly) end
+        if Plan.zone then Plan.zone.Refresh() end
         local plan = res.plan or { picks = {}, zones = {} }
         if filtered then plan = GP.Score.BuildPlan(res, routeKeeps) end
         local items = {}
@@ -311,8 +376,10 @@ UI.RegisterPage("plan", {
             end
         end
         if #plan.zones == 0 then
+            local zid = Plan.ZoneFilter()
             items[#items + 1] = { kind = "note", text = hereOnly
-                and L["Nothing to get in this zone right now. Untick This zone only to see everywhere."]
+                and string.format(L["Nothing to get in %s right now. Set Zone to All zones to see everywhere."],
+                    zid and Plan.ZoneName(zid) or "?")
                 or not filtered
                 and L["No upgrades to get at your level right now. Check Worth chasing below, or come back after a level or two."]
                 or L["Nothing to get at your level right now from what's ticked under Show."] }
@@ -340,7 +407,7 @@ UI.RegisterPage("plan", {
         groups("secondary", L["Worth chasing"], "WARN", hereOnly and L["Nothing worth chasing in this zone."]
             or L["Nothing worth chasing found yet."], true)
         groups("locked", UI.TIER_TEXT.locked, "OFF", "", false)
-        local key = UI.ContentKey() .. (Plan.BySlot() and ":slot" or "") .. (hereOnly and (":here" .. tostring(GP.Sources.PlayerZone and GP.Sources.PlayerZone())) or "")
+        local key = UI.ContentKey() .. (Plan.BySlot() and ":slot" or "") .. (hereOnly and (":zone" .. tostring((Plan.ZoneFilter()))) or "")
         Plan.list:SetItems(items, Plan.viewKey == key)
         Plan.viewKey = key
     end,

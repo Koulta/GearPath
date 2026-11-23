@@ -1,5 +1,14 @@
 # GearPath changelog
 
+## 0.8.14
+
+### Changed
+- **Route: pick any zone.** "This zone only" is now a **Zone** menu: All zones, This zone (it follows you as before), or any zone with upgrades in it. Pick one to plan a trip there before you go. Thanks again, r173ym0n28711.
+
+### Fixed
+- **Scarlet Monastery wings on Forever.** The dungeon panel showed every wing's bosses (Graveyard bosses in the Library). Forever doesn't give each wing its own map, so GearPath now tells them apart by the area you're standing in, or by the first wing boss you target or mouse over.
+- `/gp report` also says which map you're on (for bug reports).
+
 ## 0.8.13
 
 ### Fixed

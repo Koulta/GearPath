@@ -452,6 +452,12 @@ data quirk: QuestieDB marks Master Sergeant Biggins (12781, Alliance PvP vendor)
   stops ~72 down; PIECES 3/4 now h = 72 with th = 128 for texcoords, ART_H 328, so the cover fit fills
   the panel (seen in game, Scourge art). Doll.MODEL_DROP = 30: the model frame sits 30 lower so the
   feet stand on the floor; SetHitRectInsets keeps its clickable area on the panel (seen in game).
+  0.8.14 (Nov 23): Route Zone menu (Plan.zone; routeZone = nil | "here" | zone mapID; old routeHere = "here";
+  Plan.ZoneOf/InZone/ZoneKeys/ZoneName). SM wings: QuestieDB's Forever zones map the whole monastery to
+  uiMap 302 and Koulta's Library showed no wing, so Waypoint.WingOf tries the map's name, then
+  GetSubZoneText (WING_SUBZONES), then Waypoint.wingSeen (Loot.HintWing on a targeted/moused-over wing
+  boss; cleared on a new run or leaving), and only last the classic 302-305 table. /gp report: "map <id>
+  <name> in <instance> #<id> = <GearPath's place>" (Sources.MapPart). In-game wing check still to do.
   Open (not code): QuestieDB 1.1.0 has 104 gear-dropping NPCs with no spawn, zone or level (about
   86 of them Forever's new ones): their drops read "location not in the database yet" without
   ForeverDungeonJournal. Hit caps (5% / 4%, dual wield 24%) are still the October beta's numbers

@@ -1419,6 +1419,29 @@ end
 
 -- One line with what a bug report needs: version, game and language,
 -- character, add-ons GearPath reads, counts, speed and errors.
+-- In a dungeon, which map the game says you're on (and its name, and
+-- the instance's): what tells the Scarlet Monastery wings apart. Outside:
+-- "map <id>". (0.8.14, Koulta: the Library showed Graveyard bosses.)
+function Sources.MapPart()
+    local id
+    if C_Map and C_Map.GetBestMapForUnit then
+        local ok, v = pcall(C_Map.GetBestMapForUnit, "player")
+        id = ok and GP.Plain(v) or nil
+    end
+    local info = id and C_Map.GetMapInfo and C_Map.GetMapInfo(id)
+    local name = info and GP.Plain(info.name)
+    local inst, instID
+    if IsInInstance and GP.Plain((IsInInstance())) and GetInstanceInfo then
+        local n, _, _, _, _, _, _, iid = GetInstanceInfo()
+        inst, instID = GP.Plain(n), GP.Plain(iid)
+    end
+    local here = GP.Waypoint and GP.Waypoint.Here and GP.Waypoint.Here() or {}
+    local out = "map " .. tostring(id or "?")
+    if name then out = out .. " " .. name end
+    if inst then out = out .. " in " .. tostring(inst) .. " #" .. tostring(instID or "?") .. " = " .. tostring(here.instance) end
+    return out
+end
+
 function Sources.ReportLine()
     local p = GP.PlayerInfo()
     local version, build, _, toc = "?", "?", nil, "?"
@@ -1442,6 +1465,7 @@ function Sources.ReportLine()
             or (GP.Skin.Resolve and GP.Skin.Resolve(GP.Setting("look") or "auto"))) or "?"),
         table.concat(addons, " "),
         GP.ZoneData and GP.ZoneData.ReportPart() or "zones ?",
+        Sources.MapPart(),
         string.format("gear %d/%d %s", Sources.counts.candidates or 0, Sources.counts.loaded or 0, tostring(Sources.status)),
         string.format("now %d chase %d", r.primary or 0, r.secondary or 0),
         string.format("saved %d/%d", GP.Learn.Count(db.learned and db.learned.items), GP.Learn.Count(db.shared and db.shared.items)),

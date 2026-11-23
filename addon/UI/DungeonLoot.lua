@@ -204,6 +204,7 @@ function Loot.NewRun()
     local st = Loot.state
     if not st then return end
     st.dead, st.deadIDs, st.copy = {}, {}, nil
+    GP.Waypoint.wingSeen = nil
     if Loot.frame and Loot.frame:IsShown() then GP.Soon("dungeonloot", Loot.Refresh) end
 end
 
@@ -748,6 +749,16 @@ end
 
 local function soon() GP.Soon("dungeonloot", Loot.Refresh) end
 for _, e in ipairs({ "PLAYER_ENTERING_WORLD", "ZONE_CHANGED_NEW_AREA" }) do GP.RegisterEvent(e, soon) end
+-- A new subzone can name the wing (while it isn't known yet).
+for _, e in ipairs({ "ZONE_CHANGED", "ZONE_CHANGED_INDOORS" }) do
+    GP.RegisterEvent(e, function()
+        if Loot.place and not Loot.Wing(Loot.place) and GP.Waypoint.WINGS[Loot.place] then soon() end
+    end)
+end
+-- Leaving the dungeon forgets the boss you saw.
+GP.RegisterEvent("ZONE_CHANGED_NEW_AREA", function()
+    if not (IsInInstance and GP.Plain((IsInInstance()))) then GP.Waypoint.wingSeen = nil end
+end)
 GP.On("ScoresChanged", soon)
 GP.On("HiddenChanged", soon)
 GP.On("SettingChanged", function(key)
@@ -765,9 +776,23 @@ end)
 local WATCHED = { target = true, focus = true, mouseover = true,
     boss1 = true, boss2 = true, boss3 = true, boss4 = true, boss5 = true }
 
+-- A boss of one wing seen (targeted, moused over, dead): that's the wing
+-- you're in, when the map can't say (Forever's Scarlet Monastery).
+function Loot.HintWing(name)
+    local place = Loot.place
+    if type(name) ~= "string" or type(place) ~= "string" or Loot.Wing(place) then return false end
+    local base = place:match("^(.-)%s*:") or place
+    local at = Loot.BossWing(base, name)
+    if not at then return false end
+    GP.Waypoint.wingSeen = { base = base, wing = at:match(":%s*(.+)$") or at }
+    GP.Soon("dungeonloot", Loot.Refresh)
+    return true
+end
+
 function Loot.CheckDead(unit)
     if not (Loot.place and unit and UnitExists and GP.Plain(UnitExists(unit))) then return false end
     Loot.Saw(UnitGUID(unit))
+    Loot.HintWing(GP.Plain(UnitName(unit)))
     if GP.Plain(UnitIsDead(unit)) ~= true then return false end
     local npc = GP.NpcID(UnitGUID(unit))
     if not npc then return false end

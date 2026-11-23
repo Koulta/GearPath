@@ -331,11 +331,12 @@ do
     end
 end
 
--- This zone only (0.8.0): the Route keeps what's in the zone you're in
--- (Tirisfal here) and gear in your bags; unticked, it's the route as before.
+-- Zone (0.8.14; was This zone only in 0.8.0): the Route can keep one zone,
+-- the one you're in (Tirisfal here) or any you pick; gear in your bags
+-- always counts. All zones: the route as before.
 do
     local P = UI.Plan
-    check(P.here ~= nil and P.hereText and P.hereText:GetText() == "This zone only", "the Route has a This zone only box")
+    check(P.zone ~= nil, "the Route has a Zone pick")
     local function shown()
         local out = {}
         for _, it in ipairs(P.list.items or {}) do
@@ -343,9 +344,16 @@ do
         end
         return out
     end
+    local function pick(k)
+        GP.SetSetting("routeHere", nil)
+        GP.SetSetting("routeZone", k ~= "all" and k or nil)
+        GP.SafeCall(UI.PAGES.plan.Fill, UI.PAGES.plan.frame)
+    end
     local all = shown()
-    P.here:Click()
-    check(GP.Setting("routeHere") == true, "ticking it saves the choice")
+    local keys = P.ZoneKeys()
+    check(keys[1] == "all" and keys[2] == "here", "the menu starts with All zones and This zone")
+    pick("here")
+    check(GP.Setting("routeZone") == "here", "This zone saves the choice")
     local here = shown()
     local inZone = true
     for _, it in ipairs(here) do if not P.Here(it.ev) then inZone = false end end
@@ -354,10 +362,27 @@ do
         local away = false
         for _, it in ipairs(all) do if not P.Here(it.ev) then away = true end end
         check(away and #here < #all, "and something elsewhere drops off the list")
+        -- Another zone, picked from the menu.
+        local other
+        for i = 3, #keys do if keys[i] ~= GP.Sources.PlayerZone() then other = keys[i]; break end end
+        check(other ~= nil, "the menu lists the other zones with upgrades (" .. (#keys - 2) .. ")")
+        if other then
+            pick(other)
+            local there = shown()
+            local ok = #there > 0
+            for _, it in ipairs(there) do
+                if not (P.InZone(it.ev, other) or it.ev.source.kind == "bags") then ok = false end
+            end
+            check(ok, "picking " .. P.ZoneName(other) .. " lists only what's there (" .. #there .. ")")
+        end
     end
     check(P.Here({ source = { kind = "bags" } }), "gear in your bags is always here")
-    P.here:Click()
-    check(GP.Setting("routeHere") == nil and #shown() == #all, "unticked: the route as before")
+    -- The 0.8.0 tick still means This zone.
+    GP.SetSetting("routeZone", nil)
+    GP.SetSetting("routeHere", true)
+    check(P.ZoneSetting() == "here", "an old This zone only tick carries over")
+    pick("all")
+    check(GP.Setting("routeZone") == nil and GP.Setting("routeHere") == nil and #shown() == #all, "All zones: the route as before")
 end
 
 -- Safe to sell (0.8.0): bag gear no spec of yours would wear gets a coin
@@ -574,10 +599,33 @@ do
     check(W.Here().instance == "Scarlet Monastery: Library", "in the Library: " .. tostring(W.Here().instance))
     C_Map.GetBestMapForUnit = function() return nil end
     check(W.Here().instance == "Scarlet Monastery", "the map not known yet: the monastery")
+    -- 0.8.14: on Forever the whole monastery is one map (302, per
+    -- QuestieDB). Then: the map's name, the subzone, or a boss seen.
+    local sub, gmi = rawget(_G, "GetSubZoneText"), C_Map.GetMapInfo
+    C_Map.GetBestMapForUnit = function() return 9999 end
+    C_Map.GetMapInfo = function(id) if id == 9999 then return { name = "Scarlet Monastery - Armory", mapType = 4 } end return gmi(id) end
+    check(W.Here().instance == "Scarlet Monastery: Armory", "a map named for its wing: " .. tostring(W.Here().instance))
+    C_Map.GetMapInfo = function(id) if id == 9999 then return { name = "Scarlet Monastery", mapType = 4 } end return gmi(id) end
+    GetSubZoneText = function() return "Huntsman's Cloister" end
+    check(W.Here().instance == "Scarlet Monastery: Library", "the subzone names the wing: " .. tostring(W.Here().instance))
+    GetSubZoneText = function() return "" end
+    check(W.Here().instance == "Scarlet Monastery", "nothing to go on: the monastery")
+    if Loot then
+        Loot.place = "Scarlet Monastery"
+        check(Loot.HintWing("Herod") and W.Here().instance == "Scarlet Monastery: Armory", "Herod seen: the Armory")
+        check(not Loot.HintWing("Hogger"), "someone else: no change")
+        local st0 = Loot.state
+        Loot.state = Loot.state or { dead = {}, deadIDs = {}, got = {} }
+        Loot.NewRun()
+        check(W.wingSeen == nil and W.Here().instance == "Scarlet Monastery", "a new run forgets it")
+        Loot.state, Loot.place = st0, nil
+    end
+    GetSubZoneText, C_Map.GetMapInfo = sub, gmi
     GetInstanceInfo = function() return "Shadowfang Keep" end
     C_Map.GetBestMapForUnit = function() return 303 end
     check(W.Here().instance == "Shadowfang Keep", "another dungeon is left alone")
     IsInInstance, GetInstanceInfo, C_Map.GetBestMapForUnit = inInst, instInfo, best
+    W.wingSeen = nil
     check(W.PlaceName("Scarlet Monastery: Library") == "Scarlet Monastery (Library)" and W.PlaceName("The Deadmines") == "The Deadmines",
         "named Scarlet Monastery (Library) on screen")
     if Loot then

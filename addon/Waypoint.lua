@@ -128,6 +128,44 @@ local ZONE_TYPE = 3   -- Enum.UIMapType.Zone
 Waypoint.WINGS = {
     ["Scarlet Monastery"] = { [302] = "Graveyard", [303] = "Library", [304] = "Armory", [305] = "Cathedral" },
 }
+-- On Forever the map doesn't tell them apart (0.8.14, Koulta in the
+-- Library saw Graveyard bosses: QuestieDB's Forever zones put the whole
+-- monastery on one map). Next best, in order: the map's own name, the
+-- subzone you're standing in, a wing's boss you've seen this run
+-- (Waypoint.wingSeen, set by the dungeon panel), and only then the map
+-- numbers above.
+Waypoint.WING_NAMES = { "Graveyard", "Library", "Armory", "Cathedral" }
+Waypoint.WING_SUBZONES = {
+    ["Scarlet Monastery"] = {
+        ["Forlorn Cloister"] = "Graveyard", ["Chamber of Atonement"] = "Graveyard", ["Honor's Tomb"] = "Graveyard",
+        ["Huntsman's Cloister"] = "Library", ["Gallery of Treasures"] = "Library", ["Athenaeum"] = "Library",
+        ["Training Grounds"] = "Armory", ["Footman's Armory"] = "Armory", ["Crusader's Armory"] = "Armory",
+        ["Hall of Champions"] = "Armory",
+        ["Chapel Gardens"] = "Cathedral", ["Crusader's Chapel"] = "Cathedral",
+    },
+}
+Waypoint.wingSeen = nil   -- { base = "Scarlet Monastery", wing = "Library" }
+
+-- The wing you're in, or nil.
+function Waypoint.WingOf(base, mapID)
+    local wings = Waypoint.WINGS[base]
+    if not wings then return nil end
+    local info = type(mapID) == "number" and C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(mapID)
+    local name = info and GP.Plain(info.name)
+    if type(name) == "string" then
+        for _, w in ipairs(Waypoint.WING_NAMES) do
+            if name:find(w, 1, true) then return w end
+        end
+    end
+    local sub = GetSubZoneText and GP.Plain(GetSubZoneText())
+    local subs = Waypoint.WING_SUBZONES[base]
+    if type(sub) == "string" and subs and subs[sub] then return subs[sub] end
+    local seen = Waypoint.wingSeen
+    if seen and seen.base == base then return seen.wing end
+    -- Last: the classic map numbers (Forever may not use them).
+    if type(mapID) == "number" and wings[mapID] then return wings[mapID] end
+    return nil
+end
 
 -- "Scarlet Monastery: Library" -> "Scarlet Monastery (Library)"; others as they are.
 function Waypoint.PlaceName(instance)
@@ -151,10 +189,8 @@ function Waypoint.Here()
     if not (C_Map and C_Map.GetBestMapForUnit) then return here end
     local ok, id = pcall(C_Map.GetBestMapForUnit, "player")
     id = ok and GP.Plain(id) or nil
-    local wings = here.instance and Waypoint.WINGS[here.instance]
-    if wings and type(id) == "number" and wings[id] then
-        here.instance = here.instance .. ": " .. wings[id]
-    end
+    local wing = here.instance and Waypoint.WINGS[here.instance] and Waypoint.WingOf(here.instance, id)
+    if wing then here.instance = here.instance .. ": " .. wing end
     -- Up from a cave or a town map to its zone (not past it).
     for _ = 1, 4 do
         if type(id) ~= "number" or here.instance then break end

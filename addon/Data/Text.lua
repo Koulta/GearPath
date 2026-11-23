@@ -1074,16 +1074,18 @@ t("level %d, %d new upgrades to get. Open the Route (/gp).",
     "레벨 %d, 새 업그레이드 %d개. 경로를 여세요 (/gp).",
     "%d 级，有 %d 件新提升可拿。打开路线（/gp）。",
     "%d 級，有 %d 件新提升可拿。打開路線（/gp）。")
-t("This zone only", "Nur diese Zone", "Cette zone seulement", "Solo esta zona", "Só esta zona", "Только эта зона", "이 지역만", "仅本区域", "僅本區域")
-t("Nothing to get in this zone right now. Untick This zone only to see everywhere.",
-    "In dieser Zone gibt es gerade nichts. Entferne den Haken bei Nur diese Zone, um alles zu sehen.",
-    "Rien à obtenir dans cette zone pour l'instant. Décochez Cette zone seulement pour tout voir.",
-    "Nada que conseguir en esta zona ahora. Desmarca Solo esta zona para verlo todo.",
-    "Nada para pegar nesta zona agora. Desmarque Só esta zona para ver tudo.",
-    "В этой зоне сейчас ничего нет. Снимите флажок «Только эта зона», чтобы видеть всё.",
-    "지금 이 지역에서 얻을 것이 없습니다. 전체를 보려면 '이 지역만'을 해제하세요.",
-    "本区域目前没有可拿的。取消勾选“仅本区域”可查看全部。",
-    "本區域目前沒有可拿的。取消勾選「僅本區域」可查看全部。")
+t("Zone:", "Zone:", "Zone :", "Zona:", "Zona:", "Зона:", "지역:", "区域：", "區域：")
+t("All zones", "Alle Zonen", "Toutes les zones", "Todas las zonas", "Todas as zonas", "Все зоны", "모든 지역", "所有区域", "所有區域")
+t("This zone (%s)", "Diese Zone (%s)", "Cette zone (%s)", "Esta zona (%s)", "Esta zona (%s)", "Эта зона (%s)", "이 지역 (%s)", "本区域（%s）", "本區域（%s）")
+t("Nothing to get in %s right now. Set Zone to All zones to see everywhere.",
+    "In %s gibt es gerade nichts. Stelle Zone auf Alle Zonen, um alles zu sehen.",
+    "Rien à obtenir dans %s pour l'instant. Choisissez Toutes les zones pour tout voir.",
+    "Nada que conseguir en %s ahora. Elige Todas las zonas para verlo todo.",
+    "Nada para pegar em %s agora. Escolha Todas as zonas para ver tudo.",
+    "Сейчас в зоне %s ничего нет. Выберите «Все зоны», чтобы видеть всё.",
+    "지금 %s에서 얻을 것이 없습니다. 모든 지역을 선택하면 전부 보입니다.",
+    "%s 目前没有可获取的。选择所有区域查看全部。",
+    "%s 目前沒有可獲取的。選擇所有區域查看全部。")
 t("Loot roll help", "Hilfe beim Würfeln", "Aide aux jets de butin", "Ayuda para tiradas", "Ajuda nas rolagens", "Подсказка при розыгрыше", "주사위 도우미", "掷骰帮助", "擲骰幫助")
 t("On the Need/Greed window, a line under the item says how much better it is for you, or for your other spec.",
     "Im Bedarf/Gier-Fenster sagt eine Zeile unter dem Gegenstand, um wie viel besser er für dich ist oder für deine andere Spezialisierung.",
